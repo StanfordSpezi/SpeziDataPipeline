@@ -11,14 +11,16 @@ import json
 import pytz
 import ipywidgets as widgets
 from IPython.display import display
+from pandas import to_datetime
 
-
-def vizualize_data(dfs_dict, date1, date2):
+def vizualize_data(dfs_dict):
     dfs_dict = rename_key_dfs(dfs_dict)
 
     plot_output = widgets.Output()
     slider_lower = widgets.IntSlider(value=0, min=0, max=1000, step=1, description='Min value:', continuous_update=False)
     slider_upper = widgets.IntSlider(value=780, min=0, max=5000, step=1, description='Max value:', continuous_update=False)
+    date_picker_start = widgets.DatePicker(description='Start Date:', disabled=False)
+    date_picker_end = widgets.DatePicker(description='End Date:', disabled=False)
 
     def update_user_dropdown(df_key):
         unique_users = dfs_dict[df_key]['UserId'].unique().tolist()
@@ -30,24 +32,42 @@ def vizualize_data(dfs_dict, date1, date2):
             plot_output.clear_output(wait=True)
             selected_df = dfs_dict[dropdown_df.value]
             selected_user = dropdown_user.value
-            if selected_user:
-                if selected_df.empty:
-                    print("No data available to plot for the selected user and values range.")
-                else:
-                    plot_data(plot_output, selected_df, date1, date2, user_id=selected_user, y_lower=slider_lower.value, y_upper=slider_upper.value, same_plot=True, save_as_tif=False)
-                    print_statistics(selected_df, user_id=selected_user)
+            start_date = date_picker_start.value
+            end_date = date_picker_end.value
+            y_lower = slider_lower.value
+            y_upper = slider_upper.value
+            
+            if y_lower == y_upper:
+                print("Error: Lower and upper threshold values must be different.")
+                return
+            
+            str_start_date = start_date.strftime("%Y-%m-%d") if start_date else None
+            str_end_date = end_date.strftime("%Y-%m-%d") if end_date else None
+            
+            if str_start_date and str_end_date:
+                filtered_df = selected_df[(selected_df['EffectiveDateTime'] >= str_start_date) & (selected_df['EffectiveDateTime'] <= str_end_date)]
+            else:
+                filtered_df = selected_df
 
+            filtered_df = filtered_df[(filtered_df['QuantityValue'] >= y_lower) & (filtered_df['QuantityValue'] <= y_upper)]
+
+            if selected_user:
+                filtered_df = filtered_df[filtered_df['UserId'] == selected_user]
+
+            if filtered_df.empty:
+                print("No data available to plot for the selected criteria.")
+                return 
+
+            if not selected_df.empty:
+                plot_data(plot_output, filtered_df, str_start_date, str_end_date, user_id=selected_user, y_lower=y_lower, y_upper=y_upper, same_plot=True, save_as_tif=False)
+              
+ 
+            
     def on_dropdown_change(change):
         if change['type'] == 'change' and change['name'] == 'value':
             if change['owner'] == dropdown_df:
-                unique_users = update_user_dropdown(change['new'])
-                if unique_users:
-                    if dropdown_user.value not in unique_users:
-                        dropdown_user.value = unique_users[0]
-                    else:
-                        update_plot()
-            elif change['owner'] == dropdown_user:
-                update_plot()
+                update_user_dropdown(change['new'])
+            update_plot()
 
     dropdown_df = widgets.Dropdown(options=list(dfs_dict.keys()), description='Data type:')
     dropdown_user = widgets.Dropdown(description='User:')
@@ -56,25 +76,24 @@ def vizualize_data(dfs_dict, date1, date2):
     dropdown_user.observe(on_dropdown_change)
     slider_lower.observe(lambda change: update_plot(), names='value')
     slider_upper.observe(lambda change: update_plot(), names='value')
+    date_picker_start.observe(lambda change: update_plot(), names='value')
+    date_picker_end.observe(lambda change: update_plot(), names='value')
 
-    display(dropdown_df, dropdown_user, slider_lower, slider_upper, plot_output)
+    display(dropdown_df, dropdown_user, slider_lower, slider_upper, date_picker_start, date_picker_end, plot_output)
 
     # Initialization
     if dropdown_df.options:
-        initial_users = update_user_dropdown(dropdown_df.options[0])
+        update_user_dropdown(dropdown_df.options[0])
         dropdown_df.value = dropdown_df.options[0]
-        if initial_users:
-            dropdown_user.value = initial_users[0]
-            
-            
+        
 def analyze_data(reference_db, collection_name, date1=None, date2=None, save_as_csv=False):
     flattened_dfs = {}
     filtered_dfs = {}
     daily_dfs = {}
     
-    input_codes = get_unique_codes(reference_db, collection_name)
+    unique_loinc_codes, display_to_loinc_dict = get_unique_codes_and_displays(reference_db, collection_name)
 
-    for code in input_codes:
+    for code in unique_loinc_codes:
         flattened_df = fetch_and_flatten_data(reference_db, 'users', code)
         filtered_df = remove_outliers(flattened_df)
         daily_df = calculate_daily_data(filtered_df, save_as_csv)
@@ -86,8 +105,10 @@ def analyze_data(reference_db, collection_name, date1=None, date2=None, save_as_
     return flattened_dfs, filtered_dfs, daily_dfs
 
 
-def get_unique_codes(reference_db, collection_name):
+def get_unique_codes_and_displays(reference_db, collection_name):
     unique_loinc_codes = set()
+    display_to_loinc_dict = {}  # Dictionary to map 'display' to 'unique_loinc_codes'
+
     users = reference_db.collection(collection_name).stream()
 
     for user in users:
@@ -96,20 +117,43 @@ def get_unique_codes(reference_db, collection_name):
         for doc in healthkit_docs:
             doc_data = doc.to_dict()
             coding = doc_data.get('code', {}).get('coding', [])
-            loinc_code = coding[0]['code'] if len(coding) > 0 else ''
-            unique_loinc_codes.add(loinc_code)
-            
-    return unique_loinc_codes
-            
-            
-def rename_key_dfs(dfs_dict):
-    renamed_dict_dfs = {}
+            if len(coding) > 0:
+                loinc_code = coding[0]['code']
+                display = coding[0].get('display', '')
+                unique_loinc_codes.add(loinc_code)
+                
+                # Update display_to_loinc_dict
+                if display in display_to_loinc_dict:
+                    # If the display is already in the dictionary, add the loinc_code if it's not already present
+                    display_to_loinc_dict[display].add(loinc_code)
+                else:
+                    # Otherwise, create a new set for this display
+                    display_to_loinc_dict[display] = {loinc_code}
 
-    for key, df in dfs_dict.items():
-        new_key = df['QuantityName'].iloc[0]
-        renamed_dict_dfs[new_key] = df
+    # Convert sets to lists in display_to_loinc_dict to make it JSON serializable, if needed
+    for display in display_to_loinc_dict:
+        display_to_loinc_dict[display] = list(display_to_loinc_dict[display])
 
-    return renamed_dict_dfs
+    return unique_loinc_codes, display_to_loinc_dict
+
+    
+
+def rename_key_dfs(dfs_dict_or_df):
+    if isinstance(dfs_dict_or_df, dict):
+        renamed_dict_dfs = {}
+        for key, df in dfs_dict_or_df.items():
+            if not df.empty and 'QuantityName' in df.columns:
+                new_key = df['QuantityName'].iloc[0]
+                renamed_dict_dfs[new_key] = df
+        return renamed_dict_dfs
+    elif isinstance(dfs_dict_or_df, pd.DataFrame):
+        if not dfs_dict_or_df.empty and 'QuantityName' in dfs_dict_or_df.columns:
+            new_key = dfs_dict_or_df['QuantityName'].iloc[0]
+            return {new_key: dfs_dict_or_df}
+    else:
+        raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
+
+        
 
 
 def fetch_and_flatten_data(reference_db, collection_name, input_code):
@@ -210,7 +254,6 @@ def remove_outliers(df, manual_threshold=None):
         cleaned_df.to_csv(f'filtered_{quantity_name}_data_{pd.Timestamp.now().strftime("%Y-%m-%d")}.csv', index=False)
     
     return cleaned_df
-
 
 
 def print_statistics(df, user_id=None):

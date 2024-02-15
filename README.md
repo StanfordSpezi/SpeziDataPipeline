@@ -2,12 +2,17 @@
 
 This source file is part of the Stanford Spezi open-source project.
 
+<<<<<<< HEAD
 SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+=======
+SPDX-FileCopyrightText: 2022 Stanford University and the project authors (see CONTRIBUTORS.md)
+>>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
 
 SPDX-License-Identifier: MIT
   
 -->
 
+<<<<<<< HEAD
 # Spezi Data Pipeline Template
 
 [![Build and Test](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/actions/workflows/build-and-test.yml)
@@ -18,6 +23,17 @@ SPDX-License-Identifier: MIT
 The Spezi Data Pipeline provides a suite of functionalities for accessing, filtering, analyzing, and visualizing data from Firestore, tailored specifically for healthcare applications. Designed for flexibility, it can be easily integrated into any Python notebook environment.
 
 The `SpeziDataPipelineTemplate` Python Notebook contains a template demonstrating the usage of the Spezi Data Pipeline.
+=======
+# Spezi Data Pipeline
+
+
+The Spezi Data Pipeline provides a suite of functionalities for accessing, filtering, analyzing, and visualizing data from Firestore, tailored specifically for healthcare applications. Designed for flexibility, it can be easily integrated into any Python notebook environment.
+
+To simplify access and facilitate immediate hands-on exploration, we provide a direct link to open the Spezi Data Pipeline in Google Colab: <a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipeline.git">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
+
+>>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
 
 
 ## Overview
@@ -37,6 +53,7 @@ Ensure you have the following Python packages installed:
 
 **[firebase_admin](https://firebase.google.com/docs/admin/setup)** 
 
+<<<<<<< HEAD
 **[requests](https://pypi.org/project/requests/)**
 
 **[ipywidgets](https://ipywidgets.readthedocs.io/en/latest/user_install.html)**
@@ -47,6 +64,12 @@ You can install all required external packages using pip, which is the package i
 
 ```bash
 pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
+=======
+You can install all required external packages using pip, which is the package installer for Python, with the following command:
+
+```bash
+pip install pandas numpy matplotlib firebase-admin
+>>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
 ```
 
 
@@ -116,8 +139,13 @@ daily_df = calculate_daily_data(filtered_df)
 vizualize_data(daily_df)
 
 ```
+<<<<<<< HEAD
 
 ![visualize_data.png](Figures/visualize_data.png)
+=======
+![visualize_data.png](attachment:b0a17b62-3676-4abb-bcb5-643f623c96ce.png)
+
+>>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
 
 
 ## Contributing

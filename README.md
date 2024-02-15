@@ -38,9 +38,9 @@ Ensure you have the following Python packages installed:
 
 You can install all required external packages using pip, which is the package installer for Python, with the following command:
 
-`bash
+```bash
 pip install pandas numpy matplotlib firebase-admin
-`
+```
 
 
 ## Generate Service Account Key
@@ -76,10 +76,11 @@ if not firebase_admin._apps:
 # Create a Firestore client instance to interact with the database
 db = firestore.client()
 ```
-Notes:
 
-- Replace 'path/to/your/serviceAccountKey.json' with the actual path to the .json file you downloaded earlier.
-- The 'projectId' is your Firebase project ID, which you can find in your Firebase project settings.
+
+> [!NOTE]
+> - Replace 'path/to/your/serviceAccountKey.json' with the actual path to the .json file you downloaded earlier.
+> - The 'projectId' is your Firebase project ID, which you can find in your Firebase project settings.
 
 
 ### 2. Fetch and flatten data to retrieve and prepare your data.
@@ -122,4 +123,4 @@ Contributions to this project are welcome. Please make sure to read the [contrib
 This project is licensed under the MIT License. See [Licenses](https://github.com/StanfordSpezi/SpeziAccessGuard/tree/main/LICENSES) for more information.
 
 ![Spezi Footer](https://raw.githubusercontent.com/StanfordSpezi/.github/main/assets/FooterLight.png#gh-light-mode-only)
-<!-- ![Spezi Footer](https://raw.githubusercontent.com/StanfordSpezi/.github/main/assets/FooterDark.png#gh-dark-mode-only) -->
+![Spezi Footer](https://raw.githubusercontent.com/StanfordSpezi/.github/main/assets/FooterDark.png#gh-dark-mode-only)

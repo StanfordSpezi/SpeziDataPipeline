@@ -1,0 +1,38 @@
+#
+# This source file is part of the Stanford Spezi open-source project
+#
+# SPDX-FileCopyrightText: 2022 Stanford University and the project authors (see CONTRIBUTORS.md)
+#
+# SPDX-License-Identifier: MIT
+#
+
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+    - uses: yaananth/run-notebook@v2
+      env:
+        RUNNER: ${{ toJson(runner) }}
+        SECRETS: ${{ toJson(secrets) }}
+        GITHUB: ${{ toJson(github) }}
+      with:
+        notebook: "SpeziDataPipeline.ipynb"
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: output
+        path: ${{ RUNNER.temp }}/nb-runner
+      env:
+        RUNNER: ${{ toJson(runner) }}

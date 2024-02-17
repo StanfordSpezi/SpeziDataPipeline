@@ -16,7 +16,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  run:
+  build_and_test:
+    name: Build and Test Notebook
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4

@@ -1,7 +1,11 @@
 Files: .gitignore
-SPDX-License-Identifier: MIT
+License: MIT
 Comment: The .gitignore file is part of the Stanford Spezi open source project.
 
 Files: *.png
-SPDX-License-Identifier: MIT
+License: MIT
 Comment: All PNG images are part of the Stanford Spezi open source project.
+
+Files: *.ipynb
+License: MIT
+Comment: The Python notebooks are part of the Stanford Spezi open source project.

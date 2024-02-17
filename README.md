@@ -2,7 +2,7 @@
 
 This source file is part of the Stanford Spezi open-source project.
 
-SPDX-FileCopyrightText: 2022 Stanford University and the project authors (see CONTRIBUTORS.md)
+SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
 
 SPDX-License-Identifier: MIT
   
@@ -10,7 +10,7 @@ SPDX-License-Identifier: MIT
 
 # Spezi Data Pipeline
 
-<a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipeline/blob/main/SpeziDataPipeline.ipynb">
+<a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/SpeziDataPipelineTemplate.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 

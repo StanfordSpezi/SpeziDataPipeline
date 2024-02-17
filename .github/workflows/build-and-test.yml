@@ -52,5 +52,5 @@ jobs:
         firebase emulators:exec "jupyter nbconvert --to pdf --execute Untitled.ipynb"
     - uses: actions/upload-artifact@v4
       with:
-        name: SpeziDataPipelineTemplate.pdf
-        path: SpeziDataPipelineTemplate.pdf
+        name: Untitled.pdf
+        path: Untitled.pdf

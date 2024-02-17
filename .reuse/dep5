@@ -5,7 +5,3 @@ Comment: The .gitignore file is part of the Stanford Spezi open source project.
 Files: *.png
 License: MIT
 Comment: All PNG images are part of the Stanford Spezi open source project.
-
-Files: *.ipynb
-License: MIT
-Comment: The Python notebooks are part of the Stanford Spezi open source project.

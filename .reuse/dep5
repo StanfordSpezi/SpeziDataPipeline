@@ -1,9 +1,4 @@
-Files: .gitignore
+Files: Figures/*
 License: MIT
-Copyright: 2022 Stanford University and the project authors (see CONTRIBUTORS.md)
-Comment: The .gitignore file is part of the Stanford Spezi open source project.
-
-Files: *.png
-License: MIT
-Copyright: 2022 Stanford University and the project authors (see CONTRIBUTORS.md)
-Comment: All PNG images are part of the Stanford Spezi open source project.
+Copyright: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+Comment: All figures are part of the Stanford Spezi Data Pipeline Template open source project.

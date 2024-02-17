@@ -8,13 +8,15 @@ SPDX-License-Identifier: MIT
   
 -->
 
-# Spezi Data Pipeline
+# Spezi Data Pipeline Template
 
 <a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/SpeziDataPipelineTemplate.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
 The Spezi Data Pipeline provides a suite of functionalities for accessing, filtering, analyzing, and visualizing data from Firestore, tailored specifically for healthcare applications. Designed for flexibility, it can be easily integrated into any Python notebook environment.
+
+The `SpeziDataPipelineTemplate` Python Notebook contains a template demonstrating the usage of the Spezi Data Pipeline.
 
 
 ## Overview

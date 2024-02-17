@@ -30,6 +30,9 @@ jobs:
       with:
         distribution: 'microsoft'
         java-version: '17'
+    - name: Setup LaTex
+      run: |
+        sudo apt-get install pandoc texlive-xetex texlive-fonts-recommended texlive-plain-generic
     - name: Cache Firebase Emulators
       uses: actions/cache@v3
       with:

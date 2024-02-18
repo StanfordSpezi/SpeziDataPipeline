@@ -3,15 +3,20 @@
 This source file is part of the Stanford Spezi open-source project.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
 =======
 SPDX-FileCopyrightText: 2022 Stanford University and the project authors (see CONTRIBUTORS.md)
 >>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
+=======
+SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+>>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
 
 SPDX-License-Identifier: MIT
   
 -->
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Spezi Data Pipeline Template
 
@@ -25,15 +30,22 @@ The Spezi Data Pipeline provides a suite of functionalities for accessing, filte
 The `SpeziDataPipelineTemplate` Python Notebook contains a template demonstrating the usage of the Spezi Data Pipeline.
 =======
 # Spezi Data Pipeline
+=======
+# Spezi Data Pipeline Template
+>>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
 
-
-The Spezi Data Pipeline provides a suite of functionalities for accessing, filtering, analyzing, and visualizing data from Firestore, tailored specifically for healthcare applications. Designed for flexibility, it can be easily integrated into any Python notebook environment.
-
-To simplify access and facilitate immediate hands-on exploration, we provide a direct link to open the Spezi Data Pipeline in Google Colab: <a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipeline.git">
+[![Build and Test](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/actions/workflows/build-and-test.yml)
+<a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/SpeziDataPipelineTemplate.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
+<<<<<<< HEAD
 >>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
+=======
+The Spezi Data Pipeline provides a suite of functionalities for accessing, filtering, analyzing, and visualizing data from Firestore, tailored specifically for healthcare applications. Designed for flexibility, it can be easily integrated into any Python notebook environment.
+
+The `SpeziDataPipelineTemplate` Python Notebook contains a template demonstrating the usage of the Spezi Data Pipeline.
+>>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
 
 
 ## Overview
@@ -140,12 +152,17 @@ vizualize_data(daily_df)
 
 ```
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 ![visualize_data.png](Figures/visualize_data.png)
 =======
 ![visualize_data.png](attachment:b0a17b62-3676-4abb-bcb5-643f623c96ce.png)
 
 >>>>>>> d6b481a... Adding date filtering feature and other improvements (#1)
+=======
+
+![visualize_data.png](Figures/visualize_data.png)
+>>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
 
 
 ## Contributing

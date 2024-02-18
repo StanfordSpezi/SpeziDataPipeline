@@ -47,6 +47,7 @@ jobs:
     - name: Install SpeziDataPipelineTemplate Dependencies
       run: |
         pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
+<<<<<<< HEAD
     - name: Conditionally Run Firebase Emulator & Execute Notebook
       run: |
         if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -56,6 +57,11 @@ jobs:
           echo "Not a CI environment, executing notebook without importing data."
           jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb
         fi
+=======
+    - name: Run Firebase Emulator & Execute Notebook
+      run: |
+        firebase emulators:exec "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
+>>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
     - uses: actions/upload-artifact@v4
       with:
         name: SpeziDataPipelineTemplate.pdf

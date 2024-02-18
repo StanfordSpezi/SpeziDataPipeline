@@ -110,8 +110,8 @@ daily_df = calculate_daily_data(filtered_df)
 vizualize_data(daily_df)
 
 ```
-![visualize_data.png](attachment:b0a17b62-3676-4abb-bcb5-643f623c96ce.png)
 
+![visualize_data.png](Figures/visualize_data.png)
 
 
 ## Contributing

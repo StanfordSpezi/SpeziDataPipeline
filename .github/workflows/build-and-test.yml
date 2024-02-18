@@ -49,8 +49,8 @@ jobs:
         pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
     - name: Run Firebase Emulator & Execute Notebook
       run: |
-        firebase emulators:exec "jupyter nbconvert --to pdf --execute Untitled.ipynb"
+        firebase emulators:exec "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
     - uses: actions/upload-artifact@v4
       with:
-        name: Untitled.pdf
-        path: Untitled.pdf
+        name: SpeziDataPipelineTemplate.pdf
+        path: SpeziDataPipelineTemplate.pdf

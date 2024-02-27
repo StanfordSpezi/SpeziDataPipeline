@@ -1,0 +1,33 @@
+{
+    "identifier": [
+        {
+            "id": "0bedf1f3-05bd-495c-b970-7498b8a03bd6"
+        }
+    ],
+    "status": "final",
+    "resourceType": "Observation",
+    "id": "0bedf1f3-05bd-495c-b970-7498b8a03bd6",
+    "effectivePeriod": {
+        "start": "2023-03-10T23:20:29.000000Z",
+        "end": "2023-03-10T23:20:34.000000Z"
+    },
+    "issued": "2023-03-10T23:20:29.000000Z",
+    "valueQuantity": {
+        "unit": "steps",
+        "value": 129.0
+    },
+    "code": {
+        "coding": [
+            {
+                "system": "http://loinc.org",
+                "code": "55423-8",
+                "display": "Number of steps in unspecified time Pedometer"
+            },
+            {
+                "system": "http://developer.apple.com/documentation/healthkit",
+                "code": "HKQuantityTypeIdentifierStepCount",
+                "display": "Step Count"
+            }
+        ]
+    }
+}

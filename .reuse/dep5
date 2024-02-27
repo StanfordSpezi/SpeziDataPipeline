@@ -1,0 +1,6 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: Figures/*
+Copyright: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+License: MIT
+Comment: All figures are part of the Stanford Spezi Data Pipeline Template open source project.

@@ -1,0 +1,31 @@
+{
+    "identifier": [
+        {
+            "id": "0b78ea1d-7603-444e-b3ce-980026c0e780"
+        }
+    ],
+    "status": "final",
+    "resourceType": "Observation",
+    "id": "0b78ea1d-7603-444e-b3ce-980026c0e780",
+    "effectivePeriod": {
+        "start": "2023-09-24T09:27:41.000000Z",
+        "end": "2023-09-24T09:27:46.000000Z"
+    },
+    "issued": "2023-09-24T09:27:41.000000Z",
+    "valueQuantity": {
+        "unit": "g",
+        "value": 61,
+        "code": "g",
+        "system": "http://unitsofmeasure.org"
+    },
+    "code": {
+        "coding": [
+            {
+                "system": "http://developer.apple.com/documentation/healthkit",
+                "code": "HKQuantityTypeIdentifierDietaryProtein",
+                "display": "Dietary Protein"
+            }
+        ]
+    },
+    "effectiveDateTime": "2023-09-24T09:27:41.000000Z"
+}

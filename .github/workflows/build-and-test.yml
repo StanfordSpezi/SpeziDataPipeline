@@ -50,6 +50,7 @@ jobs:
 <<<<<<< HEAD
     - name: Conditionally Run Firebase Emulator & Execute Notebook
       run: |
+<<<<<<< HEAD
         if [ "${{ env.CI }}" = "true" ]; then
           echo "CI environment detected, importing data from sample_data/ and executing notebook."
           firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
@@ -62,6 +63,12 @@ jobs:
       run: |
         firebase emulators:exec "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
 >>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
+=======
+        echo "CI environment detected, importing data from sample_data/ and executing notebook."
+        firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
+      env:
+        CI: true
+>>>>>>> b5bb4d4... Update build-and-test.yml
     - uses: actions/upload-artifact@v4
       with:
         name: SpeziDataPipelineTemplate.pdf

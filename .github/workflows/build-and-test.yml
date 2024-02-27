@@ -47,9 +47,8 @@ jobs:
     - name: Install SpeziDataPipelineTemplate Dependencies
       run: |
         pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
-    - name: Conditionally Run Firebase Emulator & Execute Notebook
+    - name: Run Firebase Emulator & Execute Notebook
       run: |
-        echo "CI environment detected, importing data from sample_data/ and executing notebook."
         firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
       env:
         CI: true

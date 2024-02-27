@@ -21,6 +21,7 @@ import ipywidgets as widgets
 from IPython.display import display
 from pandas import to_datetime
 
+
 def vizualize_data(dfs_dict):
     dfs_dict = rename_key_dfs(dfs_dict)
 
@@ -136,6 +137,7 @@ def get_unique_codes_and_displays(reference_db, collection_name):
                 else:
                     display_to_loinc_dict[quantity_name] = {loinc_code}
 
+
     # Convert sets to lists in display_to_loinc_dict to make it JSON serializable
     for quantity_name in display_to_loinc_dict:
         display_to_loinc_dict[quantity_name] = list(display_to_loinc_dict[quantity_name])
@@ -159,7 +161,22 @@ def rename_key_dfs(dfs_dict_or_df):
     else:
         raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
 
-        
+
+
+def rename_key_dfs(dfs_dict_or_df):
+    if isinstance(dfs_dict_or_df, dict):
+        renamed_dict_dfs = {}
+        for key, df in dfs_dict_or_df.items():
+            if not df.empty and 'QuantityName' in df.columns:
+                new_key = df['QuantityName'].iloc[0]
+                renamed_dict_dfs[new_key] = df
+        return renamed_dict_dfs
+    elif isinstance(dfs_dict_or_df, pd.DataFrame):
+        if not dfs_dict_or_df.empty and 'QuantityName' in dfs_dict_or_df.columns:
+            new_key = dfs_dict_or_df['QuantityName'].iloc[0]
+            return {new_key: dfs_dict_or_df}
+    else:
+        raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
 
 
 def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_csv=True):
@@ -265,6 +282,7 @@ def remove_outliers(df, manual_threshold=None):
         filtered_df.to_csv(f'filtered_{quantity_name}_data_{pd.Timestamp.now().strftime("%Y-%m-%d")}.csv', index=False)
     
     return filtered_df
+
 
 def print_statistics(df, user_id=None):
     if user_id is not None:

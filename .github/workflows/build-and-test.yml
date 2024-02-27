@@ -69,7 +69,11 @@ jobs:
 =======
     - name: Run Firebase Emulator & Execute Notebook
       run: |
+<<<<<<< HEAD
 >>>>>>> ddba11f... Update build-and-test.yml
+=======
+        export GCLOUD_PROJECT=spezidatapipelinetemplate
+>>>>>>> 7730c93... Update Build and test workflow
         firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
       env:
         CI: true

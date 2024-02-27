@@ -49,7 +49,7 @@ jobs:
         pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
     - name: Conditionally Run Firebase Emulator & Execute Notebook
       run: |
-        if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "pull_request" ]; then
+        if [ "${{ env.CI }}" = "true" ]; then
           echo "CI environment detected, importing data from sample_data/ and executing notebook."
           firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
         else

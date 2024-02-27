@@ -48,6 +48,7 @@ jobs:
       run: |
         pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
 <<<<<<< HEAD
+<<<<<<< HEAD
     - name: Conditionally Run Firebase Emulator & Execute Notebook
       run: |
 <<<<<<< HEAD
@@ -65,6 +66,10 @@ jobs:
 >>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
 =======
         echo "CI environment detected, importing data from sample_data/ and executing notebook."
+=======
+    - name: Run Firebase Emulator & Execute Notebook
+      run: |
+>>>>>>> ddba11f... Update build-and-test.yml
         firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
       env:
         CI: true

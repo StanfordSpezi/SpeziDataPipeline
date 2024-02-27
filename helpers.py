@@ -196,7 +196,7 @@ def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_cs
                 flattened_data.append(flattened_entry)
 
     flattened_data = pd.DataFrame(flattened_data)
-    
+    print(flattened_data.columns)
     flattened_data['EffectiveDateTime'] = pd.to_datetime(flattened_data['EffectiveDateTime'], errors='coerce')
 
     if save_as_csv:

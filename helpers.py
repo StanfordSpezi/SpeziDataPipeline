@@ -21,7 +21,6 @@ import ipywidgets as widgets
 from IPython.display import display
 from pandas import to_datetime
 
-
 def vizualize_data(dfs_dict):
     dfs_dict = rename_key_dfs(dfs_dict)
 
@@ -143,7 +142,7 @@ def get_unique_codes_and_displays(reference_db, collection_name):
 
     return unique_loinc_codes, display_to_loinc_dict
 
-    
+  
 
 def rename_key_dfs(dfs_dict_or_df):
     if isinstance(dfs_dict_or_df, dict):
@@ -159,8 +158,6 @@ def rename_key_dfs(dfs_dict_or_df):
             return {new_key: dfs_dict_or_df}
     else:
         raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
-
-        
 
 
 def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_csv=True):
@@ -197,7 +194,6 @@ def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_cs
                 flattened_data.append(flattened_entry)
 
     flattened_data = pd.DataFrame(flattened_data)
-    
     flattened_data['EffectiveDateTime'] = pd.to_datetime(flattened_data['EffectiveDateTime'], errors='coerce')
 
     if save_as_csv:

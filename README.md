@@ -4,8 +4,6 @@ This source file is part of the Stanford Spezi open-source project.
 
 SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
 
-SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
-
 SPDX-License-Identifier: MIT
   
 -->
@@ -49,12 +47,13 @@ You can install all required external packages using pip, which is the package i
 
 ```bash
 pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
+```
 
 You can install all required external packages using pip, which is the package installer for Python, with the following command:
 
 ```bash
 pip install pandas numpy matplotlib firebase-admin
-
+```
 
 ## Generate Service Account Key
 

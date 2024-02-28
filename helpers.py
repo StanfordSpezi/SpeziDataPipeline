@@ -61,19 +61,11 @@ def vizualize_data(dfs_dict):
 
             if selected_user:
                 filtered_df = filtered_df[filtered_df['UserId'] == selected_user]
-<<<<<<< HEAD
 
             if filtered_df.empty:
                 print("No data available to plot for the selected criteria.")
                 return 
 
-=======
-
-            if filtered_df.empty:
-                print("No data available to plot for the selected criteria.")
-                return 
-
->>>>>>> 7abc6a8... date filtering feature and other improvements
             if not selected_df.empty:
                 plot_data(plot_output, filtered_df, str_start_date, str_end_date, user_id=selected_user, y_lower=y_lower, y_upper=y_upper, same_plot=True, save_as_tif=False)
               
@@ -102,11 +94,8 @@ def vizualize_data(dfs_dict):
         update_user_dropdown(dropdown_df.options[0])
         dropdown_df.value = dropdown_df.options[0]
         
-<<<<<<< HEAD
+
 def analyze_data(reference_db, collection_name, date1=None, date2=None, save_as_csv=True):
-=======
-def analyze_data(reference_db, collection_name, date1=None, date2=None, save_as_csv=False):
->>>>>>> 7abc6a8... date filtering feature and other improvements
     flattened_dfs = {}
     filtered_dfs = {}
     daily_dfs = {}
@@ -114,11 +103,8 @@ def analyze_data(reference_db, collection_name, date1=None, date2=None, save_as_
     unique_loinc_codes, display_to_loinc_dict = get_unique_codes_and_displays(reference_db, collection_name)
 
     for code in unique_loinc_codes:
-<<<<<<< HEAD
         flattened_df = fetch_and_flatten_data(reference_db, 'users', code, save_as_csv)
-=======
-        flattened_df = fetch_and_flatten_data(reference_db, 'users', code)
->>>>>>> 7abc6a8... date filtering feature and other improvements
+
         filtered_df = remove_outliers(flattened_df)
         daily_df = calculate_daily_data(filtered_df, save_as_csv)
     
@@ -131,11 +117,8 @@ def analyze_data(reference_db, collection_name, date1=None, date2=None, save_as_
 
 def get_unique_codes_and_displays(reference_db, collection_name):
     unique_loinc_codes = set()
-<<<<<<< HEAD
     display_to_loinc_dict = {}  
-=======
-    display_to_loinc_dict = {}  # Dictionary to map 'display' to 'unique_loinc_codes'
->>>>>>> 7abc6a8... date filtering feature and other improvements
+
 
     users = reference_db.collection(collection_name).stream()
 
@@ -147,7 +130,6 @@ def get_unique_codes_and_displays(reference_db, collection_name):
             coding = doc_data.get('code', {}).get('coding', [])
             if len(coding) > 0:
                 loinc_code = coding[0]['code']
-<<<<<<< HEAD
                 # display = coding[0].get('display', '')
                 quantity_name = coding[1].get('display', '') if len(coding) > 1 else (coding[0].get('display', '') if len(coding) > 0 else '')
                 unique_loinc_codes.add(loinc_code)
@@ -162,24 +144,6 @@ def get_unique_codes_and_displays(reference_db, collection_name):
         display_to_loinc_dict[quantity_name] = list(display_to_loinc_dict[quantity_name])
 
     return unique_loinc_codes, display_to_loinc_dict
-=======
-                display = coding[0].get('display', '')
-                unique_loinc_codes.add(loinc_code)
-                
-                # Update display_to_loinc_dict
-                if display in display_to_loinc_dict:
-                    # If the display is already in the dictionary, add the loinc_code if it's not already present
-                    display_to_loinc_dict[display].add(loinc_code)
-                else:
-                    # Otherwise, create a new set for this display
-                    display_to_loinc_dict[display] = {loinc_code}
-
-    # Convert sets to lists in display_to_loinc_dict to make it JSON serializable, if needed
-    for display in display_to_loinc_dict:
-        display_to_loinc_dict[display] = list(display_to_loinc_dict[display])
-
-    return unique_loinc_codes, display_to_loinc_dict
-
     
 
 def rename_key_dfs(dfs_dict_or_df):
@@ -197,9 +161,12 @@ def rename_key_dfs(dfs_dict_or_df):
     else:
         raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
 
-        
->>>>>>> 7abc6a8... date filtering feature and other improvements
 
+    # Convert sets to lists in display_to_loinc_dict to make it JSON serializable, if needed
+    for display in display_to_loinc_dict:
+        display_to_loinc_dict[display] = list(display_to_loinc_dict[display])
+
+    return unique_loinc_codes, display_to_loinc_dict
     
 
 def rename_key_dfs(dfs_dict_or_df):
@@ -322,12 +289,7 @@ def remove_outliers(df, manual_threshold=None):
         quantity_name = df['QuantityName'].iloc[0].lower().replace(' ', '_')
         filtered_df.to_csv(f'filtered_{quantity_name}_data_{pd.Timestamp.now().strftime("%Y-%m-%d")}.csv', index=False)
     
-<<<<<<< HEAD
     return filtered_df
-=======
-    return cleaned_df
-
->>>>>>> 7abc6a8... date filtering feature and other improvements
 
 def print_statistics(df, user_id=None):
     if user_id is not None:

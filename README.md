@@ -37,12 +37,23 @@ Ensure you have the following Python packages installed:
 
 **[firebase_admin](https://firebase.google.com/docs/admin/setup)** 
 
+**[requests](https://pypi.org/project/requests/)**
+
+**[ipywidgets](https://ipywidgets.readthedocs.io/en/latest/user_install.html)**
+
+**[pytz](https://pypi.org/project/pytz/)**
+
+You can install all required external packages using pip, which is the package installer for Python, with the following command:
+
+```bash
+pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
+```
+
 You can install all required external packages using pip, which is the package installer for Python, with the following command:
 
 ```bash
 pip install pandas numpy matplotlib firebase-admin
 ```
-
 
 ## Generate Service Account Key
 
@@ -110,6 +121,7 @@ daily_df = calculate_daily_data(filtered_df)
 vizualize_data(daily_df)
 
 ```
+
 
 ![visualize_data.png](Figures/visualize_data.png)
 

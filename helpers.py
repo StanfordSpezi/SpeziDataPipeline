@@ -162,12 +162,7 @@ def rename_key_dfs(dfs_dict_or_df):
         raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
 
 
-    # Convert sets to lists in display_to_loinc_dict to make it JSON serializable, if needed
-    for display in display_to_loinc_dict:
-        display_to_loinc_dict[display] = list(display_to_loinc_dict[display])
 
-    return unique_loinc_codes, display_to_loinc_dict
-    
 
 def rename_key_dfs(dfs_dict_or_df):
     if isinstance(dfs_dict_or_df, dict):
@@ -183,8 +178,6 @@ def rename_key_dfs(dfs_dict_or_df):
             return {new_key: dfs_dict_or_df}
     else:
         raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
-
-        
 
 
 def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_csv=True):
@@ -221,7 +214,6 @@ def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_cs
                 flattened_data.append(flattened_entry)
 
     flattened_data = pd.DataFrame(flattened_data)
-    
     flattened_data['EffectiveDateTime'] = pd.to_datetime(flattened_data['EffectiveDateTime'], errors='coerce')
 
     if save_as_csv:

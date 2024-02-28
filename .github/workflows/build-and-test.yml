@@ -47,46 +47,15 @@ jobs:
     - name: Install SpeziDataPipelineTemplate Dependencies
       run: |
         pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    - name: Conditionally Run Firebase Emulator & Execute Notebook
-      run: |
-<<<<<<< HEAD
-        if [ "${{ env.CI }}" = "true" ]; then
-          echo "CI environment detected, importing data from sample_data/ and executing notebook."
-          firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
-        else
-          echo "Not a CI environment, executing notebook without importing data."
-          jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb
-        fi
-=======
-    - name: Run Firebase Emulator & Execute Notebook
-      run: |
-        firebase emulators:exec "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
->>>>>>> 51e212a... Improve Badge & Add Basic GitHub Actions (#4)
-=======
-        echo "CI environment detected, importing data from sample_data/ and executing notebook."
-=======
-    - name: Run Firebase Emulator & Execute Notebook
-      run: |
-<<<<<<< HEAD
->>>>>>> ddba11f... Update build-and-test.yml
-=======
-        export GCLOUD_PROJECT=spezidatapipelinetemplate
->>>>>>> 7730c93... Update Build and test workflow
-=======
     - name: Set Firestore Emulator Environment Variable
       run: |
         echo "FIRESTORE_EMULATOR_HOST=localhost:8080" >> $GITHUB_ENV
         echo "GCLOUD_PROJECT=spezidatapipelinetemplate" >> $GITHUB_ENV
     - name: Run Firebase Emulator & Execute Notebook
       run: |
->>>>>>> 8263b7b... Update notebook and CI test
         firebase emulators:exec --import=./sample_data "jupyter nbconvert --to pdf --execute SpeziDataPipelineTemplate.ipynb"
       env:
         CI: true
->>>>>>> b5bb4d4... Update build-and-test.yml
     - uses: actions/upload-artifact@v4
       with:
         name: SpeziDataPipelineTemplate.pdf

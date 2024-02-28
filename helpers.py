@@ -142,7 +142,7 @@ def get_unique_codes_and_displays(reference_db, collection_name):
 
     return unique_loinc_codes, display_to_loinc_dict
 
-    
+  
 
 def rename_key_dfs(dfs_dict_or_df):
     if isinstance(dfs_dict_or_df, dict):
@@ -158,8 +158,6 @@ def rename_key_dfs(dfs_dict_or_df):
             return {new_key: dfs_dict_or_df}
     else:
         raise ValueError("Input must be a DataFrame or a dictionary of DataFrames")
-
-        
 
 
 def fetch_and_flatten_data(reference_db, collection_name, input_code, save_as_csv=True):
@@ -264,6 +262,7 @@ def remove_outliers(df, manual_threshold=None):
         filtered_df.to_csv(f'filtered_{quantity_name}_data_{pd.Timestamp.now().strftime("%Y-%m-%d")}.csv', index=False)
     
     return filtered_df
+
 
 def print_statistics(df, user_id=None):
     if user_id is not None:

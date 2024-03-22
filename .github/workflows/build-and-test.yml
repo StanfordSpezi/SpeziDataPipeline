@@ -46,7 +46,7 @@ jobs:
         pip install jupyterlab
     - name: Install SpeziDataPipelineTemplate Dependencies
       run: |
-        pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
+        pip install pandas numpy matplotlib firebase-admin fhir.resources
     - name: Set Firestore Emulator Environment Variable
       run: |
         echo "FIRESTORE_EMULATOR_HOST=localhost:8080" >> $GITHUB_ENV

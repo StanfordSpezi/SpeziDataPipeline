@@ -16,6 +16,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: PyLint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+    - name: Install Infrastructure
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+    - name: Install SpeziDataPipelineTemplate Dependencies
+      run: |
+        pip install pandas numpy matplotlib firebase-admin fhir.resources
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py')
   build_and_test:
     name: Build and Test Notebook
     runs-on: ubuntu-latest

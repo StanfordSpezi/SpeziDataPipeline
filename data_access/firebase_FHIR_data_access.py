@@ -21,7 +21,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter, Or
 from fhir.resources.observation import Observation
 
 class EnhancedObservation:
-    def __init__(self, observation: Observation, UserId=None):
+    def __init__(self, observation: Observation, UserId: str = None):
         self.observation = observation
         self.UserId = UserId
 

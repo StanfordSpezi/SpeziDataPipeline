@@ -6,6 +6,15 @@
 # SPDX-License-Identifier: MIT
 #
 
+"""
+This module provides a FHIRDataProcessor class for processing FHIR data. 
+The processor normalizes, filters outliers, and performs data aggregation operations 
+such as calculating daily totals and averages for specified LOINC codes within 
+the flattened FHIR data frames. It's designed to work with a specific structure of 
+FHIR data encapsulated by the FHIRDataFrame class, aiming to simplify the manipulation 
+and analysis of healthcare data in research and clinical applications.
+"""
+
 # Related third-party imports
 from typing import Any
 import pandas as pd
@@ -33,7 +42,9 @@ class FHIRDataProcessor:
             "9052-2": (0, 2700),  # Dietary energy consumed in calories
         }
 
-    def process_fhir_data(self, flattened_fhir_df: FHIRDataFrame) -> FHIRDataFrame:
+    def process_fhir_data(
+        self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame
+    ) -> FHIRDataFrame:
         self.validate_columns(flattened_fhir_df)
         flattened_fhir_df = flattened_fhir_df.df
 
@@ -77,7 +88,9 @@ class FHIRDataProcessor:
 
         return processed_FHIRDataFrame
 
-    def calculate_daily_data(self, group_FHIRDataFrame: FHIRDataFrame) -> FHIRDataFrame:
+    def calculate_daily_data(
+        self: "FHIRDataProcessor", group_FHIRDataFrame: FHIRDataFrame
+    ) -> FHIRDataFrame:
         self.validate_columns(group_FHIRDataFrame)
         aggregated_df = group_FHIRDataFrame.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
@@ -89,7 +102,7 @@ class FHIRDataProcessor:
         )
 
     def calculate_average_data(
-        self, group_FHIRDataFrame: FHIRDataFrame
+        self: "FHIRDataProcessor", group_FHIRDataFrame: FHIRDataFrame
     ) -> FHIRDataFrame:
         self.validate_columns(group_FHIRDataFrame)
         aggregated_df = group_FHIRDataFrame.df.groupby(
@@ -104,7 +117,10 @@ class FHIRDataProcessor:
         )
 
     def _finalize_group(
-        self, original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str
+        self: "FHIRDataProcessor",
+        original_df: pd.DataFrame,
+        aggregated_df: pd.DataFrame,
+        prefix: str,
     ) -> pd.DataFrame:
         # Aggregate non-numeric fields by taking the first value in each group
         non_numeric_aggregation = original_df.groupby(
@@ -133,7 +149,7 @@ class FHIRDataProcessor:
         return final_df
 
     def filter_outliers(
-        self: Self @ FHIRDataProcessor,
+        self: "FHIRDataProcessor",
         flattened_fhir_df: FHIRDataFrame,
         value_range: Any | None = None,
     ) -> FHIRDataFrame:
@@ -156,7 +172,9 @@ class FHIRDataProcessor:
         ]
         return FHIRDataFrame(filtered_df, flattened_fhir_df.resource_type)
 
-    def validate_columns(self: Any, flattened_fhir_df: FHIRDataFrame) -> None:
+    def validate_columns(
+        self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame
+    ) -> None:
 
         if flattened_fhir_df.resource_type == "Observation":
             REQUIRED_COLUMNS = [
@@ -179,7 +197,7 @@ class FHIRDataProcessor:
             )
 
     def select_data_by_user(
-        self: Self @ FHIRDataProcessor, flattened_fhir_df: FHIRDataFrame, user_id: str
+        self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame, user_id: str
     ) -> FHIRDataFrame:
         self.validate_columns(flattened_fhir_df)
 
@@ -189,7 +207,10 @@ class FHIRDataProcessor:
         )
 
     def select_data_by_dates(
-        self, flattened_fhir_df: FHIRDataFrame, start_date: str, end_date: str
+        self: "FHIRDataProcessor",
+        flattened_fhir_df: FHIRDataFrame,
+        start_date: str,
+        end_date: str,
     ) -> FHIRDataFrame:
         """Selects data within a specific date range within a DataFrame."""
         self.validate_columns(flattened_fhir_df)
@@ -211,7 +232,7 @@ class FHIRDataProcessor:
         )
 
     def calculate_moving_average(
-        self: Any, flattened_fhir_df: FHIRDataFrame, n=7
+        self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame, n=7
     ) -> FHIRDataFrame:
         self.validate_columns(flattened_fhir_df)
 

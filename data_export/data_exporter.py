@@ -6,6 +6,21 @@
 # SPDX-License-Identifier: MIT
 #
 
+"""
+This module defines the DataExporter class, which extends the DataVisualizer
+class to provide additional functionality for exporting FHIR (Fast Healthcare 
+Interoperability Resources) data. The DataExporter allows for exporting
+flattened FHIR data frames to CSV files and generating plots from the data.
+It supports setting various parameters such as date ranges, user IDs, and
+plot properties to customize  the export and visualization processes according 
+to specific requirements.
+
+Features include:
+- Exporting data to CSV with `export_to_csv`.
+- Creating and saving plots with customized parameters through
+`create_and_save_plot`.
+"""
+
 # Local application/library specific imports
 from data_flattening.FHIR_data_flattener import FHIRDataFrame
 from data_visualization.data_visualizer import DataVisualizer

@@ -6,6 +6,13 @@
 # SPDX-License-Identifier: MIT
 #
 
+"""
+This module provides functionalities for accessing and fetching FHIR data from a Firebase
+database. It includes the FirebaseFHIRAccess class which handles the connection to the Firebase
+database and provides methods for fetching FHIR data based on user ID and LOINC codes. The module
+is designed to support both development (using the Firestore emulator) and production environments.
+"""
+
 # Standard library imports
 import json
 import os

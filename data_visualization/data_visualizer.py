@@ -5,6 +5,26 @@
 #
 # SPDX-License-Identifier: MIT
 #
+
+"""
+The DataVisualizer module, building upon the functionalities provided
+by the FHIRDataProcessor, is designed to visualize health-related data
+processed from FHIR (Fast Healthcare Interoperability Resources) formats.
+It supports generating static plots for data analysis and insights, offering
+a range of customization options to cater to different visualization needs.
+
+Features include:
+- Setting custom date ranges for data visualization.
+- Filtering data for specific user IDs.
+- Customizing y-axis bounds to focus on relevant data ranges.
+- Aggregating and visualizing data on the same plot or separately.
+- Adjusting plot resolution with DPI settings.
+
+This module integrates closely with data processed by FHIRDataProcessor and
+is part of the larger Stanford Spezi project aimed at enhancing healthcare 
+data interoperability and analytics.
+"""
+
 # Standard library imports
 from datetime import datetime, date
 from typing import Any, List, Optional

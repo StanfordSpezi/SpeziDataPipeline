@@ -6,10 +6,8 @@
 # SPDX-License-Identifier: MIT
 #
 
-# Standard library imports
-from datetime import datetime
-
 # Related third-party imports
+from typing import Any
 import pandas as pd
 import numpy as np
 
@@ -35,11 +33,9 @@ class FHIRDataProcessor:
             "9052-2": (0, 2700),  # Dietary energy consumed in calories
         }
 
-    def process_FHIR_data(
-        self, flattened_FHIRDataFrame: FHIRDataFrame
-    ) -> FHIRDataFrame:
-        self.validate_columns(flattened_FHIRDataFrame)
-        flattened_fhir_df = flattened_FHIRDataFrame.df
+    def process_fhir_data(self, flattened_fhir_df: FHIRDataFrame) -> FHIRDataFrame:
+        self.validate_columns(flattened_fhir_df)
+        flattened_fhir_df = flattened_fhir_df.df
 
         # Normalize 'EffectiveDateTime' to date only
         flattened_fhir_df["EffectiveDateTime"] = pd.to_datetime(
@@ -49,22 +45,22 @@ class FHIRDataProcessor:
         processed_fhir_df = pd.DataFrame()
 
         for (
-            userId,
-            effectiveDateTime,
-            loincCode,
+            user_id,
+            effective_dat_time,
+            loinc_code,
         ), group_df in flattened_fhir_df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"]
         ):
             # Filter outliers for the group based on LOINC code-specific ranges
             group_FHIRDataFrame = FHIRDataFrame(
-                group_df, flattened_FHIRDataFrame.resource_type
+                group_df, flattened_fhir_df.resource_type
             )
             filtered_group_FHIRDataFrame = self.filter_outliers(
-                group_FHIRDataFrame, self.default_value_ranges.get(loincCode)
+                group_FHIRDataFrame, self.default_value_ranges.get(loinc_code)
             )
 
             # Determine the processing function based on the LOINC code
-            process_function = self.code_to_function.get(loincCode)
+            process_function = self.code_to_function.get(loinc_code)
             if process_function and filtered_group_FHIRDataFrame.df is not None:
                 # Apply the processing function to the filtered group
                 processed_group_FHIRDataFrame = process_function(
@@ -76,7 +72,7 @@ class FHIRDataProcessor:
                 )
 
                 processed_FHIRDataFrame = FHIRDataFrame(
-                    processed_fhir_df, flattened_FHIRDataFrame.resource_type
+                    processed_fhir_df, flattened_fhir_df.resource_type
                 )
 
         return processed_FHIRDataFrame
@@ -134,19 +130,17 @@ class FHIRDataProcessor:
             lambda x: f"{prefix} {x}"
         )
 
-        # Optionally, update 'Display' or other fields as needed
-        # final_df['Display'] = final_df['Display'].apply(lambda x: f"Updated display info based on {prefix}")
-
         return final_df
 
     def filter_outliers(
-        self, flattened_FHIRDataFrame: FHIRDataFrame, value_range=None
+        self: Self @ FHIRDataProcessor,
+        flattened_fhir_df: FHIRDataFrame,
+        value_range: Any | None = None,
     ) -> FHIRDataFrame:
-        self.validate_columns(flattened_FHIRDataFrame)
+        self.validate_columns(flattened_fhir_df)
 
-        """Filters outliers from the FHIRDataFrame."""
         if value_range is None:
-            loinc_code = flattened_FHIRDataFrame.df["LoincCode"].iloc[
+            loinc_code = flattened_fhir_df.df["LoincCode"].iloc[
                 0
             ]  # Assumes uniform LoincCode within the DataFrame
             value_range = self.default_value_ranges.get(loinc_code)
@@ -156,15 +150,15 @@ class FHIRDataProcessor:
                 )
 
         lower_bound, upper_bound = value_range
-        filtered_df = flattened_FHIRDataFrame.df[
-            (flattened_FHIRDataFrame.df["QuantityValue"] >= lower_bound)
-            & (flattened_FHIRDataFrame.df["QuantityValue"] <= upper_bound)
+        filtered_df = flattened_fhir_df.df[
+            (flattened_fhir_df.df["QuantityValue"] >= lower_bound)
+            & (flattened_fhir_df.df["QuantityValue"] <= upper_bound)
         ]
-        return FHIRDataFrame(filtered_df, flattened_FHIRDataFrame.resource_type)
+        return FHIRDataFrame(filtered_df, flattened_fhir_df.resource_type)
 
-    def validate_columns(self, flattened_FHIRDataFrame: FHIRDataFrame) -> None:
+    def validate_columns(self: Any, flattened_fhir_df: FHIRDataFrame) -> None:
 
-        if flattened_FHIRDataFrame.resource_type == "Observation":
+        if flattened_fhir_df.resource_type == "Observation":
             REQUIRED_COLUMNS = [
                 "UserId",
                 "EffectiveDateTime",
@@ -177,9 +171,7 @@ class FHIRDataProcessor:
             ]
 
         missing_columns = [
-            col
-            for col in REQUIRED_COLUMNS
-            if col not in flattened_FHIRDataFrame.df.columns
+            col for col in REQUIRED_COLUMNS if col not in flattened_fhir_df.df.columns
         ]
         if missing_columns:
             raise ValueError(
@@ -187,51 +179,47 @@ class FHIRDataProcessor:
             )
 
     def select_data_by_user(
-        self, flattened_FHIRDataFrame: FHIRDataFrame, user_id: str
+        self: Self @ FHIRDataProcessor, flattened_fhir_df: FHIRDataFrame, user_id: str
     ) -> FHIRDataFrame:
-        self.validate_columns(flattened_FHIRDataFrame)
+        self.validate_columns(flattened_fhir_df)
 
-        user_df = flattened_FHIRDataFrame.df[
-            flattened_FHIRDataFrame.df["UserId"] == user_id
-        ]
+        user_df = flattened_fhir_df.df[flattened_fhir_df.df["UserId"] == user_id]
         return FHIRDataFrame(
-            user_df.reset_index(drop=True), flattened_FHIRDataFrame.resource_type
+            user_df.reset_index(drop=True), flattened_fhir_df.resource_type
         )
 
     def select_data_by_dates(
-        self, flattened_FHIRDataFrame: FHIRDataFrame, start_date: str, end_date: str
+        self, flattened_fhir_df: FHIRDataFrame, start_date: str, end_date: str
     ) -> FHIRDataFrame:
         """Selects data within a specific date range within a DataFrame."""
-        self.validate_columns(flattened_FHIRDataFrame)
+        self.validate_columns(flattened_fhir_df)
 
         start_datetime = pd.to_datetime(start_date).tz_localize(None)
         end_datetime = pd.to_datetime(end_date).tz_localize(None)
 
-        flattened_FHIRDataFrame.df["EffectiveDateTime"] = pd.to_datetime(
-            flattened_FHIRDataFrame.df["EffectiveDateTime"]
+        flattened_fhir_df.df["EffectiveDateTime"] = pd.to_datetime(
+            flattened_fhir_df.df["EffectiveDateTime"]
         ).dt.tz_localize(None)
 
-        filtered_df = flattened_FHIRDataFrame.df[
-            (df.df["EffectiveDateTime"] >= start_datetime)
-            & (df.df["EffectiveDateTime"] <= end_datetime)
+        filtered_df = flattened_fhir_df.df[
+            (flattened_fhir_df.df["EffectiveDateTime"] >= start_datetime)
+            & (flattened_fhir_df.df["EffectiveDateTime"] <= end_datetime)
         ]
 
         return FHIRDataFrame(
-            filtered_df.reset_index(drop=True), flattened_FHIRDataFrame.resource_type
+            filtered_df.reset_index(drop=True), flattened_fhir_df.resource_type
         )
 
     def calculate_moving_average(
-        self, flattened_FHIRDataFrame: FHIRDataFrame, n=7
+        self: Any, flattened_fhir_df: FHIRDataFrame, n=7
     ) -> FHIRDataFrame:
-        self.validate_columns(flattened_FHIRDataFrame)
+        self.validate_columns(flattened_fhir_df)
 
-        flattened_FHIRDataFrame.df["EffectiveDateTime"] = pd.to_datetime(
-            flattened_FHIRDataFrame.df["EffectiveDateTime"]
+        flattened_fhir_df.df["EffectiveDateTime"] = pd.to_datetime(
+            flattened_fhir_df.df["EffectiveDateTime"]
         ).dt.date
 
-        moving_avg_df = flattened_FHIRDataFrame.df.groupby(
-            ["UserId", "LoincCode"]
-        ).apply(
+        moving_avg_df = flattened_fhir_df.df.groupby(["UserId", "LoincCode"]).apply(
             lambda x: x.sort_values("EffectiveDateTime")
             .rolling(window=n, on="EffectiveDateTime")["QuantityValue"]
             .mean()
@@ -240,7 +228,7 @@ class FHIRDataProcessor:
 
         moving_avg_df = moving_avg_df.reset_index()
         result_df = pd.merge(
-            flattened_FHIRDataFrame.df,
+            flattened_fhir_df.df,
             moving_avg_df,
             on=["UserId", "LoincCode", "EffectiveDateTime"],
             suffixes=("", "_moving_avg"),
@@ -249,4 +237,4 @@ class FHIRDataProcessor:
             columns={"QuantityValue_moving_avg": "QuantityValue"}, inplace=True
         )
 
-        return FHIRDataFrame(result_df, flattened_FHIRDataFrame.resource_type)
+        return FHIRDataFrame(result_df, flattened_fhir_df.resource_type)

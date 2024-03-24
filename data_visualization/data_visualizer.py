@@ -7,16 +7,14 @@
 #
 # Standard library imports
 from datetime import datetime, date
-from typing import List, Optional
+from typing import Any, List, Optional
 
 # Related third-party imports
 import matplotlib.pyplot as plt
-import pandas as pd
 
 # Local application/library specific imports
-from data_analysis.data_analyzer import *
-from data_flattening.FHIR_data_flattener import *
-from utils.helpers import *
+from data_analysis.data_analyzer import FHIRDataProcessor
+from data_flattening.FHIR_data_flattener import FHIRDataFrame
 
 
 class DataVisualizer(FHIRDataProcessor):
@@ -48,12 +46,12 @@ class DataVisualizer(FHIRDataProcessor):
         self.dpi = dpi
 
     def create_static_plot(
-        self, flattened_FHIRDataFrame: FHIRDataFrame
+        self: Any, flattened_FHIRDataFrame: FHIRDataFrame
     ) -> Optional[plt.Figure]:
         if not isinstance(
             flattened_FHIRDataFrame.df["EffectiveDateTime"].iloc[0], date
         ):
-            print(f"The date type should be date.")
+            print("The date type should be of type date.")
             return
 
         if flattened_FHIRDataFrame.df["LoincCode"].nunique() != 1:

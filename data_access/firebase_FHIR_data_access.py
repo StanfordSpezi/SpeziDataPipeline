@@ -9,22 +9,21 @@
 # Standard library imports
 import json
 import os
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Tuple, Optional
 
 # Related third-party imports
-import pandas as pd
 from firebase_admin import credentials, firestore
 import firebase_admin
-from google.cloud.firestore_v1.base_query import FieldFilter, Or
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # Local application/library specific imports
 from fhir.resources.observation import Observation
 
 
 class EnhancedObservation:
-    def __init__(self, observation: Observation, UserId: str = None):
+    def __init__(self, observation: Observation, user_id: str = None):
         self.observation = observation
-        self.UserId = UserId
+        self.user_id = user_id
 
 
 class FirebaseFHIRAccess:
@@ -53,8 +52,8 @@ class FirebaseFHIRAccess:
         self,
         collection_name: str = "users",
         subcollection_name: str = "HealthKit",
-        loinc_codes: Optional[List[str]] = None,
-    ) -> List[EnhancedObservation]:
+        loinc_codes: Optional[list[str]] = None,
+    ) -> list[EnhancedObservation]:
         resources = []
         users = self.db.collection(collection_name).stream()
 
@@ -84,7 +83,7 @@ class FirebaseFHIRAccess:
                         observation_str = json.dumps(doc.to_dict())
                         fhir_obj = Observation.parse_raw(observation_str)
                         enhanced_fhir_obj = EnhancedObservation(
-                            observation=fhir_obj, UserId=user.id
+                            observation=fhir_obj, user_id=user.id
                         )
                         resources.append(enhanced_fhir_obj)
             else:
@@ -93,7 +92,7 @@ class FirebaseFHIRAccess:
                     observation_str = json.dumps(doc.to_dict())
                     fhir_obj = Observation.parse_raw(observation_str)
                     enhanced_fhir_obj = EnhancedObservation(
-                        observation=fhir_obj, UserId=user.id
+                        observation=fhir_obj, user_id=user.id
                     )
                     resources.append(enhanced_fhir_obj)
 

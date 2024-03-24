@@ -6,10 +6,6 @@
 # SPDX-License-Identifier: MIT
 #
 
-# Standard library imports
-from datetime import datetime
-from typing import List, Dict, Any
-
 # Related third-party imports
 import pandas as pd
 
@@ -35,7 +31,7 @@ class FHIRDataFrame:
         return self.data_frame
 
 
-def flatten_FHIR_resources(FHIR_resources: List[EnhancedObservation]) -> FHIRDataFrame:
+def flatten_FHIR_resources(FHIR_resources: list[EnhancedObservation]) -> FHIRDataFrame:
     flattened_data = []
 
     for FHIR_obj in FHIR_resources:
@@ -58,7 +54,7 @@ def flatten_FHIR_resources(FHIR_resources: List[EnhancedObservation]) -> FHIRDat
         )
 
         flattened_entry = {
-            "UserId": FHIR_obj.UserId,
+            "UserId": FHIR_obj.user_id,
             "DocumentId": FHIR_obj.observation.dict()["id"],
             "EffectiveDateTime": effective_datetime if effective_datetime else None,
             "QuantityName": quantity_name,

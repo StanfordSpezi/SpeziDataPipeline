@@ -7,9 +7,8 @@
 #
 
 # Local application/library specific imports
-from data_flattening.FHIR_data_flattener import *
-from utils.helpers import *
-from data_visualization.data_visualizer import *
+from data_flattening.FHIR_data_flattener import FHIRDataFrame
+from data_visualization.data_visualizer import DataVisualizer
 
 
 class DataExporter(DataVisualizer):
@@ -31,12 +30,12 @@ class DataExporter(DataVisualizer):
     def create_and_save_plot(self, filename):
         """Generates a plot using inherited create_static_plot method and saves it."""
         try:
-            if self.user_ids == None or len(self.user_ids) > 1:
+            if self.user_ids is None or len(self.user_ids) > 1:
                 print("Select a single user for enabling figure saving.")
             else:
                 fig = super().create_static_plot(self.flattened_FHIRDataFrame)
                 fig.savefig(filename, dpi=self.dpi)
                 print("Plot saved successfully.")
 
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             print(f"An error occurred while generating the plot: {e}")

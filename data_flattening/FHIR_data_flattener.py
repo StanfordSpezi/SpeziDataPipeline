@@ -6,13 +6,6 @@
 # SPDX-License-Identifier: MIT
 #
 
-"""Module for flattening FHIR data.
-
-This module provides functionalities to flatten Fast Healthcare Interoperability
-Resources (FHIR) data for easier processing and analysis. It includes functions
-to transform nested FHIR JSON structures into flattened tabular formats.
-"""
-
 # Related third-party imports
 import pandas as pd
 
@@ -22,23 +15,55 @@ from data_access.firebase_FHIR_data_access import EnhancedObservation
 
 class FHIRDataFrame:
     """
-    A class to represent a DataFrame specifically designed for FHIR data.
+    Represents a DataFrame specifically designed to handle FHIR data. This class provides
+    a structured format for FHIR data, facilitating easier manipulation and analysis of
+    health-related information encoded in FHIR resources.
 
     Attributes:
-        data_frame (pd.DataFrame): The underlying pandas DataFrame containing FHIR data.
-        resource_type (str): The type of FHIR resources contained, e.g., 'Observation'.
+        data_frame (pd.DataFrame): The underlying pandas DataFrame that stores the FHIR data.
+        resource_type (str): Indicates the type of FHIR resources contained in the DataFrame,
+                             such as 'Observation', to provide context for the data.
+
+    Parameters:
+        data (pd.DataFrame): A pandas DataFrame containing the FHIR data.
+        resource_type (str, optional): The type of FHIR resources contained. Defaults to 'Observation'.
     """
 
     def __init__(self, data: pd.DataFrame, resource_type: str = "Observation") -> None:
+        """
+        Initializes a FHIRDataFrame with given data and resource type.
+
+        Parameters:
+            data (pd.DataFrame): The pandas DataFrame containing FHIR data.
+            resource_type (str, optional): The type of FHIR resource (e.g., 'Observation'). Defaults to 'Observation'.
+        """
         self.data_frame = data
         self.resource_type = resource_type
 
     @property
     def df(self) -> pd.DataFrame:
+        """
+        A property to access the underlying pandas DataFrame containing FHIR data.
+
+        Returns:
+            pd.DataFrame: The pandas DataFrame storing the FHIR data.
+        """
         return self.data_frame
 
 
 def flatten_FHIR_resources(FHIR_resources: list[EnhancedObservation]) -> FHIRDataFrame:
+    """
+    Transforms a list of EnhancedObservation objects into a flattened pandas DataFrame
+    structure, making it easier to manipulate and analyze the FHIR data.
+
+    Parameters:
+        FHIR_resources (list[EnhancedObservation]): A list of EnhancedObservation objects
+                                                    containing FHIR data to be flattened.
+
+    Returns:
+        FHIRDataFrame: A FHIRDataFrame object containing the flattened FHIR data, suitable
+                       for further data processing and analysis.
+    """
     flattened_data = []
 
     for FHIR_obj in FHIR_resources:

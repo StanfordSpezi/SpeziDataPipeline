@@ -16,6 +16,22 @@ on:
   workflow_dispatch:
 
 jobs:
+pylint:
+    name: Pylint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+    - name: Install Infrastructure
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+    - name: Install SpeziDataPipelineTemplate Dependencies
+      run: |
+        pip install pandas numpy matplotlib firebase-admin fhir.resources
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py')
   black_lint:
     name: Black Code Formatter Check
     runs-on: ubuntu-latest

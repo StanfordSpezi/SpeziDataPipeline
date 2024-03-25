@@ -6,15 +6,6 @@
 # SPDX-License-Identifier: MIT
 #
 
-"""
-This module provides a FHIRDataProcessor class for processing FHIR data. 
-The processor normalizes, filters outliers, and performs data aggregation operations 
-such as calculating daily totals and averages for specified LOINC codes within 
-the flattened FHIR data frames. It's designed to work with a specific structure of 
-FHIR data encapsulated by the FHIRDataFrame class, aiming to simplify the manipulation 
-and analysis of healthcare data in research and clinical applications.
-"""
-
 # Related third-party imports
 from typing import Any
 import pandas as pd
@@ -25,8 +16,24 @@ from data_flattening.FHIR_data_flattener import FHIRDataFrame
 
 
 class FHIRDataProcessor:
+    """
+    Processes FHIR data for analysis and reporting, focusing on transforming and
+    normalizing health data according to specific metrics and value ranges.
+
+    This class maps LOINC codes to specific processing functions and applies outlier
+    filtering and data aggregation strategies to compute daily averages or totals
+    for health metrics.
+
+    Attributes:
+        code_to_function (dict): Maps LOINC codes to processing functions for specific health data metrics.
+        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on LOINC codes.
+    """
 
     def __init__(self):
+        """
+        Initializes the FHIRDataProcessor with mappings from LOINC codes to processing
+        functions and default value ranges for various health metrics.
+        """
         # Maps LOINC codes to the corresponding processing function
         self.code_to_function = {
             # Averaged per Day LOINC codes
@@ -45,6 +52,16 @@ class FHIRDataProcessor:
     def process_fhir_data(
         self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame
     ) -> FHIRDataFrame:
+        """
+        Processes flattened FHIR data, applying code-specific processing functions
+        and filtering outliers based on predefined value ranges.
+
+        Parameters:
+            flattened_fhir_df (FHIRDataFrame): A DataFrame containing flattened FHIR data.
+
+        Returns:
+            FHIRDataFrame: A DataFrame containing processed FHIR data.
+        """
         self.validate_columns(flattened_fhir_df)
         flattened_fhir_df = flattened_fhir_df.df
 
@@ -57,7 +74,7 @@ class FHIRDataProcessor:
 
         for (
             user_id,
-            effective_dat_time,
+            effective_date_time,
             loinc_code,
         ), group_df in flattened_fhir_df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"]
@@ -91,6 +108,15 @@ class FHIRDataProcessor:
     def calculate_daily_data(
         self: "FHIRDataProcessor", group_FHIRDataFrame: FHIRDataFrame
     ) -> FHIRDataFrame:
+        """
+        Aggregates daily data for a specific health metric, summing up values within a day.
+
+        Parameters:
+            group_FHIRDataFrame (FHIRDataFrame): A group of FHIR data entries to be aggregated.
+
+        Returns:
+            FHIRDataFrame: Aggregated FHIR data with daily totals for the specified metric.
+        """
         self.validate_columns(group_FHIRDataFrame)
         aggregated_df = group_FHIRDataFrame.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
@@ -104,6 +130,15 @@ class FHIRDataProcessor:
     def calculate_average_data(
         self: "FHIRDataProcessor", group_FHIRDataFrame: FHIRDataFrame
     ) -> FHIRDataFrame:
+        """
+        Calculates the daily average for a specific health metric across a given time span.
+
+        Parameters:
+            group_FHIRDataFrame (FHIRDataFrame): A group of FHIR data entries for averaging.
+
+        Returns:
+            FHIRDataFrame: Aggregated FHIR data with daily averages for the specified metric.
+        """
         self.validate_columns(group_FHIRDataFrame)
         aggregated_df = group_FHIRDataFrame.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
@@ -122,6 +157,18 @@ class FHIRDataProcessor:
         aggregated_df: pd.DataFrame,
         prefix: str,
     ) -> pd.DataFrame:
+        """
+        Merges aggregated numeric data with non-numeric data, applying a descriptive prefix
+        to the quantity name.
+
+        Parameters:
+            original_df (pd.DataFrame): The original DataFrame before aggregation.
+            aggregated_df (pd.DataFrame): The DataFrame containing aggregated numeric data.
+            prefix (str): A descriptive prefix to add to the 'QuantityName' column.
+
+        Returns:
+            pd.DataFrame: The final aggregated DataFrame with updated 'QuantityName'.
+        """
         # Aggregate non-numeric fields by taking the first value in each group
         non_numeric_aggregation = original_df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
@@ -153,6 +200,17 @@ class FHIRDataProcessor:
         flattened_fhir_df: FHIRDataFrame,
         value_range: Any | None = None,
     ) -> FHIRDataFrame:
+        """
+        Filters out data points that fall outside the specified value range, effectively
+        removing outliers from the dataset.
+
+        Parameters:
+            flattened_fhir_df (FHIRDataFrame): The DataFrame to filter.
+            value_range (Tuple[int, int], optional): The inclusive range of acceptable values.
+
+        Returns:
+            FHIRDataFrame: The filtered DataFrame with outliers removed.
+        """
         self.validate_columns(flattened_fhir_df)
 
         if value_range is None:
@@ -175,6 +233,16 @@ class FHIRDataProcessor:
     def validate_columns(
         self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame
     ) -> None:
+        """
+        Validates that the DataFrame contains all required columns for processing.
+        Raises a ValueError if any required column is missing.
+
+        Parameters:
+            flattened_fhir_df (FHIRDataFrame): The DataFrame to validate.
+
+        Raises:
+            ValueError: If any required columns are missing.
+        """
 
         if flattened_fhir_df.resource_type == "Observation":
             REQUIRED_COLUMNS = [
@@ -199,6 +267,16 @@ class FHIRDataProcessor:
     def select_data_by_user(
         self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame, user_id: str
     ) -> FHIRDataFrame:
+        """
+        Selects data corresponding to a specific user from a DataFrame.
+
+        Parameters:
+            flattened_fhir_df (FHIRDataFrame): The DataFrame from which to select data.
+            user_id (str): The user ID for which data is to be selected.
+
+        Returns:
+            FHIRDataFrame: A DataFrame containing only data for the specified user.
+        """
         self.validate_columns(flattened_fhir_df)
 
         user_df = flattened_fhir_df.df[flattened_fhir_df.df["UserId"] == user_id]
@@ -212,7 +290,17 @@ class FHIRDataProcessor:
         start_date: str,
         end_date: str,
     ) -> FHIRDataFrame:
-        """Selects data within a specific date range within a DataFrame."""
+        """
+        Selects data within a specific date range from a DataFrame.
+
+        Parameters:
+            flattened_fhir_df (FHIRDataFrame): The DataFrame from which to select data.
+            start_date (str): The start date of the range (inclusive).
+            end_date (str): The end date of the range (inclusive).
+
+        Returns:
+            FHIRDataFrame: A DataFrame containing data within the specified date range.
+        """
         self.validate_columns(flattened_fhir_df)
 
         start_datetime = pd.to_datetime(start_date).tz_localize(None)
@@ -234,6 +322,25 @@ class FHIRDataProcessor:
     def calculate_moving_average(
         self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame, n=7
     ) -> FHIRDataFrame:
+        """
+        Calculates a moving average of the 'QuantityValue' over a specified number of days (n) for each
+        unique combination of 'UserId' and 'LoincCode'. This method is useful for smoothing out data
+        series and identifying long-term trends.
+
+        Parameters:
+            flattened_fhir_df (FHIRDataFrame): A DataFrame containing flattened FHIR data with columns
+                                            for 'UserId', 'EffectiveDateTime', 'LoincCode', and 'QuantityValue'.
+            n (int, optional): The window size in days over which the moving average is calculated. Defaults to 7 days.
+
+        Returns:
+            FHIRDataFrame: A DataFrame identical to the input but with 'QuantityValue' replaced by its n-day
+                        moving average. All other columns are preserved as is.
+
+        Note:
+            This method assumes that the input DataFrame's 'EffectiveDateTime' column is already normalized to date-only
+            values. If 'EffectiveDateTime' includes time components, they should be removed or normalized beforehand to
+            ensure accurate calculations.
+        """
         self.validate_columns(flattened_fhir_df)
 
         flattened_fhir_df.df["EffectiveDateTime"] = pd.to_datetime(

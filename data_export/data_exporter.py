@@ -6,28 +6,36 @@
 # SPDX-License-Identifier: MIT
 #
 
-"""
-This module defines the DataExporter class, which extends the DataVisualizer
-class to provide additional functionality for exporting FHIR (Fast Healthcare 
-Interoperability Resources) data. The DataExporter allows for exporting
-flattened FHIR data frames to CSV files and generating plots from the data.
-It supports setting various parameters such as date ranges, user IDs, and
-plot properties to customize  the export and visualization processes according 
-to specific requirements.
-
-Features include:
-- Exporting data to CSV with `export_to_csv`.
-- Creating and saving plots with customized parameters through
-`create_and_save_plot`.
-"""
-
 # Local application/library specific imports
 from data_flattening.FHIR_data_flattener import FHIRDataFrame
 from data_visualization.data_visualizer import DataVisualizer
 
 
 class DataExporter(DataVisualizer):
+    """
+    Extends the DataVisualizer class to enable data exporting functionalities, allowing for the export of FHIR data
+    into CSV files and the creation and saving of visualizations as image files. This class handles the preparation
+    and configuration of data for export based on specified parameters.
+
+    Attributes:
+        flattened_FHIRDataFrame (FHIRDataFrame): The FHIRDataFrame containing flattened FHIR data for export or visualization.
+        start_date (str): The start date for filtering the data, defaulting to "2022-01-01".
+        end_date (str): The end date for filtering the data, defaulting to "2022-12-31".
+        user_ids (List[str], optional): A list of user IDs for filtering the data. If None, all users are considered.
+        y_lower (int): The lower bound for the y-axis of the plot, defaulting to 50.
+        y_upper (int): The upper bound for the y-axis of the plot, defaulting to 100.
+        same_plot (bool): Indicates whether to combine multiple users' data into a single plot. Defaults to False.
+        dpi (int): The resolution of the saved plot image, defaulting to 300 DPI.
+
+    """
+
     def __init__(self, flattened_FHIRDataFrame: FHIRDataFrame):
+        """
+        Initializes the DataExporter with a specified FHIRDataFrame and default parameters for data export and visualization.
+
+        Parameters:
+            flattened_FHIRDataFrame (FHIRDataFrame): The FHIRDataFrame to be used for data export and visualization.
+        """
         super().__init__()
         self.flattened_FHIRDataFrame = flattened_FHIRDataFrame
         # Default values
@@ -40,9 +48,27 @@ class DataExporter(DataVisualizer):
         self.dpi = 300
 
     def export_to_csv(self, filename):
+        """
+        Exports the FHIR data to a CSV file.
+
+        Parameters:
+            filename (str): The path or filename where the CSV file will be saved.
+        """
         self.flattened_FHIRDataFrame.df.to_csv(filename, index=False)
 
     def create_and_save_plot(self, filename):
+        """
+        Generates a plot for the specified FHIR data and saves it to a file. Only supports creating and saving plots for
+        data related to a single user. If multiple user IDs are present or no user ID is specified, it prompts to select a
+        single user.
+
+        Parameters:
+            filename (str): The path or filename where the plot image will be saved.
+
+        Raises:
+            TypeError: If an unsupported type is encountered in the plotting data.
+            ValueError: If the data values are outside the expected ranges or if plotting parameters are incorrect.
+        """
         """Generates a plot using inherited create_static_plot method and saves it."""
         try:
             if self.user_ids is None or len(self.user_ids) > 1:

@@ -6,13 +6,6 @@
 # SPDX-License-Identifier: MIT
 #
 
-"""
-This module provides functionalities for accessing and fetching FHIR data from a Firebase
-database. It includes the FirebaseFHIRAccess class which handles the connection to the Firebase
-database and provides methods for fetching FHIR data based on user ID and LOINC codes. The module
-is designed to support both development (using the Firestore emulator) and production environments.
-"""
-
 # Standard library imports
 import json
 import os
@@ -28,18 +21,70 @@ from fhir.resources.observation import Observation
 
 
 class EnhancedObservation:
+    """
+    A wrapper class for FHIR Observation resources with an optional user identifier.
+
+    This class is designed to enhance the Observation object by associating it with
+    a specific user, allowing for easier tracking and organization of observations
+    within user-centric applications.
+
+    Attributes:
+        observation (Observation): The FHIR Observation resource object.
+        user_id (str, optional): The identifier for the user associated with this
+                                 observation. Defaults to None.
+
+    """
     def __init__(self, observation: Observation, user_id: str = None):
+        """
+        Initializes the EnhancedObservation instance with a FHIR Observation and an optional user ID.
+
+        Parameters:
+            observation (Observation): The FHIR Observation resource.
+            user_id (str, optional): A unique identifier for the user associated with
+                                     this observation. Defaults to None.
+        """
         self.observation = observation
         self.user_id = user_id
 
 
 class FirebaseFHIRAccess:
+    """
+    Provides access to FHIR resources stored in Firebase Firestore, allowing for
+    operations such as connecting to the database and fetching data based on
+    specific criteria like LOINC codes.
+
+    This class abstracts the complexity of interacting with Firestore for FHIR-related
+    operations, offering a simplified interface for fetching and manipulating FHIR
+    Observations.
+
+    Attributes:
+        service_account_key_file (str): Path to the Firebase service account key file.
+        project_id (str): The Firebase project ID.
+        db (Optional[firestore.Client]): The Firestore client instance, initialized upon
+                                         connection. Defaults to None.
+
+    """
     def __init__(self, service_account_key_file: str, project_id: str) -> None:
+        """
+        Initializes the FirebaseFHIRAccess instance with Firebase service account
+        credentials and project ID.
+
+        Parameters:
+            service_account_key_file (str): Path to the Firebase service account key file.
+            project_id (str): The Firebase project ID.
+        """
         self.service_account_key_file = service_account_key_file
         self.project_id = project_id
         self.db = None
 
     def connect(self) -> None:
+        """
+        Establishes a connection to the Firebase Firestore database.
+
+        Depending on the environment, it connects to either the Firestore emulator
+        for CI tests or the production Firestore service. It initializes the Firestore
+        client and sets it to the `db` attribute.
+        """
         if (
             os.getenv("CI") or "FIRESTORE_EMULATOR_HOST" in os.environ
         ):  # Check if running in CI environment
@@ -61,6 +106,18 @@ class FirebaseFHIRAccess:
         subcollection_name: str = "HealthKit",
         loinc_codes: Optional[list[str]] = None,
     ) -> list[EnhancedObservation]:
+        """
+            Fetches FHIR Observation data from Firestore based on the given collection names
+            and optional LOINC codes.
+
+            Parameters:
+                collection_name (str): The name of the Firestore collection to query. Defaults to "users".
+                subcollection_name (str): The name of the Firestore subcollection to query. Defaults to "HealthKit".
+                loinc_codes (Optional[list[str]]): A list of LOINC codes to filter the Observations. Defaults to None.
+
+            Returns:
+                list[EnhancedObservation]: A list of EnhancedObservation objects representing the fetched FHIR Observations.
+        """
         resources = []
         users = self.db.collection(collection_name).stream()
 
@@ -105,21 +162,33 @@ class FirebaseFHIRAccess:
 
         return resources
 
-    def get_code_details(
-        self, code: str
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        code_mappings = {
-            "9052-2": ("Calorie intake total", "9052-2", "http://loinc.org"),
-            "55423-8": (
-                "Number of steps in unspecified time Pedometer",
-                "55423-8",
-                "http://loinc.org",
-            ),
-            "HKQuantityTypeIdentifierDietaryProtein": (
-                "Dietary Protein",
-                "HKQuantityTypeIdentifierDietaryProtein",
-                "http://developer.apple.com/documentation/healthkit",
-            ),
-        }
+def get_code_details(code: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """
+    Retrieves the details associated with a given LOINC code or custom code.
 
-        return code_mappings.get(code, (None, None, None))
+    This method looks up the code in a predefined mapping and returns the display
+    string, code string, and system string associated with the code.
+
+    Parameters:
+        code (str): The LOINC code or custom code to look up.
+
+    Returns:
+        Tuple[Optional[str], Optional[str], Optional[str]]: A tuple containing the display string, code string,
+                                                            and system string for the code, or (None, None, None)
+                                                            if the code is not found in the mapping.
+    """
+    code_mappings = {
+        "9052-2": ("Calorie intake total", "9052-2", "http://loinc.org"),
+        "55423-8": (
+            "Number of steps in unspecified time Pedometer",
+            "55423-8",
+            "http://loinc.org",
+        ),
+        "HKQuantityTypeIdentifierDietaryProtein": (
+            "Dietary Protein",
+            "HKQuantityTypeIdentifierDietaryProtein",
+            "http://developer.apple.com/documentation/healthkit",
+        ),
+    }
+
+    return code_mappings.get(code, (None, None, None))

@@ -89,12 +89,14 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                 os.environ["GCLOUD_PROJECT"] = self.project_id
 
                 firebase_admin.initialize_app(options={"projectId": self.project_id})
+                self.db = firestore.Client(  # pylint: disable=no-member
+                    project=self.project_id
+                )
 
             else:  # Connect to the production environment
                 cred = credentials.Certificate(self.service_account_key_file)
                 firebase_admin.initialize_app(cred, {"projectId": self.project_id})
-
-            self.db = firestore.client()
+                self.db = firestore.client()
 
     def fetch_data(
         self,

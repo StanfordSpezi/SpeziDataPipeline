@@ -15,6 +15,7 @@ from enum import Enum
 # Local application/library specific imports
 from data_flattening.FHIR_data_flattener import FHIRDataFrame
 
+
 class FHIRResourceType(Enum):
     """
     Enumeration of FHIR resource types.
@@ -24,13 +25,13 @@ class FHIRResourceType(Enum):
 
     Attributes:
         OBSERVATION (str): Represents an observation resource type.
-        SURVEY (str): Represents a survey resource type.
 
     Note:
         The `.value` attribute is used to access the string value of the enum members.
     """
-    OBSERVATION = 'Observation'
-    SURVEY = 'Survey'
+
+    OBSERVATION = "Observation"
+
 
 class FHIRDataProcessor:
     """
@@ -44,7 +45,7 @@ class FHIRDataProcessor:
     Attributes:
         code_to_function (dict): Maps LOINC codes to processing functions for specific health data
                             metrics.
-        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on 
+        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on
                                 LOINC codes.
     """
 

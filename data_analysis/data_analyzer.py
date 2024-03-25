@@ -84,7 +84,7 @@ class FHIRDataProcessor:
         Returns:
             FHIRDataFrame: A DataFrame containing processed FHIR data.
         """
-        self.validate_columns(flattened_fhir_df)
+        validate_columns(flattened_fhir_df)
         flattened_fhir_df = flattened_fhir_df.df
 
         # Normalize 'EffectiveDateTime' to date only
@@ -139,7 +139,7 @@ class FHIRDataProcessor:
         Returns:
             FHIRDataFrame: Aggregated FHIR data with daily totals for the specified metric.
         """
-        self.validate_columns(group_fhir_dataframe)
+        validate_columns(group_fhir_dataframe)
         aggregated_df = group_fhir_dataframe.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
         )["QuantityValue"].sum()
@@ -161,7 +161,7 @@ class FHIRDataProcessor:
         Returns:
             FHIRDataFrame: Aggregated FHIR data with daily averages for the specified metric.
         """
-        self.validate_columns(group_fhir_dataframe)
+        validate_columns(group_fhir_dataframe)
         aggregated_df = group_fhir_dataframe.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
         )["QuantityValue"].mean()
@@ -189,7 +189,7 @@ class FHIRDataProcessor:
         Returns:
             FHIRDataFrame: The filtered DataFrame with outliers removed.
         """
-        self.validate_columns(flattened_fhir_df)
+        validate_columns(flattened_fhir_df)
 
         if value_range is None:
             loinc_code = flattened_fhir_df.df["LoincCode"].iloc[
@@ -220,7 +220,7 @@ class FHIRDataProcessor:
         Returns:
             FHIRDataFrame: A DataFrame containing only data for the specified user.
         """
-        self.validate_columns(flattened_fhir_df)
+        validate_columns(flattened_fhir_df)
 
         user_df = flattened_fhir_df.df[flattened_fhir_df.df["UserId"] == user_id]
         return FHIRDataFrame(
@@ -244,7 +244,7 @@ class FHIRDataProcessor:
         Returns:
             FHIRDataFrame: A DataFrame containing data within the specified date range.
         """
-        self.validate_columns(flattened_fhir_df)
+        validate_columns(flattened_fhir_df)
 
         start_datetime = pd.to_datetime(start_date).tz_localize(None)
         end_datetime = pd.to_datetime(end_date).tz_localize(None)
@@ -286,7 +286,7 @@ class FHIRDataProcessor:
             normalized to date-only values. If 'EffectiveDateTime' includes time components,
             they should be removed or normalized beforehand to ensure accurate calculations.
         """
-        self.validate_columns(flattened_fhir_df)
+        validate_columns(flattened_fhir_df)
 
         flattened_fhir_df.df["EffectiveDateTime"] = pd.to_datetime(
             flattened_fhir_df.df["EffectiveDateTime"]

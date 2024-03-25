@@ -6,14 +6,16 @@
 # SPDX-License-Identifier: MIT
 #
 
+# Standard library imports
+from enum import Enum
+
 # Related third-party imports
 from typing import Any
 import pandas as pd
 import numpy as np
-from enum import Enum
 
 # Local application/library specific imports
-from data_flattening.FHIR_data_flattener import FHIRDataFrame
+from data_flattening.fhir_data_flattener import FHIRDataFrame
 
 
 class FHIRResourceType(Enum):
@@ -143,7 +145,7 @@ class FHIRDataProcessor:
         )["QuantityValue"].sum()
 
         return FHIRDataFrame(
-            self._finalize_group(group_fhir_dataframe.df, aggregated_df, "Total daily"),
+            _finalize_group(group_fhir_dataframe.df, aggregated_df, "Total daily"),
             group_fhir_dataframe.resource_type,
         )
 
@@ -165,55 +167,11 @@ class FHIRDataProcessor:
         )["QuantityValue"].mean()
 
         return FHIRDataFrame(
-            self._finalize_group(
+            _finalize_group(
                 group_fhir_dataframe.df, np.round(aggregated_df, 0), "Daily average"
             ),
             group_fhir_dataframe.resource_type,
         )
-
-    def _finalize_group(
-        self: "FHIRDataProcessor",
-        original_df: pd.DataFrame,
-        aggregated_df: pd.DataFrame,
-        prefix: str,
-    ) -> pd.DataFrame:
-        """
-        Merges aggregated numeric data with non-numeric data, applying a descriptive prefix
-        to the quantity name.
-
-        Parameters:
-            original_df (pd.DataFrame): The original DataFrame before aggregation.
-            aggregated_df (pd.DataFrame): The DataFrame containing aggregated numeric data.
-            prefix (str): A descriptive prefix to add to the 'QuantityName' column.
-
-        Returns:
-            pd.DataFrame: The final aggregated DataFrame with updated 'QuantityName'.
-        """
-        # Aggregate non-numeric fields by taking the first value in each group
-        non_numeric_aggregation = original_df.groupby(
-            ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
-        ).agg(
-            {
-                "AppleHealthKitCode": "first",
-                "QuantityUnit": "first",
-                "QuantityName": "first",
-                "Display": "first",
-            }
-        )
-
-        # Merge the aggregated non-numeric data with the numeric aggregation
-        final_df = pd.merge(
-            aggregated_df,
-            non_numeric_aggregation,
-            on=["UserId", "EffectiveDateTime", "LoincCode"],
-        )
-
-        # Update 'QuantityName' with the prefix
-        final_df["QuantityName"] = final_df["QuantityName"].apply(
-            lambda x: f"{prefix} {x}"
-        )
-
-        return final_df
 
     def filter_outliers(
         self: "FHIRDataProcessor",
@@ -248,40 +206,6 @@ class FHIRDataProcessor:
             & (flattened_fhir_df.df["QuantityValue"] <= upper_bound)
         ]
         return FHIRDataFrame(filtered_df, flattened_fhir_df.resource_type)
-
-    def validate_columns(
-        self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame
-    ) -> None:
-        """
-        Validates that the DataFrame contains all required columns for processing.
-        Raises a ValueError if any required column is missing.
-
-        Parameters:
-            flattened_fhir_df (FHIRDataFrame): The DataFrame to validate.
-
-        Raises:
-            ValueError: If any required columns are missing.
-        """
-
-        if flattened_fhir_df.resource_type == FHIRResourceType.OBSERVATION.value:
-            required_columns = [
-                "UserId",
-                "EffectiveDateTime",
-                "QuantityName",
-                "QuantityUnit",
-                "QuantityValue",
-                "LoincCode",
-                "Display",
-                "AppleHealthKitCode",
-            ]
-
-        missing_columns = [
-            col for col in required_columns if col not in flattened_fhir_df.df.columns
-        ]
-        if missing_columns:
-            raise ValueError(
-                f"The DataFrame is missing required columns: {missing_columns}"
-            )
 
     def select_data_by_user(
         self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame, user_id: str
@@ -387,3 +311,79 @@ class FHIRDataProcessor:
         )
 
         return FHIRDataFrame(result_df, flattened_fhir_df.resource_type)
+
+
+def validate_columns(flattened_fhir_df: FHIRDataFrame) -> None:
+    """
+    Validates that the DataFrame contains all required columns for processing.
+    Raises a ValueError if any required column is missing.
+
+    Parameters:
+        flattened_fhir_df (FHIRDataFrame): The DataFrame to validate.
+
+    Raises:
+        ValueError: If any required columns are missing.
+    """
+
+    if flattened_fhir_df.resource_type == FHIRResourceType.OBSERVATION.value:
+        required_columns = [
+            "UserId",
+            "EffectiveDateTime",
+            "QuantityName",
+            "QuantityUnit",
+            "QuantityValue",
+            "LoincCode",
+            "Display",
+            "AppleHealthKitCode",
+        ]
+
+    missing_columns = [
+        col for col in required_columns if col not in flattened_fhir_df.df.columns
+    ]
+    if missing_columns:
+        raise ValueError(
+            f"The DataFrame is missing required columns: {missing_columns}"
+        )
+
+def _finalize_group(
+        original_df: pd.DataFrame,
+        aggregated_df: pd.DataFrame,
+        prefix: str,
+    ) -> pd.DataFrame:
+        """
+        Merges aggregated numeric data with non-numeric data, applying a descriptive prefix
+        to the quantity name.
+
+        Parameters:
+            original_df (pd.DataFrame): The original DataFrame before aggregation.
+            aggregated_df (pd.DataFrame): The DataFrame containing aggregated numeric data.
+            prefix (str): A descriptive prefix to add to the 'QuantityName' column.
+
+        Returns:
+            pd.DataFrame: The final aggregated DataFrame with updated 'QuantityName'.
+        """
+        # Aggregate non-numeric fields by taking the first value in each group
+        non_numeric_aggregation = original_df.groupby(
+            ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
+        ).agg(
+            {
+                "AppleHealthKitCode": "first",
+                "QuantityUnit": "first",
+                "QuantityName": "first",
+                "Display": "first",
+            }
+        )
+
+        # Merge the aggregated non-numeric data with the numeric aggregation
+        final_df = pd.merge(
+            aggregated_df,
+            non_numeric_aggregation,
+            on=["UserId", "EffectiveDateTime", "LoincCode"],
+        )
+
+        # Update 'QuantityName' with the prefix
+        final_df["QuantityName"] = final_df["QuantityName"].apply(
+            lambda x: f"{prefix} {x}"
+        )
+
+        return final_df

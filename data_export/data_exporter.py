@@ -7,7 +7,7 @@
 #
 
 # Local application/library specific imports
-from data_flattening.FHIR_data_flattener import FHIRDataFrame
+from data_flattening.fhir_data_flattener import FHIRDataFrame
 from data_visualization.data_visualizer import DataVisualizer
 
 

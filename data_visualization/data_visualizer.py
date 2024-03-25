@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 # Local application/library specific imports
 from data_analysis.data_analyzer import FHIRDataProcessor
-from data_flattening.FHIR_data_flattener import FHIRDataFrame
+from data_flattening.fhir_data_flattener import FHIRDataFrame
 
 
 class DataVisualizer(FHIRDataProcessor):

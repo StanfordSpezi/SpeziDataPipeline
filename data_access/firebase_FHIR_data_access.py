@@ -18,6 +18,8 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 # Local application/library specific imports
 from fhir.resources.observation import Observation
 
+FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
+
 
 class EnhancedObservation:
     """
@@ -90,7 +92,7 @@ class FirebaseFHIRAccess:
             os.getenv("CI") or "FIRESTORE_EMULATOR_HOST" in os.environ
         ):  # Check if running in CI environment
             # Point to the emulator for CI tests
-            os.environ["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
+            os.environ[FIRESTORE_EMULATOR_HOST_KEY] = "localhost:8080"
             os.environ["GCLOUD_PROJECT"] = self.project_id
             if not firebase_admin._apps:
                 firebase_admin.initialize_app(options={"projectId": self.project_id})
@@ -113,11 +115,11 @@ class FirebaseFHIRAccess:
 
         Parameters:
             collection_name (str): The name of the Firestore collection to query.
-                                   Defaults to "users".
+                                Defaults to "users".
             subcollection_name (str): The name of the Firestore subcollection to query.
-                                      Defaults to "HealthKit".
-            loinc_codes (list[str] | None = None): A list of LOINC codes to filter the Observations.
-                                               Defaults to None.
+                                    Defaults to "HealthKit".
+            loinc_codes (list[str] | None): A list of LOINC codes to filter the Observations.
+                                        Defaults to None.
 
         Returns:
             list[EnhancedObservation]: A list of EnhancedObservation objects representing

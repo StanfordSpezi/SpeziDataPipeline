@@ -195,7 +195,7 @@ class FHIRDataProcessor:
             loinc_code = flattened_fhir_df.df["LoincCode"].iloc[
                 0
             ]  # Assumes uniform LoincCode within the DataFrame
-            if (value_range := self.default_value_ranges.get(loinc_code)) is None:
+            if self.default_value_ranges.get(loinc_code) is None:
                 raise ValueError(
                     f"Value range must be defined for 'LoincCode': {loinc_code}."
                 )
@@ -347,9 +347,7 @@ def validate_columns(flattened_fhir_df: FHIRDataFrame) -> None:
 
 
 def _finalize_group(
-    original_df: pd.DataFrame,
-    aggregated_df: pd.DataFrame,
-    prefix: str
+    original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str
 ) -> pd.DataFrame:
     """
     Merges aggregated numeric data with non-numeric data, applying a descriptive prefix

@@ -25,7 +25,7 @@ from data_flattening.fhir_data_flattener import FHIRDataFrame
 from data_visualization.data_visualizer import DataVisualizer
 
 
-class DataExporter(DataVisualizer):
+class DataExporter(DataVisualizer):  # pylint: disable=unused-variable
     """
     Extends the DataVisualizer class to enable data exporting functionalities, allowing
     for the export of FHIR data into CSV files and the creation and saving of visualizations
@@ -41,10 +41,8 @@ class DataExporter(DataVisualizer):
                                     If None, all users are considered.
         y_lower (int): The lower bound for the y-axis of the plot, defaulting to 50.
         y_upper (int): The upper bound for the y-axis of the plot, defaulting to 100.
-        same_plot (bool): Indicates whether to combine multiple users' data into a single plot.
+        combine_plots (bool): Indicates whether to combine multiple users' data into a single plot.
                         Defaults to False.
-        dpi (int): The resolution of the saved plot image, defaulting to 300 DPI.
-
     """
 
     def __init__(self, flattened_fhir_dataframe: FHIRDataFrame):
@@ -59,13 +57,12 @@ class DataExporter(DataVisualizer):
         super().__init__()
         self.flattened_fhir_dataframe = flattened_fhir_dataframe
         # Default values
-        self.start_date = "2022-01-01"
-        self.end_date = "2022-12-31"
+        self.start_date = None
+        self.end_date = None
         self.user_ids = None
         self.y_lower = 50
         self.y_upper = 100
-        self.same_plot = False
-        self.dpi = 300
+        self.combine_plots = False
 
     def export_to_csv(self, filename):
         """
@@ -95,7 +92,7 @@ class DataExporter(DataVisualizer):
                 print("Select a single user for enabling figure saving.")
             else:
                 fig = super().create_static_plot(self.flattened_fhir_dataframe)
-                fig.savefig(filename, dpi=self.dpi)
+                fig.savefig(filename, dpi=300)
                 print("Plot saved successfully.")
 
         except (TypeError, ValueError) as e:

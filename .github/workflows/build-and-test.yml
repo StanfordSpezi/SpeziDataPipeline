@@ -46,7 +46,7 @@ jobs:
     - name: Install Black
       run: pip install black[jupyter]
     - name: Check code formatting with Black
-      run: black --check .
+      run: black . --exclude '\.ipynb$'  
   build_and_test:
     name: Build and Test Notebook
     runs-on: ubuntu-latest

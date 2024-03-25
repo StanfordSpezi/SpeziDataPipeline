@@ -8,7 +8,7 @@
 
 # Standard library imports
 from datetime import datetime, date
-from typing import Any, List, Optional
+from typing import Any
 
 # Related third-party imports
 import matplotlib.pyplot as plt
@@ -30,7 +30,7 @@ class DataVisualizer(FHIRDataProcessor):
                                     Defaults to None.
         end_date (str, optional): End date for filtering the data for visualization.
                                   Defaults to None.
-        user_ids (List[str], optional): List of user IDs to filter the data for visualization.
+        user_ids (list[str], optional): List of user IDs to filter the data for visualization.
                                         Defaults to None.
         y_lower (float): Lower bound for the Y-axis. Defaults to 50.
         y_upper (float): Upper bound for the Y-axis. Defaults to 1000.
@@ -45,7 +45,7 @@ class DataVisualizer(FHIRDataProcessor):
         set_combine_plots(combine_plots): Sets whether to combine multiple users' data
                                           into a single plot.
         set_dpi(dpi): Sets the DPI for the plot image.
-        create_static_plot(flattened_FHIRDataFrame): Creates and displays a static plot
+        create_static_plot(flattened_fhir_dataframe): Creates and displays a static plot
                                                      based on the filtered FHIR data.
     """
 
@@ -64,7 +64,7 @@ class DataVisualizer(FHIRDataProcessor):
         self.start_date = start_date
         self.end_date = end_date
 
-    def set_user_ids(self, user_ids: List[str]):
+    def set_user_ids(self, user_ids: list[str]):
         """Sets the list of user IDs to filter the FHIR data for visualization."""
         self.user_ids = user_ids
 
@@ -84,15 +84,15 @@ class DataVisualizer(FHIRDataProcessor):
         self.dpi = dpi
 
     def create_static_plot(
-        self: Any, flattened_FHIRDataFrame: FHIRDataFrame
-    ) -> Optional[plt.Figure]:
+        self: Any, flattened_fhir_dataframe: FHIRDataFrame
+    ) -> plt.Figure | None:
         """
         Generates a static plot based on the filtered FHIR data, considering the visualization
         parameters set previously such as date range, user IDs, Y-axis bounds, and whether to
         combine plots. The plot is displayed and optionally returned if a single plot is created.
 
         Parameters:
-            flattened_FHIRDataFrame (FHIRDataFrame): The FHIRDataFrame containing the data
+            flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing the data
             to be visualized.
 
         Returns:
@@ -101,20 +101,20 @@ class DataVisualizer(FHIRDataProcessor):
             if no plot is generated due to errors.
         """
         if not isinstance(
-            flattened_FHIRDataFrame.df["EffectiveDateTime"].iloc[0], date
+            flattened_fhir_dataframe.df["EffectiveDateTime"].iloc[0], date
         ):
             print("The date type should be of type date.")
             return
 
-        if flattened_FHIRDataFrame.df["LoincCode"].nunique() != 1:
+        if flattened_fhir_dataframe.df["LoincCode"].nunique() != 1:
             print(
                 "Error: More than one unique LoincCode found."
                 "Each plot should be based on a single LoincCode."
             )
             return
 
-        self.validate_columns(flattened_FHIRDataFrame)
-        flattened_df = flattened_FHIRDataFrame.df
+        self.validate_columns(flattened_fhir_dataframe)
+        flattened_df = flattened_fhir_dataframe.df
         if self.start_date:
             self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").date()
         if self.end_date:

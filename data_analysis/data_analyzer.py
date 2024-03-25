@@ -10,10 +10,27 @@
 from typing import Any
 import pandas as pd
 import numpy as np
+from enum import Enum
 
 # Local application/library specific imports
 from data_flattening.FHIR_data_flattener import FHIRDataFrame
 
+class FHIRResourceType(Enum):
+    """
+    Enumeration of FHIR resource types.
+
+    This enum provides a list of FHIR resource types used in the application, ensuring
+    consistency and preventing typos in resource type handling.
+
+    Attributes:
+        OBSERVATION (str): Represents an observation resource type.
+        SURVEY (str): Represents a survey resource type.
+
+    Note:
+        The `.value` attribute is used to access the string value of the enum members.
+    """
+    OBSERVATION = 'Observation'
+    SURVEY = 'Survey'
 
 class FHIRDataProcessor:
     """
@@ -27,8 +44,8 @@ class FHIRDataProcessor:
     Attributes:
         code_to_function (dict): Maps LOINC codes to processing functions for specific health data
                             metrics.
-        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on LOINC
-                                codes.
+        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on 
+                                LOINC codes.
     """
 
     def __init__(self):
@@ -75,29 +92,29 @@ class FHIRDataProcessor:
         processed_fhir_df = pd.DataFrame()
 
         for (
-            user_id,
-            effective_date_time,
+            _,
+            _,
             loinc_code,
         ), group_df in flattened_fhir_df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"]
         ):
             # Filter outliers for the group based on LOINC code-specific ranges
-            group_FHIRDataFrame = FHIRDataFrame(
+            group_fhir_dataframe = FHIRDataFrame(
                 group_df, flattened_fhir_df.resource_type
             )
-            filtered_group_FHIRDataFrame = self.filter_outliers(
-                group_FHIRDataFrame, self.default_value_ranges.get(loinc_code)
+            filtered_group_fhir_dataframe = self.filter_outliers(
+                group_fhir_dataframe, self.default_value_ranges.get(loinc_code)
             )
 
             # Determine the processing function based on the LOINC code
             process_function = self.code_to_function.get(loinc_code)
-            if process_function and filtered_group_FHIRDataFrame.df is not None:
+            if process_function and filtered_group_fhir_dataframe.df is not None:
                 # Apply the processing function to the filtered group
-                processed_group_FHIRDataFrame = process_function(
-                    filtered_group_FHIRDataFrame
+                processed_group_fhir_dataframe = process_function(
+                    filtered_group_fhir_dataframe
                 )
                 processed_fhir_df = pd.concat(
-                    [processed_fhir_df, processed_group_FHIRDataFrame.df],
+                    [processed_fhir_df, processed_group_fhir_dataframe.df],
                     ignore_index=True,
                 )
 
@@ -108,49 +125,49 @@ class FHIRDataProcessor:
         return processed_FHIRDataFrame
 
     def calculate_daily_data(
-        self: "FHIRDataProcessor", group_FHIRDataFrame: FHIRDataFrame
+        self: "FHIRDataProcessor", group_fhir_dataframe: FHIRDataFrame
     ) -> FHIRDataFrame:
         """
         Aggregates daily data for a specific health metric, summing up values within a day.
 
         Parameters:
-            group_FHIRDataFrame (FHIRDataFrame): A group of FHIR data entries to be aggregated.
+            group_fhir_dataframe (FHIRDataFrame): A group of FHIR data entries to be aggregated.
 
         Returns:
             FHIRDataFrame: Aggregated FHIR data with daily totals for the specified metric.
         """
-        self.validate_columns(group_FHIRDataFrame)
-        aggregated_df = group_FHIRDataFrame.df.groupby(
+        self.validate_columns(group_fhir_dataframe)
+        aggregated_df = group_fhir_dataframe.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
         )["QuantityValue"].sum()
 
         return FHIRDataFrame(
-            self._finalize_group(group_FHIRDataFrame.df, aggregated_df, "Total daily"),
-            group_FHIRDataFrame.resource_type,
+            self._finalize_group(group_fhir_dataframe.df, aggregated_df, "Total daily"),
+            group_fhir_dataframe.resource_type,
         )
 
     def calculate_average_data(
-        self: "FHIRDataProcessor", group_FHIRDataFrame: FHIRDataFrame
+        self: "FHIRDataProcessor", group_fhir_dataframe: FHIRDataFrame
     ) -> FHIRDataFrame:
         """
         Calculates the daily average for a specific health metric across a given time span.
 
         Parameters:
-            group_FHIRDataFrame (FHIRDataFrame): A group of FHIR data entries for averaging.
+            group_fhir_dataframe (FHIRDataFrame): A group of FHIR data entries for averaging.
 
         Returns:
             FHIRDataFrame: Aggregated FHIR data with daily averages for the specified metric.
         """
-        self.validate_columns(group_FHIRDataFrame)
-        aggregated_df = group_FHIRDataFrame.df.groupby(
+        self.validate_columns(group_fhir_dataframe)
+        aggregated_df = group_fhir_dataframe.df.groupby(
             ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
         )["QuantityValue"].mean()
 
         return FHIRDataFrame(
             self._finalize_group(
-                group_FHIRDataFrame.df, np.round(aggregated_df, 0), "Daily average"
+                group_fhir_dataframe.df, np.round(aggregated_df, 0), "Daily average"
             ),
-            group_FHIRDataFrame.resource_type,
+            group_fhir_dataframe.resource_type,
         )
 
     def _finalize_group(
@@ -219,8 +236,7 @@ class FHIRDataProcessor:
             loinc_code = flattened_fhir_df.df["LoincCode"].iloc[
                 0
             ]  # Assumes uniform LoincCode within the DataFrame
-            value_range = self.default_value_ranges.get(loinc_code)
-            if value_range is None:
+            if (value_range := self.default_value_ranges.get(loinc_code)) is None:
                 raise ValueError(
                     f"Value range must be defined for 'LoincCode': {loinc_code}."
                 )
@@ -246,8 +262,8 @@ class FHIRDataProcessor:
             ValueError: If any required columns are missing.
         """
 
-        if flattened_fhir_df.resource_type == "Observation":
-            REQUIRED_COLUMNS = [
+        if flattened_fhir_df.resource_type == FHIRResourceType.OBSERVATION.value:
+            required_columns = [
                 "UserId",
                 "EffectiveDateTime",
                 "QuantityName",
@@ -259,7 +275,7 @@ class FHIRDataProcessor:
             ]
 
         missing_columns = [
-            col for col in REQUIRED_COLUMNS if col not in flattened_fhir_df.df.columns
+            col for col in required_columns if col not in flattened_fhir_df.df.columns
         ]
         if missing_columns:
             raise ValueError(

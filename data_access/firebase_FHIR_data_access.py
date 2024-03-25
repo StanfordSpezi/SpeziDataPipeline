@@ -9,7 +9,6 @@
 # Standard library imports
 import json
 import os
-from typing import Tuple, Optional
 
 # Related third-party imports
 from firebase_admin import credentials, firestore
@@ -106,7 +105,7 @@ class FirebaseFHIRAccess:
         self,
         collection_name: str = "users",
         subcollection_name: str = "HealthKit",
-        loinc_codes: Optional[list[str]] = None,
+        loinc_codes: list[str] | None = None,
     ) -> list[EnhancedObservation]:
         """
         Fetches FHIR Observation data from Firestore based on the given collection names
@@ -117,7 +116,7 @@ class FirebaseFHIRAccess:
                                    Defaults to "users".
             subcollection_name (str): The name of the Firestore subcollection to query.
                                       Defaults to "HealthKit".
-            loinc_codes (Optional[list[str]]): A list of LOINC codes to filter the Observations.
+            loinc_codes (list[str] | None = None): A list of LOINC codes to filter the Observations.
                                                Defaults to None.
 
         Returns:
@@ -137,7 +136,7 @@ class FirebaseFHIRAccess:
                 for code in loinc_codes:
                     display_str, code_str, system_str = get_code_details(code)
 
-                    FHIR_docs = query.where(
+                    fhir_docs = query.where(
                         filter=FieldFilter(
                             "code.coding",
                             "array_contains",
@@ -149,7 +148,7 @@ class FirebaseFHIRAccess:
                         )
                     ).stream()
 
-                    for doc in FHIR_docs:
+                    for doc in fhir_docs:
                         observation_str = json.dumps(doc.to_dict())
                         fhir_obj = Observation.parse_raw(observation_str)
                         enhanced_fhir_obj = EnhancedObservation(
@@ -157,8 +156,8 @@ class FirebaseFHIRAccess:
                         )
                         resources.append(enhanced_fhir_obj)
             else:
-                FHIR_docs = query.stream()
-                for doc in FHIR_docs:
+                fhir_docs = query.stream()
+                for doc in fhir_docs:
                     observation_str = json.dumps(doc.to_dict())
                     fhir_obj = Observation.parse_raw(observation_str)
                     enhanced_fhir_obj = EnhancedObservation(
@@ -169,7 +168,7 @@ class FirebaseFHIRAccess:
         return resources
 
 
-def get_code_details(code: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+def get_code_details(code: str) -> tuple[str | None, str | None, str | None]:
     """
     Retrieves the details associated with a given LOINC code or custom code.
 
@@ -180,7 +179,7 @@ def get_code_details(code: str) -> Tuple[Optional[str], Optional[str], Optional[
         code (str): The LOINC code or custom code to look up.
 
     Returns:
-        Tuple[Optional[str], Optional[str], Optional[str]]: A tuple containing the display string,
+        tuple[str | None, str | None, str | None]: A tuple containing the display string,
                                                         code string, and system string for the
                                                         code,or (None, None, None) if the code is
                                                         not found in the mapping.

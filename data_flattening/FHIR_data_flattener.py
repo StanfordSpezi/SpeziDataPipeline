@@ -52,13 +52,13 @@ class FHIRDataFrame:
         return self.data_frame
 
 
-def flatten_FHIR_resources(FHIR_resources: list[EnhancedObservation]) -> FHIRDataFrame:
+def flatten_fhir_resources(fhir_resources: list[EnhancedObservation]) -> FHIRDataFrame:
     """
     Transforms a list of EnhancedObservation objects into a flattened pandas DataFrame
     structure, making it easier to manipulate and analyze the FHIR data.
 
     Parameters:
-        FHIR_resources (list[EnhancedObservation]): A list of EnhancedObservation objects
+        fhir_resources (list[EnhancedObservation]): A list of EnhancedObservation objects
                                                     containing FHIR data to be flattened.
 
     Returns:
@@ -67,12 +67,12 @@ def flatten_FHIR_resources(FHIR_resources: list[EnhancedObservation]) -> FHIRDat
     """
     flattened_data = []
 
-    for FHIR_obj in FHIR_resources:
+    for fhir_obj in fhir_resources:
         effective_datetime = (
-            FHIR_obj.observation.dict()["effectivePeriod"]["start"]
-            or FHIR_obj.dict()["effectiveDateTime"]
+            fhir_obj.observation.dict()["effectivePeriod"]["start"]
+            or fhir_obj.dict()["effectiveDateTime"]
         )
-        coding = FHIR_obj.observation.dict()["code"]["coding"]
+        coding = fhir_obj.observation.dict()["code"]["coding"]
         loinc_code = coding[0]["code"] if len(coding) > 0 else ""
         display = coding[0]["display"] if len(coding) > 0 else ""
         apple_healthkit_code = (
@@ -87,12 +87,12 @@ def flatten_FHIR_resources(FHIR_resources: list[EnhancedObservation]) -> FHIRDat
         )
 
         flattened_entry = {
-            "UserId": FHIR_obj.user_id,
-            "DocumentId": FHIR_obj.observation.dict()["id"],
+            "UserId": fhir_obj.user_id,
+            "DocumentId": fhir_obj.observation.dict()["id"],
             "EffectiveDateTime": effective_datetime if effective_datetime else None,
             "QuantityName": quantity_name,
-            "QuantityUnit": FHIR_obj.observation.dict()["valueQuantity"]["unit"],
-            "QuantityValue": FHIR_obj.observation.dict()["valueQuantity"]["value"],
+            "QuantityUnit": fhir_obj.observation.dict()["valueQuantity"]["unit"],
+            "QuantityValue": fhir_obj.observation.dict()["valueQuantity"]["value"],
             "LoincCode": loinc_code,
             "Display": display,
             "AppleHealthKitCode": apple_healthkit_code,

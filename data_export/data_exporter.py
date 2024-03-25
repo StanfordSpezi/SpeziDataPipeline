@@ -19,7 +19,7 @@ class DataExporter(DataVisualizer):
     based on specified parameters.
 
     Attributes:
-        flattened_FHIRDataFrame (FHIRDataFrame): The FHIRDataFrame containing flattened FHIR
+        flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing flattened FHIR
                                             data for export or visualization.
         start_date (str): The start date for filtering the data, defaulting to "2022-01-01".
         end_date (str): The end date for filtering the data, defaulting to "2022-12-31".
@@ -33,17 +33,17 @@ class DataExporter(DataVisualizer):
 
     """
 
-    def __init__(self, flattened_FHIRDataFrame: FHIRDataFrame):
+    def __init__(self, flattened_fhir_dataframe: FHIRDataFrame):
         """
         Initializes the DataExporter with a specified FHIRDataFrame and default parameters
         for data export and visualization.
 
         Parameters:
-            flattened_FHIRDataFrame (FHIRDataFrame): The FHIRDataFrame to be used for
+            flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame to be used for
             data export and visualization.
         """
         super().__init__()
-        self.flattened_FHIRDataFrame = flattened_FHIRDataFrame
+        self.flattened_fhir_dataframe = flattened_fhir_dataframe
         # Default values
         self.start_date = "2022-01-01"
         self.end_date = "2022-12-31"
@@ -60,7 +60,7 @@ class DataExporter(DataVisualizer):
         Parameters:
             filename (str): The path or filename where the CSV file will be saved.
         """
-        self.flattened_FHIRDataFrame.df.to_csv(filename, index=False)
+        self.flattened_fhir_dataframe.df.to_csv(filename, index=False)
 
     def create_and_save_plot(self, filename):
         """
@@ -80,7 +80,7 @@ class DataExporter(DataVisualizer):
             if self.user_ids is None or len(self.user_ids) > 1:
                 print("Select a single user for enabling figure saving.")
             else:
-                fig = super().create_static_plot(self.flattened_FHIRDataFrame)
+                fig = super().create_static_plot(self.flattened_fhir_dataframe)
                 fig.savefig(filename, dpi=self.dpi)
                 print("Plot saved successfully.")
 

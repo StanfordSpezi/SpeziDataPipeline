@@ -345,45 +345,44 @@ def validate_columns(flattened_fhir_df: FHIRDataFrame) -> None:
             f"The DataFrame is missing required columns: {missing_columns}"
         )
 
+
 def _finalize_group(
-        original_df: pd.DataFrame,
-        aggregated_df: pd.DataFrame,
-        prefix: str,
-    ) -> pd.DataFrame:
-        """
-        Merges aggregated numeric data with non-numeric data, applying a descriptive prefix
-        to the quantity name.
+    original_df: pd.DataFrame,
+    aggregated_df: pd.DataFrame,
+    prefix: str
+) -> pd.DataFrame:
+    """
+    Merges aggregated numeric data with non-numeric data, applying a descriptive prefix
+    to the quantity name.
 
-        Parameters:
-            original_df (pd.DataFrame): The original DataFrame before aggregation.
-            aggregated_df (pd.DataFrame): The DataFrame containing aggregated numeric data.
-            prefix (str): A descriptive prefix to add to the 'QuantityName' column.
+    Parameters:
+        original_df (pd.DataFrame): The original DataFrame before aggregation.
+        aggregated_df (pd.DataFrame): The DataFrame containing aggregated numeric data.
+        prefix (str): A descriptive prefix to add to the 'QuantityName' column.
 
-        Returns:
-            pd.DataFrame: The final aggregated DataFrame with updated 'QuantityName'.
-        """
-        # Aggregate non-numeric fields by taking the first value in each group
-        non_numeric_aggregation = original_df.groupby(
-            ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
-        ).agg(
-            {
-                "AppleHealthKitCode": "first",
-                "QuantityUnit": "first",
-                "QuantityName": "first",
-                "Display": "first",
-            }
-        )
+    Returns:
+        pd.DataFrame: The final aggregated DataFrame with updated 'QuantityName'.
+    """
+    # Aggregate non-numeric fields by taking the first value in each group
+    non_numeric_aggregation = original_df.groupby(
+        ["UserId", "EffectiveDateTime", "LoincCode"], as_index=False
+    ).agg(
+        {
+            "AppleHealthKitCode": "first",
+            "QuantityUnit": "first",
+            "QuantityName": "first",
+            "Display": "first",
+        }
+    )
 
-        # Merge the aggregated non-numeric data with the numeric aggregation
-        final_df = pd.merge(
-            aggregated_df,
-            non_numeric_aggregation,
-            on=["UserId", "EffectiveDateTime", "LoincCode"],
-        )
+    # Merge the aggregated non-numeric data with the numeric aggregation
+    final_df = pd.merge(
+        aggregated_df,
+        non_numeric_aggregation,
+        on=["UserId", "EffectiveDateTime", "LoincCode"],
+    )
 
-        # Update 'QuantityName' with the prefix
-        final_df["QuantityName"] = final_df["QuantityName"].apply(
-            lambda x: f"{prefix} {x}"
-        )
+    # Update 'QuantityName' with the prefix
+    final_df["QuantityName"] = final_df["QuantityName"].apply(lambda x: f"{prefix} {x}")
 
-        return final_df
+    return final_df

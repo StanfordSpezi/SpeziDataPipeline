@@ -6,6 +6,15 @@
 # SPDX-License-Identifier: MIT
 #
 
+"""
+ This module provides a FHIRDataProcessor class for processing FHIR data. 
+ The processor normalizes, filters outliers, and performs data aggregation operations 
+ such as calculating daily totals and averages for specified LOINC codes within 
+ the flattened FHIR data frames. It's designed to work with a specific structure of 
+ FHIR data encapsulated by the FHIRDataFrame class, aiming to simplify the manipulation 
+ and analysis of healthcare data in research and clinical applications.
+ """
+
 # Standard library imports
 from enum import Enum
 

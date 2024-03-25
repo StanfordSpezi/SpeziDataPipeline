@@ -6,11 +6,17 @@
 # SPDX-License-Identifier: MIT
 #
 
+"""Module for flattening FHIR data.
+ This module provides functionalities to flatten Fast Healthcare Interoperability
+ Resources (FHIR) data for easier processing and analysis. It includes functions
+ to transform nested FHIR JSON structures into flattened tabular formats.
+ """
+
 # Related third-party imports
 import pandas as pd
 
 # Local application/library specific imports
-from data_access.firebase_FHIR_data_access import EnhancedObservation
+from data_access.firebase_fhir_data_access import EnhancedObservation
 
 
 class FHIRDataFrame:

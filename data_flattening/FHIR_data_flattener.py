@@ -26,7 +26,8 @@ class FHIRDataFrame:
 
     Parameters:
         data (pd.DataFrame): A pandas DataFrame containing the FHIR data.
-        resource_type (str, optional): The type of FHIR resources contained. Defaults to 'Observation'.
+        resource_type (str, optional): The type of FHIR resources contained. Defaults to
+                                    'Observation'.
     """
 
     def __init__(self, data: pd.DataFrame, resource_type: str = "Observation") -> None:
@@ -35,7 +36,7 @@ class FHIRDataFrame:
 
         Parameters:
             data (pd.DataFrame): The pandas DataFrame containing FHIR data.
-            resource_type (str, optional): The type of FHIR resource (e.g., 'Observation'). Defaults to 'Observation'.
+            resource_type (str, optional): The type of FHIR resource. Defaults to 'Observation'.
         """
         self.data_frame = data
         self.resource_type = resource_type

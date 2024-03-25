@@ -34,9 +34,10 @@ class EnhancedObservation:
                                  observation. Defaults to None.
 
     """
+
     def __init__(self, observation: Observation, user_id: str = None):
         """
-        Initializes the EnhancedObservation instance with a FHIR Observation and an optional user ID.
+        Initializes EnhancedObservation instance with a FHIR Observation and an optional user ID.
 
         Parameters:
             observation (Observation): The FHIR Observation resource.
@@ -64,6 +65,7 @@ class FirebaseFHIRAccess:
                                          connection. Defaults to None.
 
     """
+
     def __init__(self, service_account_key_file: str, project_id: str) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
@@ -107,16 +109,20 @@ class FirebaseFHIRAccess:
         loinc_codes: Optional[list[str]] = None,
     ) -> list[EnhancedObservation]:
         """
-            Fetches FHIR Observation data from Firestore based on the given collection names
-            and optional LOINC codes.
+        Fetches FHIR Observation data from Firestore based on the given collection names
+        and optional LOINC codes.
 
-            Parameters:
-                collection_name (str): The name of the Firestore collection to query. Defaults to "users".
-                subcollection_name (str): The name of the Firestore subcollection to query. Defaults to "HealthKit".
-                loinc_codes (Optional[list[str]]): A list of LOINC codes to filter the Observations. Defaults to None.
+        Parameters:
+            collection_name (str): The name of the Firestore collection to query.
+                                   Defaults to "users".
+            subcollection_name (str): The name of the Firestore subcollection to query.
+                                      Defaults to "HealthKit".
+            loinc_codes (Optional[list[str]]): A list of LOINC codes to filter the Observations.
+                                               Defaults to None.
 
-            Returns:
-                list[EnhancedObservation]: A list of EnhancedObservation objects representing the fetched FHIR Observations.
+        Returns:
+            list[EnhancedObservation]: A list of EnhancedObservation objects representing
+                                       the fetched FHIR Observations.
         """
         resources = []
         users = self.db.collection(collection_name).stream()
@@ -129,7 +135,7 @@ class FirebaseFHIRAccess:
             )
             if loinc_codes:
                 for code in loinc_codes:
-                    display_str, code_str, system_str = self.get_code_details(code)
+                    display_str, code_str, system_str = get_code_details(code)
 
                     FHIR_docs = query.where(
                         filter=FieldFilter(
@@ -162,6 +168,7 @@ class FirebaseFHIRAccess:
 
         return resources
 
+
 def get_code_details(code: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
     Retrieves the details associated with a given LOINC code or custom code.
@@ -173,9 +180,10 @@ def get_code_details(code: str) -> Tuple[Optional[str], Optional[str], Optional[
         code (str): The LOINC code or custom code to look up.
 
     Returns:
-        Tuple[Optional[str], Optional[str], Optional[str]]: A tuple containing the display string, code string,
-                                                            and system string for the code, or (None, None, None)
-                                                            if the code is not found in the mapping.
+        Tuple[Optional[str], Optional[str], Optional[str]]: A tuple containing the display string,
+                                                        code string, and system string for the
+                                                        code,or (None, None, None) if the code is
+                                                        not found in the mapping.
     """
     code_mappings = {
         "9052-2": ("Calorie intake total", "9052-2", "http://loinc.org"),

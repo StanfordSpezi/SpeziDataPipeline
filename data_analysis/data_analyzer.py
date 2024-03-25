@@ -25,8 +25,10 @@ class FHIRDataProcessor:
     for health metrics.
 
     Attributes:
-        code_to_function (dict): Maps LOINC codes to processing functions for specific health data metrics.
-        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on LOINC codes.
+        code_to_function (dict): Maps LOINC codes to processing functions for specific health data
+                            metrics.
+        default_value_ranges (dict): Specifies default value ranges for outlier filtering based on LOINC
+                                codes.
     """
 
     def __init__(self):
@@ -323,23 +325,25 @@ class FHIRDataProcessor:
         self: "FHIRDataProcessor", flattened_fhir_df: FHIRDataFrame, n=7
     ) -> FHIRDataFrame:
         """
-        Calculates a moving average of the 'QuantityValue' over a specified number of days (n) for each
-        unique combination of 'UserId' and 'LoincCode'. This method is useful for smoothing out data
-        series and identifying long-term trends.
+        Calculates a moving average of the 'QuantityValue' over a specified number of days (n)
+        for each unique combination of 'UserId' and 'LoincCode'. This method is useful
+        for smoothing out data series and identifying long-term trends.
 
         Parameters:
-            flattened_fhir_df (FHIRDataFrame): A DataFrame containing flattened FHIR data with columns
-                                            for 'UserId', 'EffectiveDateTime', 'LoincCode', and 'QuantityValue'.
-            n (int, optional): The window size in days over which the moving average is calculated. Defaults to 7 days.
+            flattened_fhir_df (FHIRDataFrame): A DataFrame containing flattened FHIR data
+                                            with columns for 'UserId', 'EffectiveDateTime',
+                                            'LoincCode', and 'QuantityValue'.
+            n (int, optional): The window size in days over which the moving average is
+                            calculated. Defaults to 7 days.
 
         Returns:
-            FHIRDataFrame: A DataFrame identical to the input but with 'QuantityValue' replaced by its n-day
-                        moving average. All other columns are preserved as is.
+            FHIRDataFrame: A DataFrame identical to the input but with 'QuantityValue' replaced
+                        by its n-day moving average. All other columns are preserved as is.
 
         Note:
-            This method assumes that the input DataFrame's 'EffectiveDateTime' column is already normalized to date-only
-            values. If 'EffectiveDateTime' includes time components, they should be removed or normalized beforehand to
-            ensure accurate calculations.
+            This method assumes that the input DataFrame's 'EffectiveDateTime' column is already
+            normalized to date-only values. If 'EffectiveDateTime' includes time components,
+            they should be removed or normalized beforehand to ensure accurate calculations.
         """
         self.validate_columns(flattened_fhir_df)
 

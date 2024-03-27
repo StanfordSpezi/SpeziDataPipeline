@@ -10,28 +10,21 @@
  The DataVisualizer module, building upon the functionalities provided
  by the FHIRDataProcessor, is designed to visualize health-related data
  processed from FHIR (Fast Healthcare Interoperability Resources) formats.
- It supports generating static plots for data analysis and insights, offering
- a range of customization options to cater to different visualization needs.
- Features include:
- - Setting custom date ranges for data visualization.
- - Filtering data for specific user IDs.
- - Customizing y-axis bounds to focus on relevant data ranges.
- - Aggregating and visualizing data on the same plot or separately.
- This module integrates closely with data processed by FHIRDataProcessor and
- is part of the larger Stanford Spezi project aimed at enhancing healthcare 
- data interoperability and analytics.
+ It supports generating static plots for data analysis and insights, offering a
+ range of customization options to cater to different visualization needs.
+ 
  """
 
 # Related third-party imports
 import matplotlib.pyplot as plt
 
 # Local application/library specific imports
-from data_analysis.data_analyzer import (
+from data_processing.data_processor import (
     FHIRDataProcessor,
     select_data_by_dates,
     select_data_by_user,
 )
-from data_flattening.fhir_data_flattener import FHIRDataFrame
+from data_flattening.fhir_resources_flattener import FHIRDataFrame, ColumnNames
 
 
 class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
@@ -121,7 +114,7 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
         users_to_plot = (
             self.user_ids
             if self.user_ids
-            else flattened_fhir_dataframe.df["UserId"].unique()
+            else flattened_fhir_dataframe.df[ColumnNames.USER_ID.value].unique()
         )
 
         if self.combine_plots:
@@ -151,13 +144,15 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
         for user_id in users_to_plot:
             user_df = select_data_by_user(flattened_fhir_dataframe, user_id).df
             aggregated_data = (
-                user_df.groupby("EffectiveDateTime")["QuantityValue"]
+                user_df.groupby(ColumnNames.EFFECTIVE_DATE_TIME.value)[
+                    ColumnNames.QUANTITY_VALUE.value
+                ]
                 .sum()
                 .reset_index()
             )
             plt.bar(
-                aggregated_data["EffectiveDateTime"],
-                aggregated_data["QuantityValue"],
+                aggregated_data[ColumnNames.EFFECTIVE_DATE_TIME.value],
+                aggregated_data[ColumnNames.QUANTITY_VALUE.value],
                 edgecolor="black",
                 linewidth=1.5,
                 label=f"User {user_id}",
@@ -166,13 +161,14 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
         plt.ylim(self.y_lower, self.y_upper)
         plt.legend()
         plt.title(
-            f"{flattened_fhir_dataframe.df['QuantityName'].iloc[0]}"
+            f"{flattened_fhir_dataframe.df[ColumnNames.QUANTITY_NAME.value].iloc[0]}"
             f"from {self.start_date} to {self.end_date}"
         )
         plt.xlabel("Date")
         plt.ylabel(
-            f"{flattened_fhir_dataframe.df['QuantityName'].iloc[0]}"
-            f"({flattened_fhir_dataframe.df['QuantityUnit'].iloc[0]})"
+            f"{flattened_fhir_dataframe.df[ColumnNames.QUANTITY_NAME.value].iloc[0]}"
+            " "
+            f"({flattened_fhir_dataframe.df[ColumnNames.QUANTITY_UNIT.value].iloc[0]})"
         )
         plt.xticks(rotation=45)
         plt.tight_layout()
@@ -202,26 +198,29 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
             user_fhir_df = select_data_by_user(flattened_fhir_dataframe, user_id)
             plt.figure(figsize=(10, 6), dpi=300)
             aggregated_data = (
-                user_fhir_df.df.groupby("EffectiveDateTime")["QuantityValue"]
+                user_fhir_df.df.groupby(ColumnNames.EFFECTIVE_DATE_TIME.value)[
+                    ColumnNames.QUANTITY_VALUE.value
+                ]
                 .sum()
                 .reset_index()
             )
             plt.bar(
-                aggregated_data["EffectiveDateTime"],
-                aggregated_data["QuantityValue"],
+                aggregated_data[ColumnNames.EFFECTIVE_DATE_TIME.value],
+                aggregated_data[ColumnNames.QUANTITY_VALUE.value],
                 edgecolor="black",
                 linewidth=1.5,
                 label=f"User {user_id}",
             )
             plt.legend()
             plt.title(
-                f"{user_fhir_df.df['QuantityName'].iloc[0]} for User {user_id}"
+                f"{user_fhir_df.df[ColumnNames.QUANTITY_NAME.value].iloc[0]} for User {user_id}"
                 f"from {self.start_date} to {self.end_date}"
             )
             plt.xlabel("Date")
             plt.ylabel(
-                f"{user_fhir_df.df['QuantityName'].iloc[0]}"
-                f"({user_fhir_df.df['QuantityUnit'].iloc[0]})"
+                f"{user_fhir_df.df[ColumnNames.QUANTITY_NAME.value].iloc[0]}"
+                " "
+                f"({user_fhir_df.df[ColumnNames.QUANTITY_UNIT.value].iloc[0]})"
             )
             plt.xticks(rotation=45)
             plt.tight_layout()
@@ -229,117 +228,3 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
                 fig = plt.gcf()
             plt.show()
         return fig
-
-    # def create_static_plot(
-    #     self, flattened_fhir_dataframe: FHIRDataFrame
-    # ) -> plt.Figure | None:
-    #     """
-    #     Generates a static plot based on the filtered FHIR data, considering the visualization
-    #     parameters set previously such as date range, user IDs, Y-axis bounds, and whether to
-    #     combine plots. The plot is displayed and optionally returned if a single plot is created.
-
-    #     Parameters:
-    #         flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing the data
-    #         to be visualized.
-
-    #     Returns:
-    #         plt.Figure: The matplotlib figure object of the plot, if a single plot is generated.
-    #         Returns None if separate plots are created for each user or
-    #         if no plot is generated due to errors.
-    #     """
-    #     fig = None
-
-    #     try:
-    #         flattened_fhir_dataframe.validate_columns()
-
-    #         if flattened_fhir_dataframe.df["LoincCode"].nunique() != 1:
-    #             print(
-    #                 "Error: More than one unique LoincCode found."
-    #                 "Each plot should be based on a single LoincCode."
-    #             )
-    #             return []
-
-    #         flattened_df = flattened_fhir_dataframe.df
-    #         if self.start_date:
-    #             self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").date()
-    #         if self.end_date:
-    #             self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").date()
-    #         if self.start_date and self.end_date:
-    #             flattened_df = flattened_df[
-    #                 (flattened_df["EffectiveDateTime"] >= self.start_date)
-    #                 & (flattened_df["EffectiveDateTime"] <= self.end_date)
-    #             ]
-
-    #         users_to_plot = (
-    #             self.user_ids if self.user_ids else flattened_df["UserId"].unique()
-    #         )
-
-    #         if self.combine_plots:
-    #             plt.figure(figsize=(10, 6), dpi=300)
-    #             for uid in users_to_plot:
-    #                 user_df = flattened_df[flattened_df["UserId"] == uid]
-    #                 aggregated_data = (
-    #                     user_df.groupby("EffectiveDateTime")["QuantityValue"]
-    #                     .sum()
-    #                     .reset_index()
-    #                 )
-    #                 plt.bar(
-    #                     aggregated_data["EffectiveDateTime"],
-    #                     aggregated_data["QuantityValue"],
-    #                     edgecolor="black",
-    #                     linewidth=1.5,
-    #                     label=f"User {uid}",
-    #                 )
-    #             plt.ylim(self.y_lower, self.y_upper)
-    #             plt.legend()
-    #             plt.title(
-    #                 f"{flattened_df['QuantityName'].iloc[0]} from {self.start_date}"
-    #                 f"to {self.end_date}"
-    #             )
-    #             plt.xlabel("Date")
-    #             plt.ylabel(
-    #                 f"{flattened_df['QuantityName'].iloc[0]}"
-    #                 f"({flattened_df['QuantityUnit'].iloc[0]})"
-    #             )
-    #             plt.xticks(rotation=45)
-    #             plt.yticks()
-    #             plt.tight_layout()
-    #             fig = plt.gcf()
-    #             plt.show()
-
-    #         else:
-    #             for uid in users_to_plot:
-    #                 plt.figure(figsize=(10, 6), dpi=300)
-    #                 user_df = flattened_df[flattened_df["UserId"] == uid]
-    #                 aggregated_data = (
-    #                     user_df.groupby("EffectiveDateTime")["QuantityValue"]
-    #                     .sum()
-    #                     .reset_index()
-    #                 )
-    #                 plt.bar(
-    #                     aggregated_data["EffectiveDateTime"],
-    #                     aggregated_data["QuantityValue"],
-    #                     edgecolor="black",
-    #                     linewidth=1.5,
-    #                     label=f"User {uid}",
-    #                 )
-    #                 plt.legend()
-    #                 plt.title(
-    #                     f"{user_df['QuantityName'].iloc[0]} for User {uid} "
-    #                     f"from {self.start_date} to {self.end_date}"
-    #                 )
-    #                 plt.xlabel("Date")
-    #                 plt.ylabel(
-    #                     f"{user_df['QuantityName'].iloc[0]} ({user_df['QuantityUnit'].iloc[0]})"
-    #                 )
-    #                 plt.xticks(rotation=45)
-    #                 plt.yticks()
-    #                 plt.tight_layout()
-    #                 if len(users_to_plot) == 1:
-    #                     fig = plt.gcf()
-    #                 plt.show()
-
-    #         return fig
-    #     except ValueError as e:
-    #         print(f"Validation failed: {e}" "Column requirement is not satisfied.")
-    #         return []

@@ -37,22 +37,12 @@ Ensure you have the following Python packages installed:
 
 **[firebase_admin](https://firebase.google.com/docs/admin/setup)** 
 
-**[requests](https://pypi.org/project/requests/)**
-
-**[ipywidgets](https://ipywidgets.readthedocs.io/en/latest/user_install.html)**
-
-**[pytz](https://pypi.org/project/pytz/)**
+**[fhir.resources](https://pypi.org/project/fhir.resources/)**
 
 You can install all required external packages using pip, which is the package installer for Python, with the following command:
 
 ```bash
-pip install pandas numpy matplotlib firebase-admin requests ipywidgets pytz
-```
-
-You can install all required external packages using pip, which is the package installer for Python, with the following command:
-
-```bash
-pip install pandas numpy matplotlib firebase-admin
+pip install pandas numpy matplotlib firebase-admin fhir.resources
 ```
 
 ## Generate Service Account Key
@@ -70,13 +60,13 @@ This .json file contains your service account credentials and is used to authent
 ### 1. Initialize the Firebase admin SDK with your project credentials.
 ```python
 # Path to the Firebase service account key file
-serviceAccountKey_file = 'path/to/your/serviceAccountKey.json'
+serviceAccountKey_file = "path/to/your/serviceAccountKey.json"
 
 # Firebase project ID
-project_id = 'projectId'
+project_id = "projectId"
 
 # Firestore collection name to be used
-collection_name = 'users'
+collection_name = "users"
 
 # Check if the Firebase app has already been initialized to avoid re-initialization
 if not firebase_admin._apps:
@@ -91,8 +81,8 @@ db = firestore.client()
 
 
 > [!NOTE]
-> - Replace 'path/to/your/serviceAccountKey.json' with the actual path to the .json file you downloaded earlier.
-> - The 'projectId' is your Firebase project ID, which you can find in your Firebase project settings.
+> - Replace "path/to/your/serviceAccountKey.json" with the actual path to the .json file you downloaded earlier.
+> - The "projectId" is your Firebase project ID, which you can find in your Firebase project settings.
 
 
 ### 2. Fetch and flatten data to retrieve and prepare your data.
@@ -100,7 +90,7 @@ db = firestore.client()
 Here, we present an example using the fetch_and_flatten() function to query data from Firestore for HKQuantityTypeIdentifierStepCount with LOINC code equal to 55423-8.
 
 ```python
-flattened_df = fetch_and_flatten_data(db, collection_name, '55423-8')   
+flattened_df = fetch_and_flatten_data(db, collection_name, "55423-8")   
 ```
 
 ### 3. Apply remove_outliers to clean your dataset.

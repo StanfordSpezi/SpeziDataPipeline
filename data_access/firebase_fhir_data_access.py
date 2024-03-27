@@ -7,15 +7,35 @@
 #
 
 """
- This module provides functionalities for accessing and fetching FHIR data from a Firebase
- database. It includes the FirebaseFHIRAccess class which handles the connection to the Firebase
- database and provides methods for fetching FHIR data based on user ID and LOINC codes. The module
- is designed to support both development (using the Firestore emulator) and production environments.
- """
+This module provides functionalities for accessing and managing FHIR (Fast Healthcare
+Interoperability Resources) data within a Firebase Firestore database. It supports both
+development and production environments, including the use of the Firestore emulator for
+development and testing purposes. The primary class, `FirebaseFHIRAccess`, abstracts the
+complexity of Firestore connections and queries, offering simplified methods to fetch FHIR
+data based on user IDs and LOINC (Logical Observation Identifiers Names and Codes) codes.
+
+Classes:
+    FirebaseFHIRAccess: Manages access to FHIR resources stored in Firebase Firestore,
+    allowing for operations such as connecting to the database and fetching data based on
+    specific criteria like LOINC codes.
+
+Functions:
+    _fetch_user_resources: Fetches resources for a specific user from Firestore based on 
+        the given collection and subcollection names, optionally filtering by LOINC codes.
+    _process_loinc_codes: Filters documents based on LOINC codes from a Firestore collection
+        reference, converting matching documents into FHIR Observation instances.
+    _process_all_documents: Fetches and processes all documents from a Firestore collection
+        reference for a specific user, converting each document to a FHIR Observation instance.
+    _create_resources: Converts Firestore documents into FHIR Observation instances, associating
+        each with the corresponding user's Firestore document ID.
+    get_code_mappings: Retrieves mappings for a given LOINC code or custom code, supporting the
+        translation of codes for FHIR resource creation and querying.
+"""
 
 # Standard library imports
 import json
 import os
+from typing import Any
 
 # Related third-party imports
 from firebase_admin import credentials, firestore
@@ -26,10 +46,9 @@ from google.cloud.firestore import (
     DocumentSnapshot,
 )
 from google.cloud.firestore_v1.base_query import FieldFilter
-
-# Local application/library specific imports
 from fhir.resources.observation import Observation
 from fhir.resources.reference import Reference
+from data_processing.code_mapping import CodeProcessor
 
 
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
@@ -37,30 +56,23 @@ FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
 
 class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     """
-    Provides access to FHIR resources stored in Firebase Firestore, allowing for
-    operations such as connecting to the database and fetching data based on
-    specific criteria like LOINC codes.
-
-    This class abstracts the complexity of interacting with Firestore for FHIR-related
-    operations, offering a simplified interface for fetching and manipulating FHIR
-    Observations.
+    Manages access and operations on FHIR resources within Firebase Firestore. This class
+    facilitates the connection to Firestore, supporting both development (via the Firestore
+    emulator) and production environments. It offers methods to fetch FHIR data based on user
+    IDs and LOINC codes, abstracting the complexity of Firestore queries and FHIR data handling.
 
     Attributes:
-        service_account_key_file (str): Path to the Firebase service account key file.
-        project_id (str): The Firebase project ID.
-        db (Optional[firestore.Client]): The Firestore client instance, initialized upon
-                                         connection. Defaults to None.
-
+        service_account_key_file (str): Path to the Firebase service account key file for
+                                        authentication.
+        project_id (str): Identifier of the Firebase project.
+        db (Optional[firestore.Client]): A Firestore client instance for database operations,
+                                          initialized upon successful connection.
     """
 
     def __init__(self, service_account_key_file: str, project_id: str) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
         credentials and project ID.
-
-        Parameters:
-            service_account_key_file (str): Path to the Firebase service account key file.
-            project_id (str): The Firebase project ID.
         """
         self.service_account_key_file = service_account_key_file
         self.project_id = project_id
@@ -69,10 +81,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     def connect(self) -> None:
         """
         Establishes a connection to the Firebase Firestore database.
-
-        Depending on the environment, it connects to either the Firestore emulator
-        for CI tests or the production Firestore service. It initializes the Firestore
-        client and sets it to the `db` attribute.
         """
 
         try:
@@ -105,20 +113,20 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         loinc_codes: list[str] | None = None,
     ) -> list[Observation]:
         """
-        Fetches FHIR Observation data from Firestore based on the given collection names
-        and optional LOINC codes.
+        Retrieves FHIR Observation data for specified LOINC codes from Firestore.
+        Data is fetched from the given collection and subcollection, optionally
+        filtered by the provided LOINC codes.
 
         Parameters:
-            collection_name (str): The name of the Firestore collection to query.
-                                Defaults to "users".
-            subcollection_name (str): The name of the Firestore subcollection to query.
-                                    Defaults to "HealthKit".
-            loinc_codes (list[str] | None): A list of LOINC codes to filter the Observations.
-                                        Defaults to None.
+            collection_name (str): The name of the Firestore collection.
+                Defaults to "users".
+            subcollection_name (str): The name of the Firestore subcollection.
+                Defaults to "HealthKit".
+            loinc_codes (list[str] | None): Optional list of LOINC codes to filter
+                observations. If None, all observations in the subcollection are fetched.
 
         Returns:
-            list[Observation]: A list of Observation objects representing
-                                    the fetched FHIR Observations.
+            list[Observation]: A list of FHIR Observation instances matching the query criteria.
         """
 
         if self.db is None:
@@ -142,18 +150,19 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         loinc_codes: list[str] | None,
     ) -> list[Observation]:
         """
-        Fetches resources for a specific user from Firestore based on the given collection and
-        subcollection names, optionally filtering by LOINC codes.
+        Private method to fetch FHIR Observation resources for a specific user,
+        ptionally filtered by LOINC codes. Queries Firestore based on specified collection
+        and subcollection names.
 
         Parameters:
-            user (str): The user document reference from Firestore.
-            collection_name (str): The name of the Firestore collection to query.
-            subcollection_name (str): The name of the Firestore subcollection to query.
-            loinc_codes (list[str] | None): A list of LOINC codes to filter the observations by,
-            or None to fetch all documents.
+            user (DocumentReference): Firestore reference to the user document.
+            collection_name (str): Name of the Firestore collection.
+            subcollection_name (str): Name of the Firestore subcollection.
+            loinc_codes (list[str] | None): Optional list of LOINC codes to filter observations.
 
         Returns:
-            list[Observation]: A list of Observation objects for the specified user.
+            list[Observation]: List of FHIR Observation objects corresponding to the user and
+                                optional LOINC codes filter.
         """
         resources = []
         query = (
@@ -174,20 +183,21 @@ def _process_loinc_codes(
     loinc_codes: list[str],
 ) -> list[Observation]:
     """
-    Processes documents from a Firestore query by filtering them based on a list of LOINC codes.
+    Filters documents based on LOINC codes from a Firestore collection reference. This function
+    processes and converts matching Firestore documents into FHIR Observation instances.
 
     Parameters:
-        query: The Firestore query object for a specific user and subcollection.
-        user: The user document reference from Firestore.
-        loinc_codes (list[str]): A list of LOINC codes to filter the documents by.
+        query (CollectionReference): Firestore query object for a user's subcollection.
+        user (DocumentReference): Firestore reference to the user document.
+        loinc_codes (list[str]): List of LOINC codes to filter documents.
 
     Returns:
-        list[Observation]: A list of Observation objects that match the
-        LOINC codes.
+        list[Observation]: A list of FHIR Observation instances that match the specified
+            LOINC codes.
     """
     resources = []
     for code in loinc_codes:
-        display_str, code_str, system_str = get_code_details(code)
+        display_str, code_str, system_str = get_code_mappings(code)
         fhir_docs = query.where(
             filter=FieldFilter(
                 "code.coding",
@@ -195,7 +205,7 @@ def _process_loinc_codes(
                 {"display": display_str, "system": system_str, "code": code_str},
             )
         ).stream()
-        resources.extend(_create_enhanced_observations(fhir_docs, user))
+        resources.extend(_create_resources(fhir_docs, user))
     return resources
 
 
@@ -203,72 +213,63 @@ def _process_all_documents(
     query: CollectionReference, user: DocumentReference
 ) -> list[Observation]:
     """
-    Processes all documents from a Firestore query for a specific user and subcollection.
+    Fetches and processes all documents from a Firestore collection reference for a specific user,
+    converting each Firestore document to a FHIR Observation instance.
 
     Parameters:
-        query: The Firestore query object for a specific user and subcollection.
-        user: The user document reference from Firestore.
+        query (CollectionReference): Firestore query object for a user's subcollection.
+        user (DocumentReference): Firestore reference to the user document.
 
     Returns:
-        list[Observation]: A list of Observation objects for all
-        documents in the query.
+        list[Observation]: List of FHIR Observation instances for all documents in the user's
+            subcollection.
     """
     fhir_docs = query.stream()
-    return _create_enhanced_observations(fhir_docs, user)
+    return _create_resources(fhir_docs, user)
 
 
-def _create_enhanced_observations(
+def _create_resources(
     fhir_docs: list[DocumentSnapshot], user: DocumentReference
-) -> list[Observation]:
+) -> list[Any]:
     """
-    Creates Observation objects from Firestore documents.
+    Converts Firestore documents into FHIR Observation instances, setting the subject reference
+    to the user's Firestore document ID.
 
     Parameters:
-        fhir_docs: An iterable of Firestore document references containing FHIR observation
-                data.
-        user: The user document reference from Firestore.
+        fhir_docs (list[DocumentSnapshot]): Iterable of Firestore document snapshots containing
+            FHIR observation data.
+        user (DocumentReference): Firestore reference to the user document.
 
     Returns:
-        list[Observation]: A list of Observation objects created from the
-        Firestore documents.
+        list[Any]: List of FHIR Observation instances created from the Firestore documents.
     """
     resources = []
     for doc in fhir_docs:
-        observation_str = json.dumps(doc.to_dict())
-        fhir_obj = Observation.parse_raw(observation_str)
-        fhir_obj.subject = Reference(id=user.id)
-        resources.append(fhir_obj)
+        resource_str = json.dumps(doc.to_dict())
+        resource_obj = Observation.parse_raw(resource_str)
+        resource_obj.subject = Reference(id=user.id)
+        resources.append(resource_obj)
     return resources
 
 
-def get_code_details(code: str) -> tuple[str, str, str]:
+def get_code_mappings(code: str) -> tuple[str, str, str]:
     """
-    Retrieves the details associated with a given LOINC code or custom code.
-
-    This method looks up the code in a predefined mapping and returns the display
-    string, code string, and system string associated with the code.
+    Retrieves display, code, and system strings associated with a given LOINC code or custom code
+    from a predefined mapping. This function is intended to support the translation of codes
+    for use in FHIR resource creation and querying.
 
     Parameters:
         code (str): The LOINC code or custom code to look up.
 
     Returns:
-        tuple[str | None, str | None, str | None]: A tuple containing the display string,
-                                                        code string, and system string for the
-                                                        code,or (None, None, None) if the code is
-                                                        not found in the mapping.
+        tuple[str, str, str]: A tuple containing the display string, code string, and system string
+                               for the code. Returns (None, None, None) if the code is not found.
     """
-    code_mappings = {
-        "9052-2": ("Calorie intake total", "9052-2", "http://loinc.org"),
-        "55423-8": (
-            "Number of steps in unspecified time Pedometer",
-            "55423-8",
-            "http://loinc.org",
-        ),
-        "HKQuantityTypeIdentifierDietaryProtein": (
-            "Dietary Protein",
-            "HKQuantityTypeIdentifierDietaryProtein",
-            "http://developer.apple.com/documentation/healthkit",
-        ),
-    }
+    loinc_processor = CodeProcessor()
+    code_mappings = loinc_processor.code_mappings.get(code)
 
-    return code_mappings.get(code, (None, None, None))
+    if (code_mappings := loinc_processor.code_mappings.get(code)) is None:
+        print(f"This LOINC code '{code}' is not supported.")
+        return (None, None, None)
+
+    return code_mappings

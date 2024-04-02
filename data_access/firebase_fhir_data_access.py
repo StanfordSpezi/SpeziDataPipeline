@@ -35,7 +35,7 @@ Functions:
 # Standard library imports
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 
 # Related third-party imports
 from firebase_admin import credentials, firestore
@@ -48,11 +48,12 @@ from google.cloud.firestore import (
 from google.cloud.firestore_v1.base_query import FieldFilter
 from fhir.resources.observation import Observation
 from fhir.resources.reference import Reference
+
+# Local application/library specific imports
 from data_processing.code_mapping import CodeProcessor
 
 
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
-
 
 class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     """
@@ -69,7 +70,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
-    def __init__(self, service_account_key_file: str, project_id: str) -> None:
+    def __init__(self, project_id: str, service_account_key_file: Optional[str] = None) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
         credentials and project ID.
@@ -82,15 +83,16 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         """
         Establishes a connection to the Firebase Firestore database.
         """
-
+        if self.db is not None:
+            return
         try:
             # Attempt to retrieve the default app.
-            firebase_admin.get_app()
+            app = firebase_admin.get_app()
+            self.db = firestore.client(app=app)
         except ValueError:
             # If it raises a ValueError, then the app hasn't been initialized.
-
             if (
-                os.getenv("CI") or FIRESTORE_EMULATOR_HOST_KEY in os.environ
+                os.getenv("CI") or FIRESTORE_EMULATOR_HOST_KEY in os.environ or not self.service_account_key_file
             ):  # Check if running in CI environment
                 # Point to the emulator for CI tests
                 os.environ[FIRESTORE_EMULATOR_HOST_KEY] = "localhost:8080"
@@ -102,9 +104,12 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                 )
 
             else:  # Connect to the production environment
-                cred = credentials.Certificate(self.service_account_key_file)
-                firebase_admin.initialize_app(cred, {"projectId": self.project_id})
-                self.db = firestore.client()
+                if self.service_account_key_file and os.path.exists(self.service_account_key_file):
+                    cred = credentials.Certificate(self.service_account_key_file)
+                    firebase_admin.initialize_app(cred, {"projectId": self.project_id})
+                    self.db = firestore.client()
+                else:
+                    raise FileNotFoundError("Service account key file is missing or does not exist.")
 
     def fetch_data(
         self,
@@ -130,8 +135,8 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         """
 
         if self.db is None:
-            print("Error: Firebase app is not initialized.")
-            return []
+            print("Reinitialize the Firebase app.")
+            return None
 
         resources = []
         users = self.db.collection(collection_name).stream()
@@ -245,7 +250,9 @@ def _create_resources(
     """
     resources = []
     for doc in fhir_docs:
-        resource_str = json.dumps(doc.to_dict())
+        doc_dict = doc.to_dict()
+        doc_dict.pop('issued')
+        resource_str = json.dumps(doc_dict)
         resource_obj = Observation.parse_raw(resource_str)
         resource_obj.subject = Reference(id=user.id)
         resources.append(resource_obj)

@@ -165,7 +165,6 @@ class FHIRDataFrame:
                 f"The DataFrame is missing required columns: {formatted_missing_columns}"
             )
 
-        # Validate specific column types
         if ColumnNames.EFFECTIVE_DATE_TIME.value in self.df.columns:
             if not all(
                 isinstance(d, date)
@@ -176,7 +175,6 @@ class FHIRDataFrame:
                     "datetime.date."
                 )
 
-        # Ensure certain columns contain strings
         for column in set(required_columns) - {
             ColumnNames.EFFECTIVE_DATE_TIME.value,
             ColumnNames.QUANTITY_VALUE.value,
@@ -187,7 +185,6 @@ class FHIRDataFrame:
                 ):
                     raise ValueError(f"The '{column}' column does not contain strings.")
 
-        # If all checks pass, return True
         return True
 
 
@@ -306,10 +303,12 @@ class ObservationFlattener(ResourceFlattener):
         """
         flattened_data = []
         for observation in resources:
-            effective_datetime = (
-                observation.dict()["effectivePeriod"]["start"]
-                or observation.dict()["effectiveDateTime"]
-            )
+            
+            effective_datetime = observation.dict().get("effectiveDateTime")
+            if not effective_datetime: 
+                effective_period = observation.dict().get("effectivePeriod", {}) 
+                effective_datetime = effective_period.get("start", None)  
+    
             coding = observation.dict()["code"]["coding"]
             loinc_code = coding[0]["code"] if len(coding) > 0 else ""
             display = coding[0]["display"] if len(coding) > 0 else ""
@@ -379,8 +378,7 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
 
     flattener_classes = {
         FHIRResourceType.OBSERVATION.value: ObservationFlattener
-        # Map more FHIR resource types to their respective flattener classes,
-        # e.g., FHIRResourceType.QUESTIONNAIRE_RESPONSE.value: QuestionnaireResponseFlattener
+        # FHIRResourceType.QUESTIONNAIRE_RESPONSE.value: QuestionnaireResponseFlattener
     }
 
     if not (flattener_class := flattener_classes.get(resource_type)):

@@ -104,13 +104,20 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
                 due to errors.
         """
         fig = None
-        # Filter by date range if both start and end dates are provided
+        
+        if not flattened_fhir_dataframe.df[ColumnNames.LOINC_CODE.value].nunique() == 1:
+            print("The FHIRDataFrame should contain data of a single LOINC code.")
+            return None
+
         if self.start_date and self.end_date:
             flattened_fhir_dataframe = select_data_by_dates(
                 flattened_fhir_dataframe, self.start_date, self.end_date
             )
 
-        # Determine users to plot
+        if flattened_fhir_dataframe.df.empty:
+            print("No data for the selected date range.")
+            return None
+
         users_to_plot = (
             self.user_ids
             if self.user_ids
@@ -204,6 +211,7 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
                 .sum()
                 .reset_index()
             )
+
             plt.bar(
                 aggregated_data[ColumnNames.EFFECTIVE_DATE_TIME.value],
                 aggregated_data[ColumnNames.QUANTITY_VALUE.value],

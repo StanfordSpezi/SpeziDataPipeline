@@ -137,9 +137,6 @@ class CodeProcessor:  # pylint: disable=unused-variable
             "100304-5": calculate_daily_data,  # Flights Climbed (flights)
             "HKQuantityTypeIdentifierSwimmingStrokeCount": calculate_daily_data,  # Swimming Stroke Count (strokes)
             # Averaged per day
-            "8462-4": calculate_average_data,  # Blood Pressure Diastolic (mmHg)
-            "8480-6": calculate_average_data,  # Blood Pressure Systolic (mmHg)
-            "8310-5": calculate_average_data,  # Body Temperature (C)
             "8867-4": calculate_average_data,  # Heart Rate (bpm)
             "80404-7": calculate_average_data,  # Heart Rate Variability SDNN (ms)
             "59408-5": calculate_average_data,  # Oxygen Saturation (%)
@@ -154,9 +151,6 @@ class CodeProcessor:  # pylint: disable=unused-variable
             "9052-2": (0, 2700),  # Calorie intake total (kcal)
             "55423-8": (0, 30000),  # Step count (steps)
             # Averaged per day
-            "8462-4": (30, 100),  # Blood Pressure Diastolic (mmHg)
-            "8480-6": (50, 200),  # Blood Pressure Systolic (mmHg)
-            "8310-5": (34, 42),  # Body Temperature (C)
             "8867-4": (34, 200),  # Heart Rate (bpm)
             "80404-7": (40, 120),  # Heart Rate Variability SDNN (ms)
             "59408-5": (80, 100),  # Oxygen Saturation (%)
@@ -168,6 +162,9 @@ class CodeProcessor:  # pylint: disable=unused-variable
                 120,
             ),  # Walking Heart Rate Average (bpm)
             # Neither averaged nor summed up
+            "8462-4": (30, 100),  # Blood Pressure Diastolic (mmHg)
+            "8480-6": (50, 200),  # Blood Pressure Systolic (mmHg)
+            "8310-5": (34, 42),  # Body Temperature (C)
             "HKQuantityTypeIdentifierBasalBodyTemperature": (
                 34,
                 42,

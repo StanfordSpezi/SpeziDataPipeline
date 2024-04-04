@@ -85,6 +85,7 @@ class FHIRResourceType(Enum):
     """
 
     OBSERVATION = "Observation"
+    ECG_OBSERVATION = "ElectrocardiographicObservation"
     QUESTIONNAIRE_RESPONSE = "QuestionnaireResponse"
 
 
@@ -377,7 +378,8 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
     resource_type = resources[0].resource_type
 
     flattener_classes = {
-        FHIRResourceType.OBSERVATION.value: ObservationFlattener
+        FHIRResourceType.OBSERVATION.value: ObservationFlattener,
+        # FHIRResourceType.ECG_OBSERVATION.value: ECGObservationFlattener
         # FHIRResourceType.QUESTIONNAIRE_RESPONSE.value: QuestionnaireResponseFlattener
     }
 

@@ -7,7 +7,7 @@
 #
 """
 Module for Flattening FHIR Resources
-
+print(flat
 This module provides functionalities to transform nested Fast Healthcare Interoperability Resources
 (FHIR) resources into flattened, tabular formats suitable for easier processing and analysis. It
 includes classes and functions that handle the conversion of complex FHIR JSON structures into
@@ -68,6 +68,53 @@ class ColumnNames(Enum):
         "AppleHealthKitCode"  # A code used in Apple HealthKit for the observation.
     )
 
+    NUMBER_OF_MEASUREMENTS = "NumberOfMeasurements"
+    SAMPLING_FREQUENCY = "SamplingFrequency"
+    SAMPLING_FREQUENCY_UNIT = "SamplingFrequencyUnit"
+    ELECTROCARDIOGRAM_CLASSIFICATION = "ElectrocardiogramClassification"
+    HEART_RATE = "HeartRate"
+    HEART_RATE_UNIT = "HeartRateUnit"
+    ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
+    ECG_RECORDING1 = "ECGRecording1"
+    ECG_RECORDING2 = "ECGRecording2"
+    ECG_RECORDING3 = "ECGRecording3"
+    ECG_RECORDINGS_COMBINED = "ECGRecordingsCombined"
+
+
+class ECGObservation:
+    def __init__(self, observation: Any):
+        """
+        Initializes an ECGObservation wrapper for FHIR ECG observations.
+
+        Parameters:
+            resource (Any): The original FHIR observation object.
+            resource_type (FHIRResourceType): An enum member representing the
+                                                       specific type of the FHIR resource.
+        """
+        self.observation = observation
+        self.resource_type = FHIRResourceType.ECG_OBSERVATION.value
+
+    def __getattr__(self, name):
+        """
+        Delegate attribute access to the underlying FHIR resource object. This method
+        is called if the requested attribute is not found in the ECGObservation's
+        dictionary.
+
+        Parameters:
+            name (str): The name of the attribute being accessed.
+
+        Returns:
+            The value of the attribute from the underlying resource object.
+        """
+        return getattr(self.observation, name)
+
+    def __repr__(self):
+        """
+        Returns a string representation of the ECGObservation, including its type
+        and some identifiable information from the underlying resource.
+        """
+        return f"<ECGObservation type={self.resource_type}, resource={repr(self.observation)}>"
+
 
 class FHIRResourceType(Enum):
     """
@@ -125,7 +172,6 @@ class FHIRDataFrame:
         self.data_frame = data
         self.resource_type = resource_type
 
-        # Instantiate a ResourceFlattener to use its resource_columns
         flattener = ResourceFlattener(resource_type)
         self.resource_columns = flattener.resource_columns
 
@@ -176,16 +222,6 @@ class FHIRDataFrame:
                     "datetime.date."
                 )
 
-        for column in set(required_columns) - {
-            ColumnNames.EFFECTIVE_DATE_TIME.value,
-            ColumnNames.QUANTITY_VALUE.value,
-        }:
-            if column in self.df.columns:
-                if not (
-                    is_string_dtype(self.df[column]) or is_object_dtype(self.df[column])
-                ):
-                    raise ValueError(f"The '{column}' column does not contain strings.")
-
         return True
 
 
@@ -230,6 +266,22 @@ class ResourceFlattener:
                 ColumnNames.QUANTITY_NAME,
                 ColumnNames.QUANTITY_UNIT,
                 ColumnNames.QUANTITY_VALUE,
+                ColumnNames.LOINC_CODE,
+                ColumnNames.DISPLAY,
+                ColumnNames.APPLE_HEALTH_KIT_CODE,
+            ],
+            FHIRResourceType.ECG_OBSERVATION: [
+                ColumnNames.USER_ID,
+                ColumnNames.EFFECTIVE_DATE_TIME,
+                ColumnNames.QUANTITY_NAME,
+                ColumnNames.NUMBER_OF_MEASUREMENTS,
+                ColumnNames.SAMPLING_FREQUENCY,
+                ColumnNames.SAMPLING_FREQUENCY_UNIT,
+                ColumnNames.ELECTROCARDIOGRAM_CLASSIFICATION,
+                ColumnNames.HEART_RATE,
+                ColumnNames.HEART_RATE_UNIT,
+                ColumnNames.ECG_RECORDING_UNIT,
+                ColumnNames.ECG_RECORDINGS_COMBINED,
                 ColumnNames.LOINC_CODE,
                 ColumnNames.DISPLAY,
                 ColumnNames.APPLE_HEALTH_KIT_CODE,
@@ -304,24 +356,26 @@ class ObservationFlattener(ResourceFlattener):
         """
         flattened_data = []
         for observation in resources:
-            
+
             effective_datetime = observation.dict().get("effectiveDateTime")
-            if not effective_datetime: 
-                effective_period = observation.dict().get("effectivePeriod", {}) 
-                effective_datetime = effective_period.get("start", None)  
-    
-            coding = observation.dict()["code"]["coding"]
-            loinc_code = coding[0]["code"] if len(coding) > 0 else ""
-            display = coding[0]["display"] if len(coding) > 0 else ""
+            if not effective_datetime:
+                effective_period = observation.dict().get("effectivePeriod", {})
+                effective_datetime = effective_period.get("start", None)
+
+            coding = observation.dict().get("code", {}).get("coding", [])
+
+            loinc_code = coding[0]["code"] if len(coding) > 0 else None
+            display = coding[0]["display"] if len(coding) > 0 else None
+
             apple_healthkit_code = (
                 coding[1]["code"]
                 if len(coding) > 1
-                else (coding[0]["code"] if len(coding) > 0 else "")
+                else (coding[0]["code"] if len(coding) > 0 else None)
             )
             quantity_name = (
                 coding[1]["display"]
                 if len(coding) > 1
-                else (coding[0]["display"] if len(coding) > 0 else "")
+                else (coding[0]["display"] if len(coding) > 0 else None)
             )
 
             flattened_entry = {
@@ -330,12 +384,12 @@ class ObservationFlattener(ResourceFlattener):
                     effective_datetime if effective_datetime else None
                 ),
                 ColumnNames.QUANTITY_NAME.value: quantity_name,
-                ColumnNames.QUANTITY_UNIT.value: observation.dict()["valueQuantity"][
-                    "unit"
-                ],
-                ColumnNames.QUANTITY_VALUE.value: observation.dict()["valueQuantity"][
-                    "value"
-                ],
+                ColumnNames.QUANTITY_UNIT.value: observation.dict()
+                .get("valueQuantity", {})
+                .get("unit", None),
+                ColumnNames.QUANTITY_VALUE.value: observation.dict()
+                .get("valueQuantity", {})
+                .get("value", None),
                 ColumnNames.LOINC_CODE.value: loinc_code,
                 ColumnNames.DISPLAY.value: display,
                 ColumnNames.APPLE_HEALTH_KIT_CODE.value: apple_healthkit_code,
@@ -349,6 +403,103 @@ class ObservationFlattener(ResourceFlattener):
         ).dt.date
 
         return FHIRDataFrame(flattened_df, FHIRResourceType.OBSERVATION)
+
+
+@dataclass
+class ECGObservationFlattener(ResourceFlattener):
+    def __init__(self):
+        super().__init__(FHIRResourceType.ECG_OBSERVATION)
+
+    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+        flattened_data = []
+        for observation in resources:
+
+            effective_datetime = observation.dict().get("effectiveDateTime")
+            if not effective_datetime:
+                effective_period = observation.dict().get("effectivePeriod", {})
+                effective_datetime = effective_period.get("start", None)
+
+            coding = observation.dict().get("code", {}).get("coding", [])
+
+            apple_healthkit_code = coding[0]["code"] if len(coding) > 0 else None
+            display = coding[0]["display"] if len(coding) > 0 else None
+
+            loinc_code = (
+                coding[1]["code"]
+                if len(coding) > 1
+                else (coding[0]["code"] if len(coding) > 0 else None)
+            )
+            quantity_name = (
+                coding[1]["display"]
+                if len(coding) > 1
+                else (coding[0]["display"] if len(coding) > 0 else None)
+            )
+
+            components = observation.dict().get("component", [])
+            ecg_data_list = []
+
+            for i in [5, 6, 7]:
+                if i < len(components):
+                    data = components[i].get("valueSampledData", {}).get("data", None)
+                    if data is not None:
+                        ecg_data_list.append(data)
+
+            ecg_recordings_combined = " ".join(ecg_data_list)
+            ecg_recording_unit = (
+                components[5]
+                .get("valueSampledData", {})
+                .get("origin", {})
+                .get("unit", None)
+                if len(components) > 5
+                else None
+            )
+
+            flattened_entry = {
+                ColumnNames.USER_ID.value: observation.subject.id,
+                ColumnNames.EFFECTIVE_DATE_TIME.value: (
+                    effective_datetime if effective_datetime else None
+                ),
+                ColumnNames.QUANTITY_NAME.value: quantity_name,
+                ColumnNames.NUMBER_OF_MEASUREMENTS.value: observation.dict()
+                .get("component", [{}])[0]
+                .get("valueQuantity", {})
+                .get("value", None),
+                ColumnNames.SAMPLING_FREQUENCY.value: observation.dict()
+                .get("component", [{}])[1]
+                .get("valueQuantity", {})
+                .get("value", None),
+                ColumnNames.SAMPLING_FREQUENCY_UNIT.value: observation.dict()
+                .get("component", [{}])[1]
+                .get("valueQuantity", {})
+                .get("unit", None),
+                ColumnNames.ELECTROCARDIOGRAM_CLASSIFICATION.value: observation.dict()
+                .get("component", [{}])[2]
+                .get("valueString", None),
+                ColumnNames.HEART_RATE.value: observation.dict()
+                .get("component", [{}])[3]
+                .get("valueQuantity", {})
+                .get("value", None),
+                ColumnNames.HEART_RATE_UNIT.value: observation.dict()
+                .get("component", [{}])[3]
+                .get("valueQuantity", {})
+                .get("unit", None),
+                ColumnNames.ECG_RECORDING_UNIT.value: ecg_recording_unit,
+                ColumnNames.ECG_RECORDINGS_COMBINED.value: (
+                    ecg_recordings_combined if ecg_data_list else None
+                ),
+                ColumnNames.LOINC_CODE.value: loinc_code,
+                ColumnNames.DISPLAY.value: display,
+                ColumnNames.APPLE_HEALTH_KIT_CODE.value: apple_healthkit_code,
+            }
+
+            flattened_data.append(flattened_entry)
+
+        flattened_df = pd.DataFrame(flattened_data)
+        flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+            flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value], errors="coerce"
+        ).dt.date
+
+        return FHIRDataFrame(flattened_df, FHIRResourceType.ECG_OBSERVATION)
 
 
 def flatten_fhir_resources(  # pylint: disable=unused-variable
@@ -375,16 +526,20 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
         print("No data available.")
         return None
 
-    resource_type = resources[0].resource_type
-
     flattener_classes = {
-        FHIRResourceType.OBSERVATION.value: ObservationFlattener,
-        # FHIRResourceType.ECG_OBSERVATION.value: ECGObservationFlattener
-        # FHIRResourceType.QUESTIONNAIRE_RESPONSE.value: QuestionnaireResponseFlattener
+        FHIRResourceType.OBSERVATION: ObservationFlattener,
+        FHIRResourceType.ECG_OBSERVATION: ECGObservationFlattener,
+        # Add other mappings
     }
 
-    if not (flattener_class := flattener_classes.get(resource_type)):
-        raise ValueError(f"No flattener found for resource type: {resource_type.name}")
+    resource_type = FHIRResourceType(
+        resources[0].resource_type
+    )  # Assuming each resource has a resource_type attribute
 
-    flattener = flattener_class()
+    if resource_type in flattener_classes:
+        flattener_class = flattener_classes[resource_type]
+        flattener = flattener_class()
+    else:
+        raise ValueError(f"No flattener found for resource type: {resource_type}")
+
     return flattener.flatten(resources)

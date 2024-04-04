@@ -52,10 +52,12 @@ from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import FHIRResourceType
+from data_flattening.fhir_resources_flattener import ECGObservation, FHIRResourceType
 from data_processing.code_mapping import CodeProcessor
 
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
+ECG_RECORDING_LOINC_CODE = "131328"
+
 
 class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     """
@@ -72,7 +74,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
-    def __init__(self, project_id: str, service_account_key_file: Optional[str] = None) -> None:
+    def __init__(
+        self, project_id: str, service_account_key_file: Optional[str] = None
+    ) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
         credentials and project ID.
@@ -94,7 +98,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         except ValueError:
             # If it raises a ValueError, then the app hasn't been initialized.
             if (
-                os.getenv("CI") or FIRESTORE_EMULATOR_HOST_KEY in os.environ or not self.service_account_key_file
+                os.getenv("CI")
+                or FIRESTORE_EMULATOR_HOST_KEY in os.environ
+                or not self.service_account_key_file
             ):  # Check if running in CI environment
                 # Point to the emulator for CI tests
                 os.environ[FIRESTORE_EMULATOR_HOST_KEY] = "localhost:8080"
@@ -106,12 +112,16 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                 )
 
             else:  # Connect to the production environment
-                if self.service_account_key_file and os.path.exists(self.service_account_key_file):
+                if self.service_account_key_file and os.path.exists(
+                    self.service_account_key_file
+                ):
                     cred = credentials.Certificate(self.service_account_key_file)
                     firebase_admin.initialize_app(cred, {"projectId": self.project_id})
                     self.db = firestore.client()
                 else:
-                    raise FileNotFoundError("Service account key file is missing or does not exist.")
+                    raise FileNotFoundError(
+                        "Service account key file is missing or does not exist."
+                    )
 
     def fetch_data(
         self,
@@ -202,7 +212,7 @@ def _process_loinc_codes(
         list[Observation]: A list of FHIR Observation instances that match the specified
             LOINC codes.
     """
-    
+
     resources = []
     for code in loinc_codes:
         display_str, code_str, system_str = get_code_mappings(code)
@@ -213,12 +223,12 @@ def _process_loinc_codes(
                 {"display": display_str, "system": system_str, "code": code_str},
             )
         ).stream()
-        
+
         try:
-            first_doc_snapshot = next(iter(fhir_docs))  
+            first_doc_snapshot = next(iter(fhir_docs))
             first_doc_dict = first_doc_snapshot.to_dict()
-            resource_type = first_doc_dict['resourceType']
-            
+            resource_type = first_doc_dict["resourceType"]
+
             if resource_type == FHIRResourceType.OBSERVATION.value:
                 creator = ObservationCreator()
                 resources.extend(creator._create_resources(fhir_docs, user))
@@ -226,13 +236,12 @@ def _process_loinc_codes(
                 creator = QuestionnaireResponseCreator()
                 resources.extend(creator._create_resources(fhir_docs, user))
             else:
-                raise ValueError(f"Unsupported resource type: {resource_type}")        
-        
+                raise ValueError(f"Unsupported resource type: {resource_type}")
+
         except StopIteration:
-            first_doc_dict = None 
+            first_doc_dict = None
 
-    return resources 
-
+    return resources
 
 
 def _process_all_documents(
@@ -249,14 +258,14 @@ def _process_all_documents(
     Returns:
         list[Observation]: List of FHIR Observation instances for all documents in the user's
             subcollection.
-    """    
+    """
     resources = []
     fhir_docs = query.stream()
-    
+
     try:
-        first_doc_snapshot = next(iter(fhir_docs))  
+        first_doc_snapshot = next(iter(fhir_docs))
         first_doc_dict = first_doc_snapshot.to_dict()
-        resource_type = first_doc_dict['resourceType']
+        resource_type = first_doc_dict["resourceType"]
 
         if resource_type == FHIRResourceType.OBSERVATION.value:
             creator = ObservationCreator()
@@ -268,35 +277,32 @@ def _process_all_documents(
             raise ValueError(f"Unsupported resource type: {resource_type}")
 
     except StopIteration:
-        first_doc_dict = None 
+        first_doc_dict = None
 
-    
     return resources
 
 
 @dataclass
 class ResourceCreator:
     """Abstract base class for creating FHIR resources based on the resource type"""
+
     def __init__(self, resource_type: FHIRResourceType):
         self.resource_type = resource_type
-        
+
     def _create_resources(
-        self, 
-        fhir_docs: list[DocumentSnapshot],
-        user: DocumentReference
+        self, fhir_docs: list[DocumentSnapshot], user: DocumentReference
     ) -> list[Any]:
-        
+
         raise NotImplementedError("Subclasses should implement this method.")
-        
+
+
 @dataclass
 class ObservationCreator(ResourceCreator):
     def __init__(self):
         super().__init__(FHIRResourceType.OBSERVATION)
-    
+
     def _create_resources(
-        self,
-        fhir_docs: list[DocumentSnapshot],
-        user: DocumentReference
+        self, fhir_docs: list[DocumentSnapshot], user: DocumentReference
     ) -> list[Observation]:
         """
         Converts Firestore documents into FHIR Observation instances, setting the subject reference
@@ -313,38 +319,38 @@ class ObservationCreator(ResourceCreator):
         resources = []
         for doc in fhir_docs:
             doc_dict = doc.to_dict()
-            doc_dict.pop('issued')
+            doc_dict.pop("issued")
             resource_str = json.dumps(doc_dict)
             resource_obj = Observation.parse_raw(resource_str)
             resource_obj.subject = Reference(id=user.id)
+            
+            # Special handling for ECG data
+            if resource_obj.code.coding[1].code == ECG_RECORDING_LOINC_CODE:
+                resource_obj = ECGObservation(resource_obj)
+
             resources.append(resource_obj)
         return resources
 
-        
-        
+
 @dataclass
 class QuestionnaireResponseCreator(ResourceCreator):
     def __init__(self):
-        super().__init__(FHIRResourceType.OBSERVATION)
-    
+        super().__init__(FHIRResourceType.QUESTIONNAIRE_RESPONSE)
+
     def _create_resources(
-        self,
-        fhir_docs: list[DocumentSnapshot],
-        user: DocumentReference
+        self, fhir_docs: list[DocumentSnapshot], user: DocumentReference
     ) -> list[QuestionnaireResponse]:
         resources = []
         for doc in fhir_docs:
             doc_dict = doc.to_dict()
-            doc_dict.pop('issued')
+            doc_dict.pop("issued")
             resource_str = json.dumps(doc_dict)
             resource_obj = QuestionnaireResponse.parse_raw(resource_str)
             resource_obj.subject = Reference(id=user.id)
             resources.append(resource_obj)
         return resources
 
-    
-        
-    
+
 def get_code_mappings(code: str) -> tuple[str, str, str]:
     """
     Retrieves display, code, and system strings associated with a given LOINC code or custom code

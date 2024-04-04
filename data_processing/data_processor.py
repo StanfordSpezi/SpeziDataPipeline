@@ -133,6 +133,11 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
                     processed_df,
                     FHIRResourceType(flattened_fhir_dataframe.resource_type),
                 )
+            else:
+                processed_fhir_dataframe = FHIRDataFrame(
+                    flattened_fhir_dataframe.df,
+                    FHIRResourceType(flattened_fhir_dataframe.resource_type),
+                )
 
         return processed_fhir_dataframe
 
@@ -158,7 +163,11 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
             ValueError: If the resource type of the input data frame is not 'Observation', as
                         outlier filtering is currently supported only for Observation data.
         """
-        if flattened_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
+        if (
+            flattened_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION
+            and flattened_fhir_dataframe.resource_type
+            != FHIRResourceType.ECG_OBSERVATION
+        ):
             raise ValueError(
                 f"Resource type must be 'Observation' for outlier filtering,"
                 f"got '{flattened_fhir_dataframe.resource_type}'."

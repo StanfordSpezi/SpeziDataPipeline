@@ -216,30 +216,28 @@ def _process_loinc_codes(
     resources = []
     for code in loinc_codes:
         display_str, code_str, system_str = get_code_mappings(code)
-        fhir_docs = query.where(
+        fhir_docs = list(query.where(
             filter=FieldFilter(
                 "code.coding",
                 "array_contains",
                 {"display": display_str, "system": system_str, "code": code_str},
             )
-        ).stream()
+        ).stream())
 
-        try:
-            first_doc_snapshot = next(iter(fhir_docs))
-            first_doc_dict = first_doc_snapshot.to_dict()
-            resource_type = first_doc_dict["resourceType"]
+        if not fhir_docs:
+            continue  # Skip if no documents found for this code
 
-            if resource_type == FHIRResourceType.OBSERVATION.value:
-                creator = ObservationCreator()
-                resources.extend(creator._create_resources(fhir_docs, user))
-            elif resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE.value:
-                creator = QuestionnaireResponseCreator()
-                resources.extend(creator._create_resources(fhir_docs, user))
-            else:
-                raise ValueError(f"Unsupported resource type: {resource_type}")
+        first_doc_dict = fhir_docs[0].to_dict()
+        resource_type = first_doc_dict["resourceType"]
 
-        except StopIteration:
-            first_doc_dict = None
+        if resource_type == FHIRResourceType.OBSERVATION.value:
+            creator = ObservationCreator()
+            resources.extend(creator._create_resources(fhir_docs, user))
+        elif resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE.value:
+            creator = QuestionnaireResponseCreator()
+            resources.extend(creator._create_resources(fhir_docs, user))
+        else:
+            raise ValueError(f"Unsupported resource type: {resource_type}")
 
     return resources
 
@@ -260,24 +258,22 @@ def _process_all_documents(
             subcollection.
     """
     resources = []
-    fhir_docs = query.stream()
+    fhir_docs = list(query.stream())  # Convert to list to prevent iterator from being consumed
 
-    try:
-        first_doc_snapshot = next(iter(fhir_docs))
-        first_doc_dict = first_doc_snapshot.to_dict()
-        resource_type = first_doc_dict["resourceType"]
+    if not fhir_docs:
+        return resources  
 
-        if resource_type == FHIRResourceType.OBSERVATION.value:
-            creator = ObservationCreator()
-            resources = creator._create_resources(fhir_docs, user)
-        elif resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE.value:
-            creator = QuestionnaireResponseCreator()
-            resources = creator._create_resources(fhir_docs, user)
-        else:
-            raise ValueError(f"Unsupported resource type: {resource_type}")
+    first_doc_dict = fhir_docs[0].to_dict()
+    resource_type = first_doc_dict["resourceType"]
 
-    except StopIteration:
-        first_doc_dict = None
+    if resource_type == FHIRResourceType.OBSERVATION.value:
+        creator = ObservationCreator()
+        resources = creator._create_resources(fhir_docs, user)
+    elif resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE.value:
+        creator = QuestionnaireResponseCreator()
+        resources = creator._create_resources(fhir_docs, user)
+    else:
+        raise ValueError(f"Unsupported resource type: {resource_type}")
 
     return resources
 
@@ -319,15 +315,17 @@ class ObservationCreator(ResourceCreator):
         resources = []
         for doc in fhir_docs:
             doc_dict = doc.to_dict()
-            doc_dict.pop("issued")
+            # doc_dict.pop("issued")
             resource_str = json.dumps(doc_dict)
             resource_obj = Observation.parse_raw(resource_str)
             resource_obj.subject = Reference(id=user.id)
             
             # Special handling for ECG data
-            if resource_obj.code.coding[1].code == ECG_RECORDING_LOINC_CODE:
+            if len(resource_obj.code.coding) > 1 and hasattr(resource_obj.code.coding[1], 'code') and resource_obj.code.coding[1].code == ECG_RECORDING_LOINC_CODE:
                 resource_obj = ECGObservation(resource_obj)
 
+                
+                
             resources.append(resource_obj)
         return resources
 
@@ -343,7 +341,6 @@ class QuestionnaireResponseCreator(ResourceCreator):
         resources = []
         for doc in fhir_docs:
             doc_dict = doc.to_dict()
-            doc_dict.pop("issued")
             resource_str = json.dumps(doc_dict)
             resource_obj = QuestionnaireResponse.parse_raw(resource_str)
             resource_obj.subject = Reference(id=user.id)

@@ -37,7 +37,7 @@ from dataclasses import dataclass
 from typing import Any
 import pandas as pd
 from pandas.api.types import is_string_dtype, is_object_dtype
-
+import json
 # Local application/library specific imports
 
 
@@ -501,9 +501,94 @@ class ECGObservationFlattener(ResourceFlattener):
 
         return FHIRDataFrame(flattened_df, FHIRResourceType.ECG_OBSERVATION)
 
+class QuestionnaireResponseFlattener:
+    
+    def flatten(self, resources: list[Any], survey_paths: list[str]) -> FHIRDataFrame:
+        
+        def extract_mappings(json_content):
+            
+            question_mapping = {}
+            answer_mapping = {}
 
-def flatten_fhir_resources(  # pylint: disable=unused-variable
+            for section in json_content.get('item', []):
+                question_id = section.get('linkId')
+                question_mapping[question_id] = section.get('text', "Unknown Question")
+
+                for answer_option in section.get('answerOption', []):
+                    value = answer_option.get('valueCoding', {})
+                    code = value.get('code')
+                    display = value.get('display')
+                    
+                    system = value.get('system')
+                    
+                    if code and display and system:
+                        combined_id = f"{system}|{code}"
+                        answer_mapping[combined_id] = display
+
+            return question_mapping, answer_mapping
+
+        all_question_mappings = {}
+        all_answer_mappings = {}
+
+        for file_path in survey_paths:
+            with open(file_path, 'r') as file:
+                question_mapping, answer_mapping = extract_mappings(json.load(file))
+                all_question_mappings.update(question_mapping)
+                all_answer_mappings.update(answer_mapping)
+
+        
+        data = []
+        for response in resources:
+            for item in response.item:
+                question_id = item.linkId
+                question_text = all_question_mappings.get(question_id, "Unknown Question")
+                
+                answer_value = "No Answer"
+
+                if item.answer and len(item.answer) > 0:
+                    
+                    answer = item.answer[0]
+                    
+                    answer = answer.dict()
+                        
+                    if 'valueCoding' in answer:
+                        system_id = answer['valueCoding'].get('system')
+                        code = answer['valueCoding'].get('code')
+                        if system_id and code:
+                            combined_id = f"{system_id}|{code}"
+                            answer_value = all_answer_mappings.get(combined_id, "No Answer")
+                            
+                    elif 'valueString' in answer:
+                        answer_value = answer['valueString']
+                    elif 'valueInteger' in answer:
+                        answer_value = answer['valueInteger']
+                    else:
+                        answer_value = "No Answer"
+                    
+                responseDict = response.dict()
+                date = responseDict['authored']
+                    
+                user_id = getattr(response.subject, 'id', None)
+
+                data.append({
+                    "Date": date,
+                    "UserID": user_id,
+                    "SurveyID": response.id,
+                    "QuestionID": question_id,
+                    "QuestionText": question_text,
+                    "Answer": answer_value,
+                })
+
+        df = pd.DataFrame(data)
+        
+        csv_filename = "all_questionnaire_responses.csv"
+        df.to_csv(csv_filename, index=False)
+        
+        return FHIRDataFrame(df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
+
+def flatten_fhir_resources(
     resources: list[Any],
+    survey_path: list[str] = None,
 ) -> FHIRDataFrame | None:
     """
     Flattens a list of FHIR resources into a structured DataFrame.
@@ -529,7 +614,7 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
     flattener_classes = {
         FHIRResourceType.OBSERVATION: ObservationFlattener,
         FHIRResourceType.ECG_OBSERVATION: ECGObservationFlattener,
-        # Add other mappings
+        FHIRResourceType.QUESTIONNAIRE_RESPONSE: QuestionnaireResponseFlattener
     }
 
     resource_type = FHIRResourceType(
@@ -541,5 +626,8 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
         flattener = flattener_class()
     else:
         raise ValueError(f"No flattener found for resource type: {resource_type}")
+        
+    if resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE:
+        return flattener.flatten(resources, survey_path)
 
     return flattener.flatten(resources)

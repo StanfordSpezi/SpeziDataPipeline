@@ -581,8 +581,9 @@ class QuestionnaireResponseFlattener:
 
         df = pd.DataFrame(data)
         
-        csv_filename = "all_questionnaire_responses.csv"
-        df.to_csv(csv_filename, index=False)
+        index_columns = ['UserID', 'SurveyID', 'Date', 'QuestionID']
+        df = df.pivot(index=index_columns, columns='QuestionText', values='Answer').reset_index()
+        df.to_csv("all_questionnaire_responses.csv", index=False)
         
         return FHIRDataFrame(df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 

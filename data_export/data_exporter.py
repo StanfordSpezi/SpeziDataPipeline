@@ -21,8 +21,8 @@
  """
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import FHIRDataFrame
-from data_visualization.data_visualizer import DataVisualizer
+from data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from data_visualization.data_visualizer import DataVisualizer, visualizer_factory
 
 
 class DataExporter(DataVisualizer):  # pylint: disable=unused-variable
@@ -35,12 +35,12 @@ class DataExporter(DataVisualizer):  # pylint: disable=unused-variable
     Attributes:
         flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing flattened FHIR
                                             data for export or visualization.
-        start_date (str): The start date for filtering the data, defaulting to "2022-01-01".
-        end_date (str): The end date for filtering the data, defaulting to "2022-12-31".
+        start_date (str): The start date for filtering the data.
+        end_date (str): The end date for filtering the data.
         user_ids (List[str], optional): A list of user IDs for filtering the data.
                                     If None, all users are considered.
-        y_lower (int): The lower bound for the y-axis of the plot, defaulting to 50.
-        y_upper (int): The upper bound for the y-axis of the plot, defaulting to 100.
+        y_lower (int): The lower bound for the y-axis of the plot.
+        y_upper (int): The upper bound for the y-axis of the plot.
         combine_plots (bool): Indicates whether to combine multiple users' data into a single plot.
                         Defaults to False.
     """
@@ -56,12 +56,11 @@ class DataExporter(DataVisualizer):  # pylint: disable=unused-variable
         """
         super().__init__()
         self.flattened_fhir_dataframe = flattened_fhir_dataframe
-        # Default values
         self.start_date = None
         self.end_date = None
         self.user_ids = None
-        self.y_lower = 50
-        self.y_upper = 100
+        self.y_lower = None
+        self.y_upper = None
         self.combine_plots = False
 
     def export_to_csv(self, filename):
@@ -88,12 +87,45 @@ class DataExporter(DataVisualizer):  # pylint: disable=unused-variable
             parameters are incorrect.
         """
         try:
-            if self.user_ids is None or len(self.user_ids) > 1:
-                print("Select a single user for enabling figure saving.")
-            else:
-                fig = super().create_static_plot(self.flattened_fhir_dataframe)
-                fig.savefig(filename, dpi=300)
-                print("Plot saved successfully.")
+            visualizer = visualizer_factory(self.flattened_fhir_dataframe)
+            if (
+                self.flattened_fhir_dataframe.resource_type
+                == FHIRResourceType.OBSERVATION
+            ):
+                if self.user_ids is None or len(self.user_ids) > 1:
+                    print("Select a single user for enabling figure saving.")
+                    return None
+
+                if fig := super().create_static_plot(self.flattened_fhir_dataframe):
+                    fig.savefig(filename, dpi=300)
+                    print("Plot saved successfully to:", filename)
+                    # return fig
+
+            elif (
+                self.flattened_fhir_dataframe.resource_type
+                == FHIRResourceType.ECG_OBSERVATION
+            ):
+                if self.user_ids is None:
+                    print("Select a single user for enabling figure saving.")
+                    return None
+
+                if not isinstance(self.user_ids, str):
+                    print("The selected user to plot should be inputted as a string.")
+                    return None
+
+                visualizer.set_user_ids(self.user_ids)
+                fig = visualizer.plot_ecg_subplots(
+                    self.flattened_fhir_dataframe,
+                    self.user_ids,
+                    effective_datetime=self.start_date,
+                )
+                if fig:
+                    fig.savefig(filename, dpi=300)
+                    print("Plot saved successfully to:", filename)
+                    # return fig
 
         except (TypeError, ValueError) as e:
             print(f"An error occurred while generating the plot: {e}")
+            return None
+
+        return None

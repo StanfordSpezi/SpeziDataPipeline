@@ -12,11 +12,17 @@
  processed from FHIR (Fast Healthcare Interoperability Resources) formats.
  It supports generating static plots for data analysis and insights, offering a
  range of customization options to cater to different visualization needs.
- 
  """
+
+# Standard library imports
+from datetime import datetime
+from decimal import Decimal
+from math import ceil
 
 # Related third-party imports
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
+import numpy as np
 
 # Local application/library specific imports
 from data_processing.data_processor import (
@@ -24,7 +30,14 @@ from data_processing.data_processor import (
     select_data_by_dates,
     select_data_by_user,
 )
-from data_flattening.fhir_resources_flattener import FHIRDataFrame, ColumnNames
+from data_flattening.fhir_resources_flattener import (
+    FHIRResourceType,
+    FHIRDataFrame,
+    ColumnNames,
+)
+
+TIME_UNIT = "sec"
+ECG_UNIT = "uV"
 
 
 class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
@@ -104,7 +117,21 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
                 due to errors.
         """
         fig = None
-        
+
+        if not flattened_fhir_dataframe.resource_type == FHIRResourceType.OBSERVATION:
+            print(
+                f"The input FHIRDataFrame is not an {FHIRResourceType.OBSERVATION.value} type."
+            )
+            print(
+                "See documentation for related methods for"
+                f"{flattened_fhir_dataframe.resource_type.name} types."
+            )
+            return None
+
+        if not isinstance(self.user_ids, list):
+            print("The selected user(s) should be inputted in a list structure.")
+            return None
+
         if not flattened_fhir_dataframe.df[ColumnNames.LOINC_CODE.value].nunique() == 1:
             print("The FHIRDataFrame should contain data of a single LOINC code.")
             return None
@@ -157,6 +184,11 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
                 .sum()
                 .reset_index()
             )
+
+            if aggregated_data.empty:
+                print(f"No data found for user ID(s): {users_to_plot}")
+                return None
+
             plt.bar(
                 aggregated_data[ColumnNames.EFFECTIVE_DATE_TIME.value],
                 aggregated_data[ColumnNames.QUANTITY_VALUE.value],
@@ -212,6 +244,10 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
                 .reset_index()
             )
 
+            if aggregated_data.empty:
+                print(f"No data found for user ID(s): {users_to_plot}")
+                return None
+
             plt.bar(
                 aggregated_data[ColumnNames.EFFECTIVE_DATE_TIME.value],
                 aggregated_data[ColumnNames.QUANTITY_VALUE.value],
@@ -234,5 +270,158 @@ class DataVisualizer(FHIRDataProcessor):  # pylint: disable=unused-variable
             plt.tight_layout()
             if len(users_to_plot) == 1:
                 fig = plt.gcf()
+                return fig
             plt.show()
         return fig
+
+
+class ECGVisualizer(DataVisualizer):  # pylint: disable=unused-variable
+    """
+    A visualization tool for electrocardiogram (ECG) data that extends the DataVisualizer class.
+    This class provides specialized plotting functions to render ECG waveforms from FHIR data frames
+    that contain ECG observations for individual patients.
+
+    The class supports plotting individual ECG leads in separate subplots, configuring axis
+    properties for ECG-specific visualization needs, and filtering ECG data by user ID and effective
+    datetime.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.lwidth = 0.5
+        self.amplitude_ecg = 1.8
+        self.time_ticks = 0.2
+
+    def _ax_plot(self, ax, x, y, secs):
+        """
+        Configures the axes for plotting ECG data on a given matplotlib axis.
+
+        Parameters:
+            ax (matplotlib.axes.Axes): Axis to configure.
+            x (np.ndarray): Time values for ECG data.
+            y (np.ndarray): Amplitude values for ECG data.
+            secs (int): The total duration of the ECG recording in seconds.
+
+        This method sets major and minor ticks for the x-axis based on the duration of the ECG
+        recording and the interval between major ticks. It adjusts the y-axis limits based on the
+        expected maximum amplitude of the ECG waveform. Additionally, it enables grid lines and
+        plots the ECG waveform.
+        """
+        ax.set_xticks(np.arange(0, secs + self.time_ticks, self.time_ticks))
+        ax.set_yticks(
+            np.arange(-ceil(self.amplitude_ecg), ceil(self.amplitude_ecg), 1.0)
+        )
+        ax.minorticks_on()
+        ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+        ax.set_ylim(-self.amplitude_ecg, self.amplitude_ecg)
+        ax.set_xlim(0, secs)
+        ax.grid(which="major", linestyle="-", linewidth="0.5", color="red")
+        ax.grid(which="minor", linestyle="-", linewidth="0.5", color=(1, 0.7, 0.7))
+        ax.plot(x, y, linewidth=self.lwidth)
+
+    def plot_ecg_subplots(self, fhir_dataframe, user_id: str, effective_datetime: str):
+        """
+        Plots three ECG recordings for a specific user from a FHIRDataFrame, filtering the data
+        by the effective date-time.
+
+        Parameters:
+            fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing the ECG observation data.
+            user_id (str): The ID of the user for whom to plot the ECG data.
+            effective_datetime (str): The effective date-time string used to filter the ECG data.
+
+        Returns:
+            matplotlib.figure.Figure: The figure object containing the ECG plots.
+            Returns None if no data is found.
+        """
+        self.set_date_range(effective_datetime, effective_datetime)
+        self.set_user_ids([user_id])
+
+        effective_datetime = datetime.strptime(effective_datetime, "%Y-%m-%d").date()
+        user_data = fhir_dataframe.df[
+            (fhir_dataframe.df[ColumnNames.USER_ID.value] == user_id)
+            & (
+                fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+                == effective_datetime
+            )
+        ]
+
+        if user_data.empty:
+            print(f"No ECG data found for user ID: {user_id} at {effective_datetime}")
+            return None
+
+        fig, axs = plt.subplots(3, 1, figsize=(15, 6), constrained_layout=True)
+
+        for i, key in enumerate(
+            [
+                ColumnNames.ECG_RECORDING1.value,
+                ColumnNames.ECG_RECORDING2.value,
+                ColumnNames.ECG_RECORDING3.value,
+            ]
+        ):
+            if key in user_data:
+                ecg_string = user_data[key].iloc[0]
+                print(ecg_string)
+                ecg = np.array(ecg_string.split(), dtype=float)
+                ecg = ecg / 1000  # convert unit to uV
+                sample_rate = user_data.get(
+                    ColumnNames.SAMPLING_FREQUENCY.value, 500
+                ).iloc[0]
+                title = f"{key} for {ColumnNames.USER_ID.value} {user_id} at {effective_datetime}"
+                self._plot_single_lead_ecg(
+                    ecg, sample_rate=sample_rate, title=title, ax=axs[i]
+                )
+            else:
+                axs[i].text(
+                    0.5,
+                    0.5,
+                    "No data available",
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    transform=axs[i].transAxes,
+                )
+        plt.show()
+
+        return fig
+
+    def _plot_single_lead_ecg(self, ecg, sample_rate=500, title="ECG", ax=None):
+        """
+        Helper function to plot a single lead ECG on a specified axes object.
+
+        Parameters:
+            ecg (np.ndarray): The ECG waveform data points to plot.
+            sample_rate (int, optional): The sample rate of the ECG recording. Defaults to 500.
+            title (str, optional): The title for the subplot. Defaults to "ECG".
+            ax (matplotlib.axes.Axes, optional): The axes object on which to plot the ECG.
+                If None, a new figure and axes will be created. Defaults to None.
+        """
+        if ax is None:
+            _, ax = plt.subplots(figsize=(15, 2))
+
+        ax.set_title(title)
+        ax.set_ylabel(f"ECG ({ECG_UNIT})")
+        # ax.set_ylabel(user_data.get("ECG", "uV").iloc[0])
+        ax.set_xlabel(f"Time ({TIME_UNIT})")
+
+        if isinstance(sample_rate, Decimal):
+            sample_rate = float(sample_rate)
+
+        seconds = len(ecg) / sample_rate
+        step = 1.0 / sample_rate
+        self._ax_plot(ax, np.arange(0, len(ecg) * step, step), ecg, seconds)
+
+
+def visualizer_factory(fhir_dataframe):  # pylint: disable=unused-variable
+    """
+    Factory function to create a visualizer based on the resource_type attribute of FHIRDataFrame.
+
+    Parameters:
+    - fhir_dataframe: An instance of FHIRDataFrame containing the data and resource_type attribute.
+
+    Returns:
+    - An instance of DataVisualizer or ECGVisualizer based on the resource_type.
+    """
+    if fhir_dataframe.resource_type == FHIRResourceType.OBSERVATION:
+        return DataVisualizer()
+    if fhir_dataframe.resource_type == FHIRResourceType.ECG_OBSERVATION:
+        return ECGVisualizer()
+    raise ValueError(f"Unsupported resource type: {fhir_dataframe.resource_type}")

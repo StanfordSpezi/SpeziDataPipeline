@@ -85,7 +85,6 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
             return None
 
         if not flattened_fhir_dataframe.validate_columns():
-            print()
             return None
 
         flattened_df = flattened_fhir_dataframe.df

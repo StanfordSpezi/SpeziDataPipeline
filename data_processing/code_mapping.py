@@ -137,8 +137,6 @@ class CodeProcessor:  # pylint: disable=unused-variable
             "100304-5": calculate_daily_data,  # Flights Climbed (flights)
             "HKQuantityTypeIdentifierSwimmingStrokeCount": calculate_daily_data,  # Swimming Stroke Count (strokes)
             # Averaged per day
-            "8867-4": calculate_average_data,  # Heart Rate (bpm)
-            "80404-7": calculate_average_data,  # Heart Rate Variability SDNN (ms)
             "59408-5": calculate_average_data,  # Oxygen Saturation (%)
             "61006-3": calculate_average_data,  # Peripheral Perfusion Index (%)
             "9279-1": calculate_average_data,  # Respiratory Rate (breaths per minute)

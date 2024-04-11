@@ -7,23 +7,36 @@
 #
 
 """
-This module provides functionalities to transform nested Fast Healthcare Interoperability Resources
-(FHIR) resources into flattened, tabular formats suitable for easier processing and analysis. It
-includes classes and functions that handle the conversion of complex FHIR JSON structures into
-pandas DataFrames, streamlining the manipulation of health-related information encoded in FHIR
-standards.
+This module provides utilities and classes for transforming FHIR (Fast Healthcare Interoperability
+Resources) data from its native hierarchical format into a flattened, tabular format. This
+transformation facilitates easier data manipulation, analysis, and visualization by converting
+complex FHIR resources into a more accessible and straightforward pandas DataFrame structure.
 
-Classes:
-    ColumnNames: An Enum for standardized column names used in the flattened DataFrames.
-    FHIRResourceType: An Enum for specifying FHIR resource types relevant to the application.
-    FHIRDataFrame: A class representing a DataFrame specifically for FHIR data, with methods for
-        validation and easy access to the data.
-    ResourceFlattener: An abstract base class for flattening resources, with subclasses for specific
-        resource types like ObservationFlattener.
+This module includes classes for processing specific types of FHIR resources, such as general
+Observations and ECG Observations, extracting relevant information and standardizing it into a
+consistent format. Additionally, it defines enums and helper functions to aid in the extraction
+and organization of data from these resources.
 
-Functions:
-    flatten_fhir_resources: A function to flatten a list of FHIR resources into a FHIRDataFrame,
-        utilizing the appropriate ResourceFlattener subclass based on the resource type.
+Main Components:
+- `KeyNames` and `ColumnNames`: Enums that define standardized keys and column names used in the
+    flattening process, ensuring consistency
+  across the application.
+- `ResourceFlattener`: An abstract base class designed to be extended for specific FHIR resource
+    types, providing a common interface
+  for the flattening operation.
+- `ObservationFlattener` and `ECGObservationFlattener`: Concrete implementations of
+    `ResourceFlattener` tailored to handle Observation
+  and ECG Observation resources, respectively.
+- `extract_coding_info` and `extract_component_info`: Helper functions for extracting detailed
+    information from Observation components and codings.
+- `flatten_fhir_resources`: A utility function that orchestrates the flattening process,
+    dynamically selecting the appropriate flattener based on the resource type.
+
+Usage:
+The module is intended for developers and data analysts working with FHIR data, particularly those
+looking to analyze health data within pandas or similar data analysis tools. By providing a
+standardized way to flatten FHIR resources, this module aims to lower the barrier to entry for
+healthcare data analysis and support a wide range of analytical applications.
 """
 
 # Standard library imports
@@ -35,6 +48,7 @@ from dataclasses import dataclass
 from typing import Any
 import pandas as pd
 
+
 ECG_SAMPLEDDATA_PART1_LOCATION = 5
 ECG_SAMPLEDDATA_PART2_LOCATION = 6
 ECG_SAMPLEDDATA_PART3_LOCATION = 7
@@ -44,7 +58,27 @@ class KeyNames(Enum):
     """
     Enumerates standardized key names for fetching FHIR resources.
 
-    These column names represent key fields in FHIR resources.
+    These keys represent common attributes found within FHIR resources that are relevant for ECG and
+    other health data manipulations. This enumeration facilitates the consistent access to these
+    attributes across various parts of an application dealing with FHIR data.
+
+    Attributes:
+        EFFECTIVE_DATE_TIME: The effective date and time of an observation or event.
+        EFFECTIVE_PERIOD: The effective period over which an observation or event occurred.
+        START: Start time within an effective period.
+        CODE: The code that identifies the observation or measurement.
+        CODING: The coding system used for the code attribute.
+        DISPLAY: The display text associated with the code.
+        VALUE_QUANTITY: The quantitative value of an observation.
+        UNIT: The units of the VALUE_QUANTITY.
+        VALUE: The actual value for VALUE_QUANTITY.
+        ORIGIN: The origin point for VALUE_SAMPLED_DATA.
+        DATA: The sampled data points in VALUE_SAMPLED_DATA.
+        VALUE_SAMPLED_DATA: The complex datatype for sampled data.
+        COMPONENT: The component part of an observation.
+        VALUE_STRING: A string value associated with an observation.
+        SYSTEM: The system that defines the coding system.
+        RESOURCE_TYPE: The type of the FHIR resource.
     """
 
     EFFECTIVE_DATE_TIME = "effectiveDateTime"
@@ -69,8 +103,30 @@ class ColumnNames(Enum):
     """
     Enumerates standardized column names for use in flattened DataFrames.
 
-    These column names represent common fields extracted from FHIR resources,
-    ensuring consistency across the application.
+    These column names are designed for handling data extracted from FHIR resources, especially for
+    observations related to ECG and other health metrics. Standardizing these names helps ensure
+    consistency in data processing and analysis tasks.
+
+    Attributes:
+        USER_ID: Identifier for the patient or subject of the observation.
+        EFFECTIVE_DATE_TIME: The datetime when the observation was effective.
+        QUANTITY_NAME: Name or description of the observed quantity.
+        QUANTITY_UNIT: Units of the observed quantity.
+        QUANTITY_VALUE: Numeric value of the observed quantity.
+        LOINC_CODE: LOINC code associated with the observation.
+        DISPLAY: Display text associated with the LOINC or other code.
+        APPLE_HEALTH_KIT_CODE: Specific code used in Apple HealthKit.
+        NUMBER_OF_MEASUREMENTS: Number of measurements taken.
+        SAMPLING_FREQUENCY: Frequency at which data was sampled.
+        SAMPLING_FREQUENCY_UNIT: Unit for the sampling frequency.
+        ELECTROCARDIOGRAM_CLASSIFICATION: Classification of the ECG observation.
+        HEART_RATE: Observed heart rate.
+        HEART_RATE_UNIT: Unit of the observed heart rate.
+        ECG_RECORDING_UNIT: Unit for ECG recording data.
+        ECG_RECORDINGJ: Represents a series of ECG recording columns.
+        ECG_RECORDING1: First set of ECG recording data.
+        ECG_RECORDING2: Second set of ECG recording data.
+        ECG_RECORDING3: Third set of ECG recording data.
     """
 
     USER_ID = "UserId"
@@ -88,61 +144,64 @@ class ColumnNames(Enum):
     HEART_RATE = "HeartRate"
     HEART_RATE_UNIT = "HeartRateUnit"
     ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
+    ECG_RECORDINGJ = "ECGRecording"
     ECG_RECORDING1 = "ECGRecording1"
     ECG_RECORDING2 = "ECGRecording2"
     ECG_RECORDING3 = "ECGRecording3"
 
 
+@dataclass
 class ECGObservation:  # pylint: disable=unused-variable
-    """ECGObservation wrapper class for FHIR ECG observations."""
+    """
+    A wrapper class for FHIR ECG observations.
+
+    This class provides a convenient interface to interact with ECG observation data encapsulated
+    within FHIR resources. It abstracts away the complexities of the FHIR data model, offering
+    direct access to attributes relevant for ECG data processing and visualization.
+
+    Parameters:
+        observation (Any): The original FHIR observation object containing ECG data.
+    """
 
     def __init__(self, observation: Any):
         """
-        Initializes an ECGObservation wrapper for FHIR ECG observations.
+        Initializes an ECGObservation instance with a FHIR observation object.
 
         Parameters:
-            resource (Any): The original FHIR observation object.
-            resource_type (FHIRResourceType): An enum member representing the
-                                                       specific type of the FHIR resource.
+            observation (Any): The FHIR observation resource containing ECG data.
         """
         self.observation = observation
         self.resource_type = FHIRResourceType.ECG_OBSERVATION.value
 
     def __getattr__(self, name):
         """
-        Delegate attribute access to the underlying FHIR resource object. This method
-        is called if the requested attribute is not found in the ECGObservation's
-        dictionary.
+        Allows attribute access to be delegated to the underlying FHIR observation object.
+
+        This method provides dynamic access to the observation's attributes, making it easier
+        to retrieve values for standard and custom attributes defined within the FHIR resource.
 
         Parameters:
-            name (str): The name of the attribute being accessed.
+            name (str): The attribute name to access from the observation object.
 
         Returns:
-            The value of the attribute from the underlying resource object.
+            The value of the attribute if it exists; otherwise, AttributeError is raised.
         """
         return getattr(self.observation, name)
-
-    def __repr__(self):
-        """
-        Returns a string representation of the ECGObservation, including its type
-        and some identifiable information from the underlying resource.
-        """
-        return f"<ECGObservation type={self.resource_type}, resource={repr(self.observation)}>"
 
 
 class FHIRResourceType(Enum):
     """
-    Enumeration of FHIR resource types.
+    Enumeration of FHIR resource types relevant to the application.
 
-    This enum provides a list of FHIR resource types used in the application, ensuring
-    consistency and preventing typos in resource type handling.
+    This enum helps ensure that the application works with a consistent set of FHIR resource
+    types, reducing the risk of errors due to typos and providing a centralized definition
+    of resource types used throughout the codebase.
 
     Attributes:
-        OBSERVATION (str): Represents an observation resource type.
-        QUESTIONNAIRE_RESPONSE (str): Represents a questionnaire response resource type.
-
-    Note:
-        The `.value` attribute is used to access the string value of the enum members.
+        OBSERVATION: Represents observation resources, commonly used for measurements and
+            findings.
+        ECG_OBSERVATION: A specialized observation type for electrocardiogram data.
+        QUESTIONNAIRE_RESPONSE: Represents responses to questionnaires.
     """
 
     OBSERVATION = "Observation"
@@ -153,22 +212,16 @@ class FHIRResourceType(Enum):
 @dataclass
 class FHIRDataFrame:
     """
-    Encapsulates a pandas DataFrame tailored for handling FHIR data.
+    Represents a DataFrame specifically designed to handle FHIR data.
 
-    This class provides a structured format for FHIR data, making it easier to
-    manipulate and analyze health-related information encoded in FHIR resources.
-    It includes validation to ensure that the DataFrame contains required columns
-    and that these columns have appropriate data types.
+    This class wraps around a pandas DataFrame, organizing FHIR data into a structured,
+    tabular format that is easy to manipulate and analyze. It includes methods for validating
+    the data structure and ensuring it meets expected requirements for FHIR-based analysis.
 
-    Attributes:
-        data_frame (pd.DataFrame): The underlying DataFrame storing the FHIR data.
-        resource_type (FHIRResourceType): The type of FHIR resources contained in the DataFrame.
-        resource_columns (dict): Maps resource types to their respective columns in the DataFrame.
-
-    Methods:
-        df: Returns the underlying pandas DataFrame.
-        validate_columns: Validates the presence and data types of required columns in
-            the DataFrame.
+    Parameters:
+        data (pd.DataFrame): The DataFrame containing structured FHIR data.
+        resource_type (FHIRResourceType): The type of FHIR resources represented in the
+            DataFrame.
     """
 
     def __init__(
@@ -177,11 +230,7 @@ class FHIRDataFrame:
         resource_type: FHIRResourceType,
     ) -> None:
         """
-        Initializes a FHIRDataFrame with given data and resource type.
-
-        Parameters:
-            data (pd.DataFrame): The pandas DataFrame containing FHIR data.
-            resource_type (FHIRResourceType): The type of FHIR resource.
+        Initializes the FHIRDataFrame with structured FHIR data and resource type.
         """
         self.data_frame = data
         self.resource_type = resource_type
@@ -242,20 +291,14 @@ class FHIRDataFrame:
 @dataclass
 class ResourceFlattener:
     """
-    Abstract base class for flattening FHIR resources into a structured DataFrame format.
+    Base class for transforming FHIR resources into a structured DataFrame format.
 
-    Subclasses of ResourceFlattener should implement the `flatten` method to convert
-    specific types of FHIR resources (e.g., Observations, QuestionnaireResponses) into
-    a flattened format suitable for analysis.
+    Subclasses of ResourceFlattener should implement specific logic for flattening
+    different types of FHIR resources, converting them into a format that's suitable
+    for data analysis and processing tasks.
 
-    Attributes:
-        resource_type (FHIRResourceType): The FHIR resource type that the flattener handles.
-        resource_columns (dict): Maps FHIRResourceType to a list of ColumnNames relevant for
-            the resource.
-
-    Methods:
-        flatten: Abstract method to be implemented by subclasses, performing the actual
-            flattening process.
+    Parameters:
+        resource_type (FHIRResourceType): The type of FHIR resources this flattener handles.
     """
 
     def __init__(self, resource_type: FHIRResourceType):
@@ -316,25 +359,11 @@ class ResourceFlattener:
 
     def flatten(self, resources: list[Any]) -> FHIRDataFrame:
         """
-        Abstract method intended to transform a list of FHIR resources into a flattened
-        FHIRDataFrame.
-
-        This method should be implemented by subclasses to process specific types of FHIR resources,
-        extracting relevant data and converting it into a structured, tabular format. The
-        implementation will vary depending on the resource type, focusing on the extraction of key
-        information suited for analysis and further processing.
-
-        Parameters:
-            resources (list[Any]): A list of FHIR resource objects to be flattened. The exact type
-                                    of objects in the list should correspond to the FHIR resource
-                                    type the subclass is designed to handle.
-
-        Returns:
-            FHIRDataFrame: A FHIRDataFrame object containing the flattened data from the resources,
-                            ready for analysis and processing.
+        Abstract method for transforming FHIR resources into a flattened DataFrame.
 
         Raises:
-            NotImplementedError: Indicates that this method needs to be implemented by subclasses.
+            NotImplementedError: Indicates that this method needs to be implemented by
+                subclasses.
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
@@ -342,32 +371,32 @@ class ResourceFlattener:
 @dataclass
 class ObservationFlattener(ResourceFlattener):
     """
-    Flattens FHIR Observation resources into a structured DataFrame.
+    Handles the flattening of FHIR Observation resources into a structured DataFrame
+    format, facilitating analysis and visualization. It extracts crucial information such
+    as patient IDs, observation timestamps, and measurement values, converting them from
+    the FHIR format into a more accessible tabular form.
 
-    Extends ResourceFlattener, specifically handling the conversion of Observation
-    resources into a tabular format, extracting key information such as user IDs,
-    effective date-times, quantities, and associated codes.
-
-    Methods:
-        flatten: Transforms a list of Observation resources into a FHIRDataFrame.
+    Inherits:
+        ResourceFlattener: The base class for resource flatteners, providing common
+        functionality and attributes.
     """
 
     def __init__(self):
+        """
+        Initializes the ObservationFlattener for processing FHIR Observation resources.
+        """
         super().__init__(FHIRResourceType.OBSERVATION)
 
     def flatten(self, resources: list[Any]) -> FHIRDataFrame:
         """
-        Transforms a list of Observation resources into a flattened FHIRDataFrame.
-
-        This method processes each Observation resource, extracting key information such as
-        effective date-time, quantities, and codes into a structured tabular format. The resulting
-        DataFrame is suitable for analysis and further data processing tasks.
+        Converts a list of FHIR Observation resources into a structured DataFrame.
+        Extracts and organizes information from observations into a format suitable for analysis.
 
         Parameters:
-            resources (list[Any]): A list of FHIR Observation resources to be flattened.
+            resources (list[Any]): A collection of FHIR Observation resources to be flattened.
 
         Returns:
-            FHIRDataFrame: A structured DataFrame containing the flattened data from the Observation
+            FHIRDataFrame: A DataFrame containing structured data extracted from the input
                 resources.
         """
 
@@ -421,26 +450,31 @@ class ObservationFlattener(ResourceFlattener):
 @dataclass
 class ECGObservationFlattener(ResourceFlattener):
     """
-    A specialized flattener for converting ECG Observation resources into a structured
-    data frame format. This class extends the ResourceFlattener to handle the unique
-    structure of ECG Observations, particularly those with complex component and coding
-    structures. It is designed to abstract the intricacies of FHIR ECG Observation resources,
-    making them accessible and analyzable in a tabular form.
+    Specializes in flattening FHIR ECG Observation resources, transforming complex ECG data
+    into a structured DataFrame. This includes handling multi-component observations and
+    extracting relevant metrics for further analysis.
 
-    Attributes:
-        Inherits all attributes from the ResourceFlattener base class.
-
-    Methods:
-        flatten: Transforms a list of ECG Observation resources into a FHIRDataFrame
-                 which is easier to analyze and can be used for further data processing
-                 or analytics.
+    Inherits:
+        ResourceFlattener: The base class providing foundational flattening functionality.
     """
 
     def __init__(self):
+        """
+        Initializes the ECGObservationFlattener specifically for ECG Observation resources.
+        """
         super().__init__(FHIRResourceType.ECG_OBSERVATION)
 
     def flatten(self, resources: list[Any]) -> FHIRDataFrame:
-        """To be added."""
+        """
+        Flattens a list of ECG Observation resources, extracting ECG data and related metrics
+        into a structured, analyzable DataFrame format.
+
+        Parameters:
+            resources (list[Any]): A collection of FHIR ECG Observation resources.
+
+        Returns:
+            FHIRDataFrame: A DataFrame containing structured ECG data from the input resources.
+        """
         flattened_data = []
         for observation in resources:
 
@@ -503,7 +537,18 @@ class ECGObservationFlattener(ResourceFlattener):
 
 
 def extract_coding_info(observation: Any) -> dict:
-    """Extract coding information from an observation."""
+    """
+    Extracts coding information from an Observation resource, focusing on key details
+    like LOINC codes and display texts.
+
+    Parameters:
+        observation (Any): The FHIR Observation resource from which to extract coding
+            information.
+
+    Returns:
+        dict: A dictionary containing extracted coding details such as LOINC code and
+            display text.
+    """
     coding = (
         observation.dict().get(KeyNames.CODE.value, {}).get(KeyNames.CODING.value, [])
     )
@@ -528,7 +573,16 @@ def extract_coding_info(observation: Any) -> dict:
 
 
 def extract_component_info(observation: Any) -> dict:
-    """Extract component information from an observation."""
+    """
+    Extracts information from components of an ECG Observation, relevant for detailed ECG
+    data analysis.
+
+    Parameters:
+        observation (Any): The FHIR ECG Observation resource containing component data.
+
+    Returns:
+        dict: A dictionary with structured information extracted from ECG components.
+    """
     component_info = {}
     components = observation.dict().get(KeyNames.COMPONENT.value, [])
     for i, idx in enumerate(
@@ -546,7 +600,7 @@ def extract_component_info(observation: Any) -> dict:
                 .get(KeyNames.VALUE_SAMPLED_DATA.value, {})
                 .get(KeyNames.DATA.value, None)
             )
-        component_info[f"ECGRecording{i}"] = data
+        component_info[f"{ColumnNames.ECG_RECORDINGJ.value}{i}"] = data
     component_info[ColumnNames.ECG_RECORDING_UNIT.value] = (
         components[ECG_SAMPLEDDATA_PART1_LOCATION]
         .get(KeyNames.VALUE_SAMPLED_DATA.value, {})
@@ -563,21 +617,16 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
     resources: list[Any],
 ) -> FHIRDataFrame | None:
     """
-    Flattens a list of FHIR resources into a structured DataFrame.
-
-    This function determines the appropriate ResourceFlattener subclass to use
-    based on the type of the first resource in the list. It then uses that flattener
-    to transform the list of resources into a FHIRDataFrame.
+    A utility function to flatten a given list of FHIR resources into a DataFrame,
+    leveraging specific flattener classes based on the resource type.
 
     Parameters:
-        resources (list[Any]): A list of FHIR resource objects to be flattened.
+        resources (list[Any]): A list of FHIR resources to be flattened.
 
     Returns:
-        FHIRDataFrame | None: A structured DataFrame containing the flattened FHIR data,
-                               or None if the resources list is empty or unsupported.
-
-    Raises:
-        ValueError: If no suitable flattener is found for the resource type.
+        FHIRDataFrame | None: A DataFrame containing structured data from the FHIR resources,
+                              or None if the input list is empty or contains unsupported
+                              resources.
     """
     if not resources:
         print("No data available.")

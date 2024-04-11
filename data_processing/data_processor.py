@@ -7,24 +7,27 @@
 #
 
 """
-This module offers a comprehensive suite for processing Fast Healthcare Interoperability Resources
-(FHIR) data. It includes the FHIRDataProcessor class along with utility functions designed to
-perform various data manipulation tasks. These tasks include normalizing data, filtering outliers
-based on predefined criteria, and calculating aggregated metrics such as daily totals, averages,
-and moving averages for health metrics identified by LOINC codes. The module is designed to
-simplify the manipulation and analysis of healthcare data for research and clinical
-applications, working specifically with the structured format provided by the FHIRDataFrame class.
+This module provides a framework for processing and analyzing Fast Healthcare
+Interoperability Resources (FHIR) data within a Python environment. It aims to simplify and
+streamline the manipulation of FHIR data by providing a set of classes and functions tailored for
+this purpose.
 
-Classes:
-    - FHIRDataProcessor: Central class for processing FHIR data, encapsulating methods for
-      normalization, outlier filtering, and data aggregation.
+This module encompasses the functionality necessary for handling various aspects of FHIR data
+processing, including but not limited to normalization, outlier detection and filtering, and the
+aggregation of healthcare data metrics. It is designed to work seamlessly with instances of
+`FHIRDataFrame`, a custom data structure that represents flattened FHIR data in a tabular format
+suitable for analysis.
 
-Functions:
-    - calculate_daily_data: Aggregates daily totals for specific health metrics.
-    - calculate_average_data: Calculates daily averages for specific health metrics.
-    - calculate_moving_average: Computes moving averages to smooth data series and highlight trends.
+Key Features:
+- `FHIRDataProcessor`: A central class that provides methods for processing FHIR data, leveraging
+    predefined code mappings to apply specific processing functions and value ranges for different
+    health data metrics.
+- `select_data_by_user` and `select_data_by_dates`: Utility functions that facilitate the filtering
+    of FHIR data based on user IDs and date ranges, respectively.
+- Code mappings and processing functions: Mechanisms for associating LOINC codes with specific
+    processing routines and value ranges, enabling targeted and meaningful analysis of healthcare
+    metrics.
 """
-
 
 # Related third-party imports
 from typing import Any
@@ -84,61 +87,67 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
             print("Please use a valid FHIRDataFrame.")
             return None
 
+        if flattened_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
+            print(
+                f"The FHIRDataFrame contains {flattened_fhir_dataframe.resource_type} data."
+                "The data were not processed."
+            )
+            return flattened_fhir_dataframe
+
         if not flattened_fhir_dataframe.validate_columns():
-            return None
+            raise ValueError(
+                "The FHIRDataFrame does not meet the required structure for processing."
+            )
 
         flattened_df = flattened_fhir_dataframe.df
 
-        # Normalize 'EffectiveDateTime' to date only
         flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
             flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value]
         ).dt.date
 
         processed_df = pd.DataFrame()
 
-        for (
-            _,
-            _,
-            loinc_code,
-        ), group_df in flattened_df.groupby(
+        # Iterate over each group defined by unique combinations of UserID, EffectiveDateTime,
+        # and LOINCCode
+        for _, group_df in flattened_df.groupby(
             [
                 ColumnNames.USER_ID.value,
                 ColumnNames.EFFECTIVE_DATE_TIME.value,
                 ColumnNames.LOINC_CODE.value,
             ]
         ):
-            # Filter outliers for the group based on LOINC code-specific ranges
             group_fhir_dataframe = FHIRDataFrame(
-                group_df, FHIRResourceType(flattened_fhir_dataframe.resource_type)
+                group_df, flattened_fhir_dataframe.resource_type
             )
-            filtered_group_fhir_dataframe = self.filter_outliers(
+
+            filtered_group_df = self.filter_outliers(
                 group_fhir_dataframe,
-                self.code_processor.default_value_ranges.get(loinc_code),
+                self.code_processor.default_value_ranges.get(
+                    group_df[ColumnNames.LOINC_CODE.value].iloc[0], {}
+                ),
             )
 
-            # Determine the processing function based on the LOINC code
-            process_function = self.code_processor.code_to_function.get(loinc_code)
-            if process_function and filtered_group_fhir_dataframe.df is not None:
-                # Apply the processing function to the filtered group
-                processed_group_fhir_dataframe = process_function(
-                    filtered_group_fhir_dataframe
-                )
-                processed_df = pd.concat(
-                    [processed_df, processed_group_fhir_dataframe.df],
-                    ignore_index=True,
-                )
+            process_function = self.code_processor.code_to_function.get(
+                group_df[ColumnNames.LOINC_CODE.value].iloc[0]
+            )
 
-                processed_fhir_dataframe = FHIRDataFrame(
-                    processed_df,
-                    FHIRResourceType(flattened_fhir_dataframe.resource_type),
-                )
+            if process_function:
+                processed_group_df = process_function(filtered_group_df)
             else:
-                processed_fhir_dataframe = FHIRDataFrame(
-                    flattened_fhir_dataframe.df,
-                    FHIRResourceType(flattened_fhir_dataframe.resource_type),
+                processed_group_df = filtered_group_df
+
+            if isinstance(processed_group_df.df, pd.DataFrame):
+                processed_df = pd.concat(
+                    [processed_df, processed_group_df.df], ignore_index=True
                 )
 
-        return processed_fhir_dataframe
+        if processed_df.empty:
+            print("No data was processed.")
+            return None
+
+        return FHIRDataFrame(
+            processed_df, resource_type=flattened_fhir_dataframe.resource_type
+        )
 
     def filter_outliers(
         self,
@@ -162,14 +171,9 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
             ValueError: If the resource type of the input data frame is not 'Observation', as
                         outlier filtering is currently supported only for Observation data.
         """
-        if (
-            flattened_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION
-            and flattened_fhir_dataframe.resource_type
-            != FHIRResourceType.ECG_OBSERVATION
-        ):
+        if flattened_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
             raise ValueError(
-                f"Resource type must be 'Observation' for outlier filtering,"
-                f"got '{flattened_fhir_dataframe.resource_type}'."
+                f"{flattened_fhir_dataframe.resource_type} are not supported for outlier filtering."
             )
 
         if not flattened_fhir_dataframe.validate_columns():

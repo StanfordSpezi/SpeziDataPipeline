@@ -7,22 +7,48 @@
 #
 
 """
-This module offers a comprehensive suite for processing Fast Healthcare Interoperability Resources
-(FHIR) data. It includes the FHIRDataProcessor class along with utility functions designed to
-perform various data manipulation tasks. These tasks include normalizing data, filtering outliers
-based on predefined criteria, and calculating aggregated metrics such as daily totals, averages,
-and moving averages for health metrics identified by LOINC codes. The module is designed to
-simplify the manipulation and analysis of healthcare data for research and clinical applications,
-working specifically with the structured format provided by the FHIRDataFrame class.
+This module provides a collection of functions designed for the processing and analysis of
+healthcare data represented in the FHIR (Fast Healthcare Interoperability Resources) format.
+It includes capabilities for aggregating data by day, calculating averages, and applying
+moving averages to smooth out time-series data. These functions facilitate the examination
+of trends and patterns in health metrics over time, making it easier for healthcare professionals,
+researchers, and data analysts to derive insights from complex datasets.
 
-Classes:
-    - FHIRDataProcessor: Central class for processing FHIR data, encapsulating methods for
-      normalization, outlier filtering, and data aggregation.
+The functions are tailored to work with `FHIRDataFrame`, a custom data structure that encapsulates
+FHIR data in a pandas DataFrame, allowing for efficient manipulation and analysis of structured
+healthcare data. This module emphasizes the flexibility in data analysis tasks, ranging from simple
+aggregations to more sophisticated time-series analysis techniques such as moving averages.
 
-Functions:
-    - calculate_daily_data: Aggregates daily totals for specific health metrics.
-    - calculate_average_data: Calculates daily averages for specific health metrics.
-    - calculate_moving_average: Computes moving averages to smooth data series and highlight trends.
+Key Features:
+- `_finalize_group`: Merges aggregated data with non-numeric attributes and applies prefixes to
+  descriptive columns, enhancing the readability and interpretability of the results.
+- `calculate_daily_data`: Aggregates data on a daily basis, summing up values to provide daily
+  totals for specified health metrics, aiding in the analysis of daily trends and variations.
+- `calculate_average_data`: Computes daily averages for health metrics, offering insights into
+  the typical values and fluctuations within each day.
+- `calculate_moving_average`: Applies a moving average to the data, smoothing out short-term
+  fluctuations and highlighting long-term trends in health metrics over specified periods.
+
+Use Cases:
+- Healthcare data analysts exploring daily patterns, trends, and anomalies in patient health
+  metrics.
+- Research teams conducting epidemiological studies requiring the aggregation and smoothing of
+  time-series data to identify trends and correlations.
+- Developers and data scientists building health analytics platforms that require preprocessing,
+  normalization, and analysis of healthcare data from FHIR resources.
+
+Example Usage:
+The module's functions can be seamlessly integrated into data processing pipelines to enrich
+FHIR datasets with aggregated metrics, smoothed time-series, and other derived data forms,
+facilitating a wide range of analytical tasks.
+from healthcare_data_analysis import calculate_daily_data, calculate_average_data,
+    calculate_moving_average
+
+# Assume `fhir_dataframe` is a FHIRDataFrame instance containing patient observation data
+daily_totals = calculate_daily_data(fhir_dataframe)
+daily_averages = calculate_average_data(fhir_dataframe)
+seven_day_moving_average = calculate_moving_average(fhir_dataframe, n=7)
+
 """
 
 # Related third-party imports
@@ -69,7 +95,6 @@ def _finalize_group(
         }
     )
 
-    # Merge the aggregated non-numeric data with the numeric aggregation
     final_df = pd.merge(
         aggregated_df,
         non_numeric_aggregation,

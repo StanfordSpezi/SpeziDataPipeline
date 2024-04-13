@@ -79,7 +79,13 @@ class ColumnNames(Enum):
     ECG_RECORDING2 = "ECGRecording2"
     ECG_RECORDING3 = "ECGRecording3"
     ECG_RECORDINGS_COMBINED = "ECGRecordingsCombined"
-
+    
+    SURVEY_TITLE = "SurveyTitle"
+    SURVEY_DATE = "Date"
+    SURVEY_ID = "SurveyID"
+    QUESTION_ID = "QuestionID"
+    QUESTION_TEXT = "QuestionText"
+    ANSWER_TEXT = "AnswerText"
 
 class ECGObservation:
     def __init__(self, observation: Any):
@@ -288,17 +294,19 @@ class ResourceFlattener:
             ],
             FHIRResourceType.QUESTIONNAIRE_RESPONSE: [
                 ColumnNames.USER_ID,
-                ColumnNames.EFFECTIVE_DATE_TIME,
-                ColumnNames.QUANTITY_NAME,
-                ColumnNames.QUANTITY_VALUE,
-                ColumnNames.LOINC_CODE,
+                ColumnNames.SURVEY_TITLE,
+                ColumnNames.SURVEY_DATE,
+                ColumnNames.SURVEY_ID,
+                ColumnNames.QUESTION_ID,
+                ColumnNames.QUESTION_TEXT,
+                ColumnNames.ANSWER_TEXT
             ],
         }
 
         if resource_type not in self.resource_columns:
             raise ValueError(f"Unsupported resource type: {resource_type.name}")
 
-    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+    def flatten(self, resources: list[Any], survey_path: list[str] = None) -> FHIRDataFrame:
         """
         Abstract method intended to transform a list of FHIR resources into a flattened
         FHIRDataFrame.
@@ -504,7 +512,7 @@ class ECGObservationFlattener(ResourceFlattener):
 class QuestionnaireResponseFlattener:
     
     def flatten(self, resources: list[Any], survey_paths: list[str]) -> FHIRDataFrame:
-        
+        flattened_data = []
         def extract_mappings(json_content):
             
             question_mapping = {}
@@ -535,9 +543,14 @@ class QuestionnaireResponseFlattener:
                 question_mapping, answer_mapping = extract_mappings(json.load(file))
                 all_question_mappings.update(question_mapping)
                 all_answer_mappings.update(answer_mapping)
-
         
         data = []
+        
+        for file_path in survey_paths:
+            with open(file_path, 'r') as file:
+                title_json = json.load(file)
+                title = title_json.get('title')
+        
         for response in resources:
             for item in response.item:
                 question_id = item.linkId
@@ -569,23 +582,19 @@ class QuestionnaireResponseFlattener:
                 date = responseDict['authored']
                     
                 user_id = getattr(response.subject, 'id', None)
+                
+                flattened_entry = {
+                    ColumnNames.USER_ID.value: user_id,
+                    ColumnNames.SURVEY_TITLE.value: title,
+                    ColumnNames.SURVEY_ID.value: response.id,
+                    ColumnNames.QUESTION_ID.value: question_id,
+                    ColumnNames.QUESTION_TEXT.value: question_text,
+                    ColumnNames.ANSWER_TEXT.value: answer_value
+                }
+                
+                flattened_data.append(flattened_entry)
 
-                data.append({
-                    "Date": date,
-                    "UserID": user_id,
-                    "SurveyID": response.id,
-                    "QuestionID": question_id,
-                    "QuestionText": question_text,
-                    "Answer": answer_value,
-                })
-
-        df = pd.DataFrame(data)
-        
-        index_columns = ['UserID', 'SurveyID', 'Date', 'QuestionID']
-        df = df.pivot(index=index_columns, columns='QuestionText', values='Answer').reset_index()
-        df.to_csv("all_questionnaire_responses.csv", index=False)
-        
-        return FHIRDataFrame(df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
+        return FHIRDataFrame(flattened_df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
 def flatten_fhir_resources(
     resources: list[Any],
@@ -627,8 +636,5 @@ def flatten_fhir_resources(
         flattener = flattener_class()
     else:
         raise ValueError(f"No flattener found for resource type: {resource_type}")
-        
-    if resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE:
-        return flattener.flatten(resources, survey_path)
 
-    return flattener.flatten(resources)
+    return flattener.flatten(resources, survey_path)

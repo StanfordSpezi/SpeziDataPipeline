@@ -69,7 +69,8 @@ from data_flattening.fhir_resources_flattener import (
 )
 
 TIME_UNIT = "sec"
-ECG_UNIT = "uV"
+ECG_MICROVOLT_UNIT = "uV"
+ECG_MILLIVOLT_UNIT = "mV"
 DEFAULT_SAMPLE_RATE_VALUE = 500
 DEFAULT_DPI_VALUE = 300
 DEFAULT_LINE_WIDTH_VALUE = 0.5
@@ -413,9 +414,9 @@ class ECGVisualizer:  # pylint: disable=unused-variable
 
     def plot_single_user_ecg(self, user_data, user_id):
         """
-        Plots ECG data for a single user, generating separate subplots for each ECG lead.
-        The method aims to visualize individual ECG waveforms with specified aesthetics.
-
+        Plots ECG data for a single user, generating separate subplots for each split of the
+        ECG lead. 
+        
         Parameters:
             user_data (DataFrame): The subset of FHIR data frame containing ECG observations
                 for a specific user. The unit ECG observations must be in mV.
@@ -431,24 +432,28 @@ class ECGVisualizer:  # pylint: disable=unused-variable
                 "%Y-%m-%d"
             )
 
-            for i, key in enumerate(
-                [
-                    ColumnNames.ECG_RECORDING1.value,
-                    ColumnNames.ECG_RECORDING2.value,
-                    ColumnNames.ECG_RECORDING3.value,
+            if row[ColumnNames.ECG_RECORDING.value] is not None:
+                ecg_array = np.array(
+                    row[ColumnNames.ECG_RECORDING.value].split(), dtype=float
+                )
+                if row[ColumnNames.ECG_RECORDING_UNIT.value] == ECG_MICROVOLT_UNIT:
+                    ecg_array = ecg_array / 1000  # Convert uV to mV
+
+                sample_rate = row.get(
+                    ColumnNames.SAMPLING_FREQUENCY.value, DEFAULT_SAMPLE_RATE_VALUE
+                )
+
+                split_length = len(ecg_array) // 3
+                ecg_parts = [
+                    ecg_array[i * split_length : (i + 1) * split_length]
+                    for i in range(3)
                 ]
-            ):
-                if row[key] is not None:
-                    ecg_string = row[key]
-                    ecg = (
-                        np.array(ecg_string.split(), dtype=float) / 1000
-                    )  # Convert unit to uV
-                    sample_rate = row.get(
-                        ColumnNames.SAMPLING_FREQUENCY.value, DEFAULT_SAMPLE_RATE_VALUE
-                    )
-                    title = f"{key} for {user_id} on {effective_date}"
+
+                for i, ecg in enumerate(ecg_parts):
+                    title = f"ECG Part {i+1} for User {user_id} on {effective_date}"
                     self._plot_single_lead_ecg(ecg, sample_rate, title, axs[i])
-                else:
+            else:
+                for i in range(3):
                     axs[i].text(
                         0.5,
                         0.5,
@@ -531,7 +536,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
             _, ax = plt.subplots(figsize=(15, 2))
 
         ax.set_title(title)
-        ax.set_ylabel(f"ECG ({ECG_UNIT})")
+        ax.set_ylabel(f"ECG ({ECG_MILLIVOLT_UNIT})")
         ax.set_xlabel(f"Time ({TIME_UNIT})")
 
         if isinstance(sample_rate, Decimal):

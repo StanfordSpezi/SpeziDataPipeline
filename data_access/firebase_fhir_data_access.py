@@ -162,6 +162,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             print("Reinitialize the Firebase app.")
             return None
 
+        if loinc_codes.count(ECG_RECORDING_LOINC_CODE) > 0 and len(loinc_codes) > 1:
+            print("HealthKit quantity types and ECG recordings cannot be downloaded ")
+            print("simultaneously. Please review and adjust your selection to include ")
+            print("only the necessary LOINC codes.")
+            return None
         resources = []
         users = self.db.collection(collection_name).stream()
         for user in users:

@@ -119,11 +119,10 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
             group_fhir_dataframe = FHIRDataFrame(
                 group_df, flattened_fhir_dataframe.resource_type
             )
-
             filtered_group_df = self.filter_outliers(
                 group_fhir_dataframe,
                 self.code_processor.default_value_ranges.get(
-                    group_df[ColumnNames.LOINC_CODE.value].iloc[0], {}
+                    group_df[ColumnNames.LOINC_CODE.value].iloc[0], None
                 ),
             )
 

@@ -42,16 +42,12 @@ healthcare data analysis and support a wide range of analytical applications.
 # Standard library imports
 from datetime import date
 from enum import Enum
+import re
 
 # Related third-party imports
 from dataclasses import dataclass
 from typing import Any
 import pandas as pd
-
-
-ECG_SAMPLEDDATA_PART1_LOCATION = 5
-ECG_SAMPLEDDATA_PART2_LOCATION = 6
-ECG_SAMPLEDDATA_PART3_LOCATION = 7
 
 
 class KeyNames(Enum):
@@ -144,10 +140,7 @@ class ColumnNames(Enum):
     HEART_RATE = "HeartRate"
     HEART_RATE_UNIT = "HeartRateUnit"
     ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
-    ECG_RECORDINGJ = "ECGRecording"
-    ECG_RECORDING1 = "ECGRecording1"
-    ECG_RECORDING2 = "ECGRecording2"
-    ECG_RECORDING3 = "ECGRecording3"
+    ECG_RECORDING = "ECGRecording"
 
 
 @dataclass
@@ -338,9 +331,7 @@ class ResourceFlattener:
                 ColumnNames.HEART_RATE,
                 ColumnNames.HEART_RATE_UNIT,
                 ColumnNames.ECG_RECORDING_UNIT,
-                ColumnNames.ECG_RECORDING1,
-                ColumnNames.ECG_RECORDING2,
-                ColumnNames.ECG_RECORDING3,
+                ColumnNames.ECG_RECORDING,
                 ColumnNames.LOINC_CODE,
                 ColumnNames.DISPLAY,
                 ColumnNames.APPLE_HEALTH_KIT_CODE,
@@ -539,36 +530,44 @@ class ECGObservationFlattener(ResourceFlattener):
 def extract_coding_info(observation: Any) -> dict:
     """
     Extracts coding information from an Observation resource, focusing on key details
-    like LOINC codes and display texts.
+    like LOINC codes (numeric) and Apple HealthKit codes (alphabetic).
 
     Parameters:
         observation (Any): The FHIR Observation resource from which to extract coding
             information.
 
     Returns:
-        dict: A dictionary containing extracted coding details such as LOINC code and
-            display text.
+        dict: A dictionary containing extracted coding details such as LOINC code,
+            Apple HealthKit code, and display text.
     """
     coding = (
         observation.dict().get(KeyNames.CODE.value, {}).get(KeyNames.CODING.value, [])
     )
+
+    loinc_code = None
+    apple_health_kit_code = None
+    display_text = None
+    quantity_name = None
+
+    if coding:
+        quantity_name = coding[1][KeyNames.DISPLAY.value] if len(coding) > 1 else (coding[0][KeyNames.DISPLAY.value] if len(coding) > 0 else None)
+            
+    for code_info in coding:
+        code = code_info.get(KeyNames.CODE.value, "")
+        display = code_info.get(KeyNames.DISPLAY.value, "")
+        
+        if re.fullmatch(r"\d+(-\d+)?", code):
+            loinc_code = code
+            display_text = display
+
+        elif re.fullmatch(r"[A-Za-z]+", code):
+            apple_health_kit_code = code
+
     return {
-        ColumnNames.QUANTITY_NAME.value: (
-            coding[1][KeyNames.DISPLAY.value]
-            if len(coding) > 1
-            else (coding[0][KeyNames.DISPLAY.value] if len(coding) > 0 else None)
-        ),
-        ColumnNames.LOINC_CODE.value: (
-            coding[0][KeyNames.CODE.value] if len(coding) > 0 else None
-        ),
-        ColumnNames.DISPLAY.value: (
-            coding[0][KeyNames.DISPLAY.value] if len(coding) > 0 else None
-        ),
-        ColumnNames.APPLE_HEALTH_KIT_CODE.value: (
-            coding[1][KeyNames.CODE.value]
-            if len(coding) > 1
-            else (coding[0][KeyNames.CODE.value] if len(coding) > 0 else None)
-        ),
+        ColumnNames.QUANTITY_NAME.value: quantity_name,
+        ColumnNames.LOINC_CODE.value: loinc_code,
+        ColumnNames.DISPLAY.value: display_text,
+        ColumnNames.APPLE_HEALTH_KIT_CODE.value: apple_health_kit_code,
     }
 
 
@@ -581,34 +580,28 @@ def extract_component_info(observation: Any) -> dict:
         observation (Any): The FHIR ECG Observation resource containing component data.
 
     Returns:
-        dict: A dictionary with structured information extracted from ECG components.
+        dict: A dictionary with structured information extracted from ECG components,
+        including a single merged ECG recording data string and the unit of measurement.
     """
     component_info = {}
     components = observation.dict().get(KeyNames.COMPONENT.value, [])
-    for i, idx in enumerate(
-        [
-            ECG_SAMPLEDDATA_PART1_LOCATION,
-            ECG_SAMPLEDDATA_PART2_LOCATION,
-            ECG_SAMPLEDDATA_PART3_LOCATION,
-        ],
-        start=1,
-    ):
-        data = None
-        if idx < len(components):
-            data = (
-                components[idx]
-                .get(KeyNames.VALUE_SAMPLED_DATA.value, {})
-                .get(KeyNames.DATA.value, None)
-            )
-        component_info[f"{ColumnNames.ECG_RECORDINGJ.value}{i}"] = data
-    component_info[ColumnNames.ECG_RECORDING_UNIT.value] = (
-        components[ECG_SAMPLEDDATA_PART1_LOCATION]
-        .get(KeyNames.VALUE_SAMPLED_DATA.value, {})
-        .get(KeyNames.ORIGIN.value, {})
-        .get(KeyNames.UNIT.value, None)
-        if len(components) > ECG_SAMPLEDDATA_PART1_LOCATION
-        else None
-    )
+
+    merged_ecg_data = ""
+    unit = None
+
+    for component in components:
+        value_sampled_data = component.get(KeyNames.VALUE_SAMPLED_DATA.value, {})
+
+        data = value_sampled_data.get(KeyNames.DATA.value, None)
+        if data is not None:  # pylint: disable=consider-using-assignment-expr
+            merged_ecg_data += data + " "  # Adding a space for separation
+
+        if unit is None:
+            origin = value_sampled_data.get(KeyNames.ORIGIN.value, {})
+            unit = origin.get(KeyNames.UNIT.value, None)
+
+    component_info[ColumnNames.ECG_RECORDING.value] = merged_ecg_data.strip()
+    component_info[ColumnNames.ECG_RECORDING_UNIT.value] = unit
 
     return component_info
 

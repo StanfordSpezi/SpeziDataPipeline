@@ -35,7 +35,7 @@ Key Features:
 from dataclasses import dataclass
 
 # Local application/library specific imports
-from .observation_processing import calculate_daily_data, calculate_average_data
+from .observation_processor import calculate_daily_data, calculate_average_data
 
 
 @dataclass
@@ -189,12 +189,12 @@ class CodeProcessor:  # pylint: disable=unused-variable
             "39156-5": (5, 40),  # Body Mass Index (kg/m^2)
             "41982-0": (5, 60),  # Body Fat Percentage (%)
             "HKQuantityTypeIdentifierElectrodermalActivity": (),  # Electrodermal Activity (siemens)
-             # Environmental Audio Exposure (dB(SPL))
+            # Environmental Audio Exposure (dB(SPL))
             "HKQuantityTypeIdentifierEnvironmentalAudioExposure": (),
             "20150-9": (1, 6),  # Forced Expiratory Volume1 (L)
             "19870-5": (),  # Forced Vital Capacity (L)
-             # Headphone Audio Exposure (dB(SPL))
-            "HKQuantityTypeIdentifierHeadphoneAudioExposure": (), 
+            # Headphone Audio Exposure (dB(SPL))
+            "HKQuantityTypeIdentifierHeadphoneAudioExposure": (),
             "8302-2": (),  # Height (in)
             "HKQuantityTypeIdentifierInhalerUsage": (),  # Inhaler Usage (count)
             "91557-9": (),  # Lean Body Mass (lbs)

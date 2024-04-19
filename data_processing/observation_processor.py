@@ -114,33 +114,33 @@ def _finalize_group(
 
 
 def calculate_daily_data(  # pylint: disable=unused-variable
-    group_fhir_dataframe: FHIRDataFrame,
+    fhir_dataframe: FHIRDataFrame,
 ) -> FHIRDataFrame:
     """
     Aggregates daily data for a specific health metric, summing up values within a day.
 
     Parameters:
-        group_fhir_dataframe (FHIRDataFrame): A group of FHIR data entries to be aggregated.
+        fhir_dataframe (FHIRDataFrame): A group of FHIR data entries to be aggregated.
 
     Returns:
         FHIRDataFrame: Aggregated FHIR data with daily totals for the specified metric,
                        or None if validation fails.
     """
-    if group_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
+    if fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
         raise ValueError(
             f"Resource type must be 'Observation' for outlier filtering,"
-            f"got '{group_fhir_dataframe.resource_type}'."
+            f"got '{fhir_dataframe.resource_type}'."
         )
 
-    if not group_fhir_dataframe.validate_columns():
+    if not fhir_dataframe.validate_columns():
         print("Validation failed: Column requirement is not satisfied.")
         return None
 
-    group_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-        group_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+        fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
     ).dt.date
 
-    aggregated_df = group_fhir_dataframe.df.groupby(
+    aggregated_df = fhir_dataframe.df.groupby(
         [
             ColumnNames.USER_ID.value,
             ColumnNames.EFFECTIVE_DATE_TIME.value,
@@ -150,38 +150,38 @@ def calculate_daily_data(  # pylint: disable=unused-variable
     )[ColumnNames.QUANTITY_VALUE.value].sum()
 
     return FHIRDataFrame(
-        data=_finalize_group(group_fhir_dataframe.df, aggregated_df, "Total daily"),
+        data=_finalize_group(fhir_dataframe.df, aggregated_df, "Total daily"),
         resource_type=FHIRResourceType.OBSERVATION,
     )
 
 
 def calculate_average_data(  # pylint: disable=unused-variable
-    group_fhir_dataframe: FHIRDataFrame,
+    fhir_dataframe: FHIRDataFrame,
 ) -> FHIRDataFrame:
     """
     Calculates the daily average for a specific health metric across a given time span.
 
     Parameters:
-        group_fhir_dataframe (FHIRDataFrame): A group of FHIR data entries for averaging.
+        fhir_dataframe (FHIRDataFrame): A group of FHIR data entries for averaging.
 
     Returns:
         FHIRDataFrame: Aggregated FHIR data with daily averages for the specified metric.
     """
-    if group_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
+    if fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
         raise ValueError(
             f"Resource type must be 'Observation' for outlier filtering,"
-            f"got '{group_fhir_dataframe.resource_type}'."
+            f"got '{fhir_dataframe.resource_type}'."
         )
 
-    if not group_fhir_dataframe.validate_columns():
+    if not fhir_dataframe.validate_columns():
         print("Validation failed: Column requirement is not satisfied.")
         return None
 
-    group_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-        group_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+        fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
     ).dt.date
 
-    aggregated_df = group_fhir_dataframe.df.groupby(
+    aggregated_df = fhir_dataframe.df.groupby(
         [
             ColumnNames.USER_ID.value,
             ColumnNames.EFFECTIVE_DATE_TIME.value,
@@ -191,15 +191,13 @@ def calculate_average_data(  # pylint: disable=unused-variable
     )[ColumnNames.QUANTITY_VALUE.value].mean()
 
     return FHIRDataFrame(
-        _finalize_group(
-            group_fhir_dataframe.df, np.round(aggregated_df, 0), "Daily average"
-        ),
+        _finalize_group(fhir_dataframe.df, np.round(aggregated_df, 0), "Daily average"),
         FHIRResourceType.OBSERVATION,
     )
 
 
 def calculate_moving_average(  # pylint: disable=unused-variable
-    flattened_fhir_dataframe: FHIRDataFrame, n=7
+    fhir_dataframe: FHIRDataFrame, n=7
 ) -> FHIRDataFrame:
     """
     Calculates a moving average of the QUANTITY_VALUE over a specified number of days (n)
@@ -207,7 +205,7 @@ def calculate_moving_average(  # pylint: disable=unused-variable
     for smoothing out data series and identifying long-term trends.
 
     Parameters:
-        flattened_fhir_dataframe (FHIRDataFrame): A DataFrame containing flattened FHIR data
+        fhir_dataframe (FHIRDataFrame): A DataFrame containing flattened FHIR data
                                         with columns for USER_ID, EFFECTIVE_DATE_TIME,
                                         LOINC_CODE, and QUANTITY_VALUE.
         n (int, optional): The window size in days over which the moving average is
@@ -222,21 +220,21 @@ def calculate_moving_average(  # pylint: disable=unused-variable
         normalized to date-only values. If EFFECTIVE_DATE_TIME includes time components,
         they should be removed or normalized beforehand to ensure accurate calculations.
     """
-    if flattened_fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
+    if fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
         raise ValueError(
             f"Resource type must be 'Observation' for outlier filtering,"
-            f"got '{flattened_fhir_dataframe.resource_type}'."
+            f"got '{fhir_dataframe.resource_type}'."
         )
 
-    if not flattened_fhir_dataframe.validate_columns():
+    if not fhir_dataframe.validate_columns():
         print("Validation failed: Column requirement is not satisfied.")
         return None
 
-    flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-        flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+        fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
     ).dt.date
 
-    moving_avg_df = flattened_fhir_dataframe.df.groupby(
+    moving_avg_df = fhir_dataframe.df.groupby(
         [ColumnNames.USER_ID.value, ColumnNames.LOINC_CODE.value]
     ).apply(
         lambda x: x.sort_values(ColumnNames.EFFECTIVE_DATE_TIME.value)
@@ -249,7 +247,7 @@ def calculate_moving_average(  # pylint: disable=unused-variable
 
     moving_avg_df = moving_avg_df.reset_index()
     result_df = pd.merge(
-        flattened_fhir_dataframe.df,
+        fhir_dataframe.df,
         moving_avg_df,
         on=[
             ColumnNames.USER_ID.value,

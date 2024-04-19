@@ -7,8 +7,24 @@
 #
 
 """
-Docstring to be added.
+This module contains unit tests for the FirebaseFHIRAccess class, which is responsible for managing
+connections to the Firebase Firestore database in a healthcare data context, specifically for
+FHIR (Fast Healthcare Interoperability Resources) data.
+
+The tests in this module ensure that the FirebaseFHIRAccess class can handle the setup and
+initialization of connections to Firestore using Firebase project credentials. It checks both
+the scenarios where the service account key file is valid and invalid, verifying the correct
+handling of authentication and connection establishment.
+
+These tests utilize the unittest framework and apply mocking to the Firebase Admin SDK components
+to isolate the tests from actual Firebase infrastructure. This approach ensures that the tests
+can be run in any environment without needing access to real Firebase project credentials.
+
+Classes:
+    TestFirebaseFHIRAccess: Contains all unit tests for testing the connectivity and initialization
+                            capabilities of the FirebaseFHIRAccess class.
 """
+
 
 # Related third-party imports
 import unittest
@@ -36,7 +52,7 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
     )
     @patch("data_access.firebase_fhir_data_access.os.getenv", return_value=None)
     @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=True)
-    def test_connect_production_with_valid_key(  # pylint: disable
+    def test_connect_production_with_valid_key(  # pylint: disable=no-self-use
         self,
         mock_exists,
         mock_initialize_app,

@@ -155,6 +155,8 @@ class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-var
         user_ids = (
             self.user_ids if self.user_ids else [None]
         )  # Handle None as a case for all users
+        if not self.user_ids:
+            return  # Do not proceed with plot creation.
 
         # Assuming that figs can either be a single figure or
         # a list of (list of figures, user_id) tuples

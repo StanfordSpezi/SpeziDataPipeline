@@ -52,11 +52,15 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
     )
     @patch("data_access.firebase_fhir_data_access.os.getenv", return_value=None)
     @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=True)
+    # pylint: disable=too-many-arguments
     def test_connect_production_with_valid_key(  # pylint: disable=no-self-use
         self,
         mock_exists,
+        mock_getenv,  # pylint: disable=unused-argument
+        mock_get_app,  # pylint: disable=unused-argument
         mock_initialize_app,
         mock_certificate,
+        mock_client,  # pylint: disable=unused-argument
     ):
         """
         Tests the FirebaseFHIRAccess connection in a production environment with a valid service
@@ -81,7 +85,11 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         side_effect=ValueError,
     )
     @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=False)
-    def test_connect_without_valid_key_raises_error(self):
+    def test_connect_without_valid_key_raises_error(  # pylint: disable=no-self-use
+        self,
+        mock_exists,  # pylint: disable=unused-argument
+        mock_get_app,  # pylint: disable=unused-argument
+    ):
         """
         Tests that attempting to connect without a valid service account key raises a
         FileNotFoundError.

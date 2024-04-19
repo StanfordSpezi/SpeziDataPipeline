@@ -51,9 +51,11 @@ class TestDataVisualizer(unittest.TestCase):  # pylint: disable=unused-variable
         Ensures that the start and end dates are correctly set in the DataVisualizer instance.
         """
         visualizer = DataVisualizer()
-        visualizer.set_date_range("2021-01-01", "2021-01-31")
-        self.assertEqual(visualizer.start_date, "2021-01-01")
-        self.assertEqual(visualizer.end_date, "2021-01-31")
+        start_date = "2021-01-01"
+        end_date = "2021-01-31"
+        visualizer.set_date_range(start_date, end_date)
+        self.assertEqual(visualizer.start_date.strftime("%Y-%m-%d"), start_date)
+        self.assertEqual(visualizer.end_date.strftime("%Y-%m-%d"), end_date)
 
     def test_set_user_ids(self):
         """

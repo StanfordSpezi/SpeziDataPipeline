@@ -78,6 +78,8 @@ jobs:
     - name: Install SpeziDataPipelineTemplate Dependencies
       run: |
         pip install -r requirements.txt
+    - name: Run Unit Tests
+      run: pytest tests/
     - name: Set Firestore Emulator Environment Variable
       run: |
         echo "FIRESTORE_EMULATOR_HOST=localhost:8080" >> $GITHUB_ENV

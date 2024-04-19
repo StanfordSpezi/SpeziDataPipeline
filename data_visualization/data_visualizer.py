@@ -99,7 +99,6 @@ class DataVisualizer:  # pylint: disable=unused-variable
 
     def __init__(self):
         """Initializes the DataVisualizer with default parameters for data visualization."""
-        super().__init__()
         self.start_date = None
         self.end_date = None
         self.user_ids = None

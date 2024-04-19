@@ -31,6 +31,7 @@ Key Features:
 
 # Related third-party imports
 from typing import Any
+# pylint: disable=duplicate-code
 import pandas as pd
 
 # Local application/library specific imports
@@ -39,6 +40,7 @@ from data_flattening.fhir_resources_flattener import (
     FHIRResourceType,
     ColumnNames,
 )
+# pylint: enable=duplicate-code
 from .code_mapping import CodeProcessor
 
 

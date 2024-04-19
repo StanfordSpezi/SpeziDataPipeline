@@ -90,12 +90,12 @@ class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-var
         """
         super().__init__()
         self.flattened_fhir_dataframe = flattened_fhir_dataframe
-        self.start_date = None
-        self.end_date = None
-        self.user_ids = None
-        self.y_lower = None
-        self.y_upper = None
-        self.combine_plots = False
+        # self.start_date = None
+        # self.end_date = None
+        # self.user_ids = None
+        # self.y_lower = None
+        # self.y_upper = None
+        # self.combine_plots = False
 
     def export_to_csv(self, filename):
         """

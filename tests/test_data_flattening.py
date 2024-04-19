@@ -33,6 +33,7 @@ from pathlib import Path
 # Related third-party imports
 import unittest
 from unittest.mock import MagicMock
+# pylint: disable=duplicate-code
 import pandas as pd
 
 
@@ -43,7 +44,7 @@ from data_flattening.fhir_resources_flattener import (
     ColumnNames,
     ObservationFlattener,
 )
-
+# pylint: enable=duplicate-code
 
 class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
     """

@@ -31,9 +31,9 @@ import datetime
 from pathlib import Path
 
 # Related third-party imports
+import pandas as pd
 import unittest
 from unittest.mock import MagicMock
-import pandas as pd
 
 # Local application/library specific imports
 from data_flattening.fhir_resources_flattener import (

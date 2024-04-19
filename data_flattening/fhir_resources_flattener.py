@@ -550,12 +550,16 @@ def extract_coding_info(observation: Any) -> dict:
     quantity_name = None
 
     if coding:
-        quantity_name = coding[1][KeyNames.DISPLAY.value] if len(coding) > 1 else (coding[0][KeyNames.DISPLAY.value] if len(coding) > 0 else None)
-            
+        quantity_name = (
+            coding[1][KeyNames.DISPLAY.value]
+            if len(coding) > 1
+            else (coding[0][KeyNames.DISPLAY.value] if len(coding) > 0 else None)
+        )
+
     for code_info in coding:
         code = code_info.get(KeyNames.CODE.value, "")
         display = code_info.get(KeyNames.DISPLAY.value, "")
-        
+
         if re.fullmatch(r"\d+(-\d+)?", code):
             loinc_code = code
             display_text = display

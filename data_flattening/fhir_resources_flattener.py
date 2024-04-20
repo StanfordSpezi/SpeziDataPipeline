@@ -48,6 +48,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 import pandas as pd
+from fhir.resources.R4B.observation import Observation
 
 
 class KeyNames(Enum):
@@ -153,15 +154,15 @@ class ECGObservation:  # pylint: disable=unused-variable
     direct access to attributes relevant for ECG data processing and visualization.
 
     Parameters:
-        observation (Any): The original FHIR observation object containing ECG data.
+        observation (Obervation): The original FHIR observation object containing ECG data.
     """
 
-    def __init__(self, observation: Any):
+    def __init__(self, observation: Observation):
         """
         Initializes an ECGObservation instance with a FHIR observation object.
 
         Parameters:
-            observation (Any): The FHIR observation resource containing ECG data.
+            observation (Observation): The FHIR observation resource containing ECG data.
         """
         self.observation = observation
         self.resource_type = FHIRResourceType.ECG_OBSERVATION.value
@@ -378,13 +379,14 @@ class ObservationFlattener(ResourceFlattener):
         """
         super().__init__(FHIRResourceType.OBSERVATION)
 
-    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+    def flatten(self, resources: list[Observation]) -> FHIRDataFrame:
         """
         Converts a list of FHIR Observation resources into a structured DataFrame.
         Extracts and organizes information from observations into a format suitable for analysis.
 
         Parameters:
-            resources (list[Any]): A collection of FHIR Observation resources to be flattened.
+            resources (list[Observation]): A collection of FHIR Observation resources to be
+                flattened.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured data extracted from the input
@@ -455,13 +457,13 @@ class ECGObservationFlattener(ResourceFlattener):
         """
         super().__init__(FHIRResourceType.ECG_OBSERVATION)
 
-    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+    def flatten(self, resources: list[ECGObservation]) -> FHIRDataFrame:
         """
         Flattens a list of ECG Observation resources, extracting ECG data and related metrics
         into a structured, analyzable DataFrame format.
 
         Parameters:
-            resources (list[Any]): A collection of FHIR ECG Observation resources.
+            resources (list[ECGObservation]): A collection of FHIR ECG Observation resources.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured ECG data from the input resources.
@@ -527,14 +529,14 @@ class ECGObservationFlattener(ResourceFlattener):
         return FHIRDataFrame(flattened_df, FHIRResourceType.ECG_OBSERVATION)
 
 
-def extract_coding_info(observation: Any) -> dict:
+def extract_coding_info(observation: Observation | ECGObservation) -> dict:
     """
     Extracts coding information from an Observation resource, focusing on key details
     like LOINC codes (numeric) and Apple HealthKit codes (alphabetic).
 
     Parameters:
-        observation (Any): The FHIR Observation resource from which to extract coding
-            information.
+        observation (Observation | ECGObservation): The FHIR Observation resource from
+            which to extract coding information.
 
     Returns:
         dict: A dictionary containing extracted coding details such as LOINC code,
@@ -575,13 +577,13 @@ def extract_coding_info(observation: Any) -> dict:
     }
 
 
-def extract_component_info(observation: Any) -> dict:
+def extract_component_info(observation: ECGObservation) -> dict:
     """
     Extracts information from components of an ECG Observation, relevant for detailed ECG
     data analysis.
 
     Parameters:
-        observation (Any): The FHIR ECG Observation resource containing component data.
+        observation (ECGObservation): The FHIR ECG Observation resource containing component data.
 
     Returns:
         dict: A dictionary with structured information extracted from ECG components,

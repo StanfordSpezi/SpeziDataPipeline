@@ -54,9 +54,11 @@ from decimal import Decimal
 from math import ceil
 
 # Related third-party imports
-import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoMinorLocator
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.ticker import AutoMinorLocator
 
 # Local application/library specific imports
 from data_processing.data_processor import (
@@ -352,7 +354,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
         self.amplitude_ecg = DEFAULT_AMPLITUDE_ECG
         self.time_ticks = DEFAULT_TIME_TICKS
 
-    def set_date_range(self, start_date: str, end_date: str):
+    def set_date_range(self, start_date: str, end_date: str) -> None:
         """
         Sets the start and end dates for filtering the FHIR data before visualization,
         aiming to narrow down the plotted data to a specific timeframe.
@@ -368,7 +370,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
             datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
         )
 
-    def set_user_ids(self, user_ids: list[str]):
+    def set_user_ids(self, user_ids: list[str]) -> None:
         """
         Sets the list of user IDs to filter the FHIR data for visualization,
         allowing for targeted analysis of ECG data for specific individuals.
@@ -378,7 +380,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
         """
         self.user_ids = user_ids if isinstance(user_ids, list) else [user_ids]
 
-    def _ax_plot(self, ax, x, y, secs):
+    def _ax_plot(self, ax: Axes, x: np.ndarray, y: np.ndarray, secs: int) -> None:
         """
         Configures the axes for plotting ECG data on a given matplotlib axis object,
         setting up visual aspects like ticks, grid lines, and axis limits.
@@ -411,13 +413,15 @@ class ECGVisualizer:  # pylint: disable=unused-variable
         )
         ax.plot(x, y, linewidth=self.lwidth)
 
-    def plot_single_user_ecg(self, user_data, user_id):
+    def plot_single_user_ecg(
+        self, user_data: pd.DataFrame, user_id: str
+    ) -> list[plt.Figure]:
         """
         Plots ECG data for a single user, generating separate subplots for each split of the
-        ECG lead. 
-        
+        ECG lead.
+
         Parameters:
-            user_data (DataFrame): The subset of FHIR data frame containing ECG observations
+            user_data (pd.DataFrame): The subset of FHIR data frame containing ECG observations
                 for a specific user. The unit ECG observations must be in mV.
             user_id (str): The ID of the user whose ECG data is being plotted.
 
@@ -465,7 +469,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
             figures.append(fig)
         return figures
 
-    def plot_ecg_subplots(self, fhir_dataframe):
+    def plot_ecg_subplots(self, fhir_dataframe: FHIRDataFrame) -> list[plt.Figure]:
         """
         Generates ECG subplots for specified users within a given date range, based on
         the filtering parameters set. This method orchestrates the creation of ECG
@@ -516,8 +520,12 @@ class ECGVisualizer:  # pylint: disable=unused-variable
         return figures
 
     def _plot_single_lead_ecg(
-        self, ecg, sample_rate=DEFAULT_SAMPLE_RATE_VALUE, title="ECG", ax=None
-    ):
+        self,
+        ecg: np.ndarray,
+        sample_rate: int = DEFAULT_SAMPLE_RATE_VALUE,
+        title: str = "ECG",
+        ax: plt.Axes | None = None,
+    ) -> None:
         """
         Helper function to plot a single lead ECG waveform on a specified axes object.
         Configures the plot with given ECG data, sample rate, and title, enhancing the
@@ -546,7 +554,9 @@ class ECGVisualizer:  # pylint: disable=unused-variable
         self._ax_plot(ax, np.arange(0, len(ecg) * step, step), ecg, seconds)
 
 
-def visualizer_factory(fhir_dataframe):  # pylint: disable=unused-variable
+def visualizer_factory(  # pylint: disable=unused-variable
+    fhir_dataframe: FHIRDataFrame,
+) -> DataVisualizer | ECGVisualizer:
     """
     Factory function to create a visualizer based on the resource_type attribute of
     FHIRDataFrame.

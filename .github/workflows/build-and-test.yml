@@ -80,6 +80,11 @@ jobs:
         pip install -r requirements.txt
     - name: Run Unit Tests
       run: pytest tests/*.py
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: StanfordSpezi/SpeziDataPipelineTemplate
     - name: Set Firestore Emulator Environment Variable
       run: |
         echo "FIRESTORE_EMULATOR_HOST=localhost:8080" >> $GITHUB_ENV

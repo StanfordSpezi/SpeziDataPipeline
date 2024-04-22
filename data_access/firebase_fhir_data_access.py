@@ -100,9 +100,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         if self.db is not None:
             return
 
-         # Check if the key file exists before trying to initialize the app
+        # Check if the key file exists before trying to initialize the app
         if not os.path.exists(self.service_account_key_file):
-            raise FileNotFoundError(f"Service account key file not found: {self.service_account_key_file}")
+            raise FileNotFoundError(
+                "Service account key file not found:" f"{self.service_account_key_file}"
+            )
 
         try:
             # Attempt to retrieve the default app.
@@ -127,18 +129,12 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                 )
 
             else:  # Connect to the production environment
-                if self.service_account_key_file and os.path.exists(
-                    self.service_account_key_file
-                ):
-                    cred = credentials.Certificate(self.service_account_key_file)
-                    firebase_admin.initialize_app(
-                        cred, {FIREBASE_PROJECT_ID_PARAM_STRING: self.project_id}
-                    )
-                    self.db = firestore.client()
-                else:
-                    raise FileNotFoundError(
-                        "Service account key file is missing or does not exist."
-                    ) from exc
+                cred = credentials.Certificate(self.service_account_key_file)
+                firebase_admin.initialize_app(
+                    cred, {FIREBASE_PROJECT_ID_PARAM_STRING: self.project_id}
+                )
+                self.db = firestore.client()
+                
 
     def fetch_data(
         self,
@@ -374,7 +370,8 @@ class ObservationCreator(ResourceCreator):
             if (
                 len(resource_obj.code.coding) > 1
                 and hasattr(
-                    resource_obj.code.coding[1], KeyNames.CODE.value  # pylint: disable=no-member
+                    resource_obj.code.coding[1],
+                    KeyNames.CODE.value,  # pylint: disable=no-member
                 )
                 and resource_obj.code.coding[1].code  # pylint: disable=no-member
                 == ECG_RECORDING_LOINC_CODE

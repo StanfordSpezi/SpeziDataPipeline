@@ -80,23 +80,57 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_certificate.assert_called_once_with(dummy_key_path)
         mock_initialize_app.assert_called_once()
 
-    @patch(
-        "data_access.firebase_fhir_data_access.firebase_admin.get_app",
-        side_effect=ValueError,
-    )
+    # @patch(
+    #     "data_access.firebase_fhir_data_access.firebase_admin.get_app",
+    #     side_effect=ValueError,
+    # )
+    # @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=False)
+    # def test_connect_without_valid_key_raises_error(  # pylint: disable=no-self-use
+    #     self,
+    #     mock_exists,  # pylint: disable=unused-argument
+    #     mock_get_app,  # pylint: disable=unused-argument
+    # ):
+    #     """
+    #     Tests that attempting to connect without a valid service account key raises a
+    #     FileNotFoundError.
+
+    #     This test verifies that if the FirebaseFHIRAccess object is provided with an
+    #     invalid path to the service account key file, it properly raises a FileNotFoundError
+    #     upon attempting to connect.
+    #     """
+    #     dummy_project_id = "dummy_project"
+    #     dummy_key_path = "invalid/path/to/service_account_key.json"
+
+    #     access = FirebaseFHIRAccess(
+    #         project_id=dummy_project_id, service_account_key_file=dummy_key_path
+    #     )
+
+    #     with self.assertRaises(FileNotFoundError):
+    #         access.connect()
+
     @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=False)
-    def test_connect_without_valid_key_raises_error(  # pylint: disable=no-self-use
-        self,
-        mock_exists,  # pylint: disable=unused-argument
-        mock_get_app,  # pylint: disable=unused-argument
-    ):
+    @patch.dict('os.environ', {'CI': 'true'}, clear=True)
+    def test_connect_without_valid_key_raises_error_in_ci(self, mock_exists):
         """
         Tests that attempting to connect without a valid service account key raises a
-        FileNotFoundError.
+        FileNotFoundError, even when CI environment variables are set.
+        """
+        dummy_project_id = "dummy_project"
+        dummy_key_path = "invalid/path/to/service_account_key.json"
 
-        This test verifies that if the FirebaseFHIRAccess object is provided with an
-        invalid path to the service account key file, it properly raises a FileNotFoundError
-        upon attempting to connect.
+        access = FirebaseFHIRAccess(
+            project_id=dummy_project_id, service_account_key_file=dummy_key_path
+        )
+
+        with self.assertRaises(FileNotFoundError):
+            access.connect()
+
+    @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=False)
+    @patch.dict('os.environ', {'FIRESTORE_EMULATOR_HOST': 'localhost:8080'}, clear=True)
+    def test_connect_without_valid_key_raises_error_with_emulator(self, mock_exists):
+        """
+        Tests that attempting to connect without a valid service account key raises a
+        FileNotFoundError, even when FIRESTORE_EMULATOR_HOST environment variable is set.
         """
         dummy_project_id = "dummy_project"
         dummy_key_path = "invalid/path/to/service_account_key.json"

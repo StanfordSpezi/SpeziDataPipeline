@@ -5,6 +5,8 @@ firebase-admin
 fhir.resources
 pytest>=7.0
 coverage
+pytest>=6.0
+pytest-cov>=2.10.0
 # Documentation links:
 # pandas: https://pypi.org/project/pandas/
 # numpy: https://numpy.org/doc/stable/user/install.html

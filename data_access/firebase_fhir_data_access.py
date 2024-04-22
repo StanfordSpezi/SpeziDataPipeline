@@ -35,7 +35,6 @@ Functions:
 # Standard library imports
 import json
 import os
-import logging
 from typing import Any
 
 # Related third-party imports
@@ -101,12 +100,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         if self.db is not None:
             return
 
-        if not os.path.exists(self.service_account_key_file):
-            logging.error(
-                f"Service account key file not found: {self.service_account_key_file}"
-            )
-            return  # Log error and exit the method
-
+        # if not os.path.exists(self.service_account_key_file):
+        #     logging.error(
+        #         f"Service account key file not found: {self.service_account_key_file}"
+        #     )
+        #     return None
         try:
             # Attempt to retrieve the default app.
             app = firebase_admin.get_app()
@@ -116,7 +114,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             if (
                 os.getenv(CI_STRING)
                 or FIRESTORE_EMULATOR_HOST_KEY in os.environ
-                or not self.service_account_key_file
+                or not os.path.exists(self.service_account_key_file)
             ):  # Check if running in CI environment
                 # Point to the emulator for CI tests
                 os.environ[FIRESTORE_EMULATOR_HOST_KEY] = LOCAL_HOST_URL
@@ -128,7 +126,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                 self.db = firestore.Client(  # pylint: disable=no-member
                     project=self.project_id
                 )
-
             else:  # Connect to the production environment
                 cred = credentials.Certificate(self.service_account_key_file)
                 firebase_admin.initialize_app(

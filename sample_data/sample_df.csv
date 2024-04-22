@@ -1,0 +1,4 @@
+UserId,EffectiveDateTime,QuantityName,QuantityUnit,QuantityValue,LoincCode,Display,AppleHealthKitCode
+XrftRMc358NndzcRWEQ7P2MxvabZ,2023-04-26,Step Count,steps,1,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
+XrftRMc358NndzcRWEQ7P2MxvabZ,2023-06-28,Step Count,steps,170.0,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
+sEmijWpn0vXe1cj60GO5kkjkrdT4,2023-03-10,Step Count,steps,129.0,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount

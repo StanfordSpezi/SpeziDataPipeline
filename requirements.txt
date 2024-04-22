@@ -4,6 +4,7 @@ matplotlib
 firebase-admin
 fhir.resources
 pytest>=7.0
+coverage
 # Documentation links:
 # pandas: https://pypi.org/project/pandas/
 # numpy: https://numpy.org/doc/stable/user/install.html

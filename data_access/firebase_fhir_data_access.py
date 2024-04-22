@@ -99,6 +99,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         """
         if self.db is not None:
             return
+
+         # Check if the key file exists before trying to initialize the app
+        if not os.path.exists(self.service_account_key_file):
+            raise FileNotFoundError(f"Service account key file not found: {self.service_account_key_file}")
+
         try:
             # Attempt to retrieve the default app.
             app = firebase_admin.get_app()

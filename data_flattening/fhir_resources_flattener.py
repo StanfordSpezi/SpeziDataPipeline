@@ -44,6 +44,7 @@ healthcare data analysis and support a wide range of analytical applications.
 from datetime import date
 from enum import Enum
 import re
+import json
 
 # Related third-party imports
 from dataclasses import dataclass
@@ -82,6 +83,7 @@ class KeyNames(Enum):
     EFFECTIVE_DATE_TIME = "effectiveDateTime"
     EFFECTIVE_PERIOD = "effectivePeriod"
     START = "start"
+    ID = "id"
     CODE = "code"
     CODING = "coding"
     DISPLAY = "display"
@@ -95,6 +97,9 @@ class KeyNames(Enum):
     VALUE_STRING = "valueString"
     SYSTEM = "system"
     RESOURCE_TYPE = "resourceType"
+    VALUE_CODING = "valueCoding"
+    VALUE_STRING = "valueString"
+    VALUE_INTEGER = "valueInteger"
 
 
 class ColumnNames(Enum):
@@ -143,7 +148,7 @@ class ColumnNames(Enum):
     HEART_RATE_UNIT = "HeartRateUnit"
     ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
     ECG_RECORDING = "ECGRecording"
-    
+
     SURVEY_TITLE = "SurveyTitle"
     SURVEY_DATE = "Date"
     SURVEY_ID = "SurveyID"
@@ -151,7 +156,8 @@ class ColumnNames(Enum):
     QUESTION_TEXT = "QuestionText"
     ANSWER_TEXT = "AnswerText"
 
-class ECGObservation:    # pylint: disable=unused-variable
+
+class ECGObservation:  # pylint: disable=unused-variable
     """
     A wrapper class for FHIR ECG observations.
 
@@ -162,6 +168,7 @@ class ECGObservation:    # pylint: disable=unused-variable
     Parameters:
         observation (Obervation): The original FHIR observation object containing ECG data.
     """
+
     def __init__(self, observation: Any):
         """
         Initializes an ECGObservation wrapper for FHIR ECG observations.
@@ -351,14 +358,16 @@ class ResourceFlattener:
                 ColumnNames.SURVEY_ID,
                 ColumnNames.QUESTION_ID,
                 ColumnNames.QUESTION_TEXT,
-                ColumnNames.ANSWER_TEXT
+                ColumnNames.ANSWER_TEXT,
             ],
         }
 
         if resource_type not in self.resource_columns:
             raise ValueError(f"Unsupported resource type: {resource_type.name}")
 
-    def flatten(self, resources: list[Any], survey_path: list[str] = None) -> FHIRDataFrame:
+    def flatten(
+        self, resources: list[Any], survey_path: list[str] = None
+    ) -> FHIRDataFrame:
         """
         Abstract method intended to transform a list of FHIR resources into a flattened
         FHIRDataFrame.
@@ -402,7 +411,9 @@ class ObservationFlattener(ResourceFlattener):
         """
         super().__init__(FHIRResourceType.OBSERVATION)
 
-    def flatten(self, resources: list[Observation]) -> FHIRDataFrame:
+    def flatten(
+        self, resources: list[Observation], survey_path: list[str] = None
+    ) -> FHIRDataFrame:
         """
         Converts a list of FHIR Observation resources into a structured DataFrame.
         Extracts and organizes information from observations into a format suitable for analysis.
@@ -480,7 +491,9 @@ class ECGObservationFlattener(ResourceFlattener):
         """
         super().__init__(FHIRResourceType.ECG_OBSERVATION)
 
-    def flatten(self, resources: list[ECGObservation]) -> FHIRDataFrame:
+    def flatten(
+        self, resources: list[ECGObservation], survey_path: list[str] = None
+    ) -> FHIRDataFrame:
         """
         Flattens a list of ECG Observation resources, extracting ECG data and related metrics
         into a structured, analyzable DataFrame format.
@@ -634,10 +647,12 @@ def extract_component_info(observation: ECGObservation) -> dict:
 
     return component_info
 
+
 class QuestionnaireResponseFlattener:
 
-    def flatten(self, resources: list[Any], survey_paths: list[str]) -> FHIRDataFrame:
+    def flatten(self, resources: list[Any], survey_path: list[str]) -> FHIRDataFrame:
         flattened_data = []
+
         def extract_mappings(json_content):
 
             question_mapping = {}
@@ -663,17 +678,17 @@ class QuestionnaireResponseFlattener:
         all_question_mappings = {}
         all_answer_mappings = {}
 
-        for file_path in survey_paths:
+        for file_path in survey_path:
             with open(file_path, "r") as file:
                 question_mapping, answer_mapping = extract_mappings(json.load(file))
                 all_question_mappings.update(question_mapping)
                 all_answer_mappings.update(answer_mapping)
-        
-        for file_path in survey_paths:
-            with open(file_path, 'r') as file:
+
+        for file_path in survey_path:
+            with open(file_path, "r") as file:
                 title_json = json.load(file)
-                title = title_json.get('title')
-        
+                title = title_json.get("title")
+
         for response in resources:
             for item in response.item:
                 question_id = item.linkId
@@ -689,42 +704,46 @@ class QuestionnaireResponseFlattener:
 
                     answer = answer.dict()
 
-                    if "valueCoding" in answer:
-                        system_id = answer["valueCoding"].get("system")
-                        code = answer["valueCoding"].get("code")
+                    if KeyNames.VALUE_CODING.name in answer:
+                        system_id = answer[KeyNames.VALUE_CODING.name].get(
+                            KeyNames.SYSTEM.name
+                        )
+                        code = answer[KeyNames.VALUE_CODING.name].get(
+                            KeyNames.CODE.name
+                        )
                         if system_id and code:
                             combined_id = f"{system_id}|{code}"
                             answer_value = all_answer_mappings.get(
                                 combined_id, "No Answer"
                             )
 
-                    elif "valueString" in answer:
-                        answer_value = answer["valueString"]
-                    elif "valueInteger" in answer:
-                        answer_value = answer["valueInteger"]
+                    elif KeyNames.VALUE_STRING.name in answer:
+                        answer_value = answer[KeyNames.VALUE_STRING.name]
+                    elif KeyNames.VALUE_INTEGER.name in answer:
+                        answer_value = answer[KeyNames.VALUE_INTEGER.name]
                     else:
                         answer_value = "No Answer"
 
-                responseDict = response.dict()
-                date = responseDict['authored']
-                    
-                user_id = getattr(response.subject, 'id', None)
-                
+                # response_dict = response.dict()
+                # date = response_dict["authored"]
+
+                user_id = getattr(response.subject, KeyNames.ID.name, None)
+
                 flattened_entry = {
                     ColumnNames.USER_ID.value: user_id,
                     ColumnNames.SURVEY_TITLE.value: title,
                     ColumnNames.SURVEY_ID.value: response.id,
                     ColumnNames.QUESTION_ID.value: question_id,
                     ColumnNames.QUESTION_TEXT.value: question_text,
-                    ColumnNames.ANSWER_TEXT.value: answer_value
+                    ColumnNames.ANSWER_TEXT.value: answer_value,
                 }
-                
+
                 flattened_data.append(flattened_entry)
 
         return FHIRDataFrame(flattened_df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
 
-def flatten_fhir_resources(
+def flatten_fhir_resources(  # pylint: disable=unused-variable
     resources: list[Any],
     survey_path: list[str] = None,
 ) -> FHIRDataFrame | None:
@@ -752,7 +771,7 @@ def flatten_fhir_resources(
     flattener_classes = {
         FHIRResourceType.OBSERVATION: ObservationFlattener,
         FHIRResourceType.ECG_OBSERVATION: ECGObservationFlattener,
-        FHIRResourceType.QUESTIONNAIRE_RESPONSE: QuestionnaireResponseFlattener
+        FHIRResourceType.QUESTIONNAIRE_RESPONSE: QuestionnaireResponseFlattener,
     }
 
     resource_type = FHIRResourceType(
@@ -766,4 +785,3 @@ def flatten_fhir_resources(
         raise ValueError(f"No flattener found for resource type: {resource_type}")
 
     return flattener.flatten(resources, survey_path)
-

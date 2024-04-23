@@ -23,10 +23,10 @@ Functions:
     _fetch_user_resources: Fetches resources for a specific user from Firestore based on 
         the given collection and subcollection names, optionally filtering by LOINC codes.
     _process_loinc_codes: Filters documents based on LOINC codes from a Firestore collection
-        reference, converting matching documents into FHIR Observation instances.
+        reference, converting matching documents into FHIR Resource instances.
     _process_all_documents: Fetches and processes all documents from a Firestore collection
-        reference for a specific user, converting each document to a FHIR Observation instance.
-    _create_resources: Converts Firestore documents into FHIR Observation instances, associating
+        reference for a specific user, converting each document to a FHIR Resource instance.
+    create_resources: Converts Firestore documents into FHIR Resources instances, associating
         each with the corresponding user's Firestore document ID.
     get_code_mappings: Retrieves mappings for a given LOINC code or custom code, supporting the
         translation of codes for FHIR resource creation and querying.
@@ -35,7 +35,7 @@ Functions:
 # Standard library imports
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 # Related third-party imports
 from dataclasses import dataclass
@@ -52,10 +52,18 @@ from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import ECGObservation, FHIRResourceType
+from data_flattening.fhir_resources_flattener import (
+    ECGObservation,
+    FHIRResourceType,
+    KeyNames,
+)
 from data_processing.code_mapping import CodeProcessor
 
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
+CI_STRING = "CI"
+LOCAL_HOST_URL = "localhost:8080"
+GCLOUD_PROJECT_STRING = "GCLOUD_PROJECT"
+FIREBASE_PROJECT_ID_PARAM_STRING = "projectId"
 ECG_RECORDING_LOINC_CODE = "131328"
 
 
@@ -75,7 +83,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     """
 
     def __init__(
-        self, project_id: str, service_account_key_file: Optional[str] = None
+        self, project_id: str, service_account_key_file: str | None = None
     ) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
@@ -91,42 +99,44 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         """
         if self.db is not None:
             return
+
+        # if not os.path.exists(self.service_account_key_file):
+        #     logging.error(
+        #         f"Service account key file not found: {self.service_account_key_file}"
+        #     )
+        #     return None
         try:
             # Attempt to retrieve the default app.
             app = firebase_admin.get_app()
             self.db = firestore.client(app=app)
-        except ValueError:
+        except ValueError as exc:
             # If it raises a ValueError, then the app hasn't been initialized.
             if (
-                os.getenv("CI")
+                os.getenv(CI_STRING)
                 or FIRESTORE_EMULATOR_HOST_KEY in os.environ
-                or not self.service_account_key_file
+                or not os.path.exists(self.service_account_key_file)
             ):  # Check if running in CI environment
                 # Point to the emulator for CI tests
-                os.environ[FIRESTORE_EMULATOR_HOST_KEY] = "localhost:8080"
-                os.environ["GCLOUD_PROJECT"] = self.project_id
+                os.environ[FIRESTORE_EMULATOR_HOST_KEY] = LOCAL_HOST_URL
+                os.environ[GCLOUD_PROJECT_STRING] = self.project_id
 
-                firebase_admin.initialize_app(options={"projectId": self.project_id})
+                firebase_admin.initialize_app(
+                    options={FIREBASE_PROJECT_ID_PARAM_STRING: self.project_id}
+                )
                 self.db = firestore.Client(  # pylint: disable=no-member
                     project=self.project_id
                 )
-
             else:  # Connect to the production environment
-                if self.service_account_key_file and os.path.exists(
-                    self.service_account_key_file
-                ):
-                    cred = credentials.Certificate(self.service_account_key_file)
-                    firebase_admin.initialize_app(cred, {"projectId": self.project_id})
-                    self.db = firestore.client()
-                else:
-                    raise FileNotFoundError(
-                        "Service account key file is missing or does not exist."
-                    )
+                cred = credentials.Certificate(self.service_account_key_file)
+                firebase_admin.initialize_app(
+                    cred, {FIREBASE_PROJECT_ID_PARAM_STRING: self.project_id}
+                )
+                self.db = firestore.client()
 
     def fetch_data(
         self,
-        collection_name: str = "users",
-        subcollection_name: str = "HealthKit",
+        collection_name: str,
+        subcollection_name: str,
         loinc_codes: list[str] | None = None,
     ) -> list[Any]:
         """
@@ -150,6 +160,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             print("Reinitialize the Firebase app.")
             return None
 
+        if loinc_codes.count(ECG_RECORDING_LOINC_CODE) > 0 and len(loinc_codes) > 1:
+            print("HealthKit quantity types and ECG recordings cannot be downloaded ")
+            print("simultaneously. Please review and adjust your selection to include ")
+            print("only the necessary LOINC codes.")
+            return None
         resources = []
         users = self.db.collection(collection_name).stream()
         for user in users:
@@ -216,26 +231,32 @@ def _process_loinc_codes(
     resources = []
     for code in loinc_codes:
         display_str, code_str, system_str = get_code_mappings(code)
-        fhir_docs = list(query.where(
-            filter=FieldFilter(
-                "code.coding",
-                "array_contains",
-                {"display": display_str, "system": system_str, "code": code_str},
-            )
-        ).stream())
+        fhir_docs = list(
+            query.where(
+                filter=FieldFilter(
+                    "code.coding",
+                    "array_contains",
+                    {
+                        KeyNames.DISPLAY.value: display_str,
+                        KeyNames.SYSTEM.value: system_str,
+                        KeyNames.CODE.value: code_str,
+                    },
+                )
+            ).stream()
+        )
 
         if not fhir_docs:
-            continue  # Skip if no documents found for this code
+            continue
 
         first_doc_dict = fhir_docs[0].to_dict()
-        resource_type = first_doc_dict["resourceType"]
+        resource_type = first_doc_dict[KeyNames.RESOURCE_TYPE.value]
 
         if resource_type == FHIRResourceType.OBSERVATION.value:
             creator = ObservationCreator()
-            resources.extend(creator._create_resources(fhir_docs, user))
+            resources.extend(creator.create_resources(fhir_docs, user))
         elif resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE.value:
             creator = QuestionnaireResponseCreator()
-            resources.extend(creator._create_resources(fhir_docs, user))
+            resources.extend(creator.create_resources(fhir_docs, user))
         else:
             raise ValueError(f"Unsupported resource type: {resource_type}")
 
@@ -247,31 +268,30 @@ def _process_all_documents(
 ) -> list[Any]:
     """
     Fetches and processes all documents from a Firestore collection reference for a specific user,
-    converting each Firestore document to a FHIR Observation instance.
+    converting each Firestore document to a FHIR Resource instance.
 
     Parameters:
         query (CollectionReference): Firestore query object for a user's subcollection.
         user (DocumentReference): Firestore reference to the user document.
 
     Returns:
-        list[Observation]: List of FHIR Observation instances for all documents in the user's
+        list[Any]: List of FHIR Resources instances for all documents in the user's
             subcollection.
     """
     resources = []
-    fhir_docs = list(query.stream())  # Convert to list to prevent iterator from being consumed
 
-    if not fhir_docs:
-        return resources  
+    if not (fhir_docs := list(query.stream())):
+        return resources
 
     first_doc_dict = fhir_docs[0].to_dict()
-    resource_type = first_doc_dict["resourceType"]
+    resource_type = first_doc_dict[KeyNames.RESOURCE_TYPE.value]
 
     if resource_type == FHIRResourceType.OBSERVATION.value:
         creator = ObservationCreator()
-        resources = creator._create_resources(fhir_docs, user)
+        resources = creator.create_resources(fhir_docs, user)
     elif resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE.value:
         creator = QuestionnaireResponseCreator()
-        resources = creator._create_resources(fhir_docs, user)
+        resources = creator.create_resources(fhir_docs, user)
     else:
         raise ValueError(f"Unsupported resource type: {resource_type}")
 
@@ -285,19 +305,36 @@ class ResourceCreator:
     def __init__(self, resource_type: FHIRResourceType):
         self.resource_type = resource_type
 
-    def _create_resources(
+    def create_resources(
         self, fhir_docs: list[DocumentSnapshot], user: DocumentReference
     ) -> list[Any]:
-
         raise NotImplementedError("Subclasses should implement this method.")
 
 
 @dataclass
 class ObservationCreator(ResourceCreator):
+    """
+    A specialized resource creator that converts Firestore document snapshots into FHIR Observation
+    instances. Each Observation instance is associated with a specific user, identified by the
+    Firestore document ID of the user, which is set as the subject reference of the Observation.
+
+    Inherits from:
+        ResourceCreator: A base class for creating FHIR resources.
+
+    Initialization:
+        Calls the superclass initializer with FHIRResourceType.OBSERVATION to specify the type of
+        FHIR resource.
+
+    Methods:
+        create_resources: Converts an iterable of Firestore document snapshots into a list of
+        Observation instances, handling specific data fields and ensuring each Observation
+        references the correct user.
+    """
+
     def __init__(self):
         super().__init__(FHIRResourceType.OBSERVATION)
 
-    def _create_resources(
+    def create_resources(
         self, fhir_docs: list[DocumentSnapshot], user: DocumentReference
     ) -> list[Observation]:
         """
@@ -315,29 +352,74 @@ class ObservationCreator(ResourceCreator):
         resources = []
         for doc in fhir_docs:
             doc_dict = doc.to_dict()
-            # doc_dict.pop("issued")
+            # The following removals will be omitted
+            doc_dict.pop("issued", None)
+            doc_dict.pop("document_id", None)
+            doc_dict.pop("physicianAssignedDiagnosis", None)
+            doc_dict.pop("physician", None)
+            doc_dict.pop("tracingQuality", None)
+
             resource_str = json.dumps(doc_dict)
             resource_obj = Observation.parse_raw(resource_str)
             resource_obj.subject = Reference(id=user.id)
-            
-            # Special handling for ECG data
-            if len(resource_obj.code.coding) > 1 and hasattr(resource_obj.code.coding[1], 'code') and resource_obj.code.coding[1].code == ECG_RECORDING_LOINC_CODE:
-                resource_obj = ECGObservation(resource_obj)
 
-                
-                
-            resources.append(resource_obj)
+            # Special handling for ECG data
+            if (
+                len(resource_obj.code.coding) > 1
+                and hasattr(
+                    resource_obj.code.coding[1],  # pylint: disable=no-member
+                    KeyNames.CODE.value,
+                )
+                and resource_obj.code.coding[1].code  # pylint: disable=no-member
+                == ECG_RECORDING_LOINC_CODE
+            ):
+                ecg_resource_obj = ECGObservation(resource_obj)
+                resources.append(ecg_resource_obj)
+            else:
+                resources.append(resource_obj)
         return resources
 
 
 @dataclass
 class QuestionnaireResponseCreator(ResourceCreator):
+    """
+    A specialized resource creator that converts Firestore document snapshots into FHIR
+    QuestionnaireResponse instances. Each QuestionnaireResponse instance is associated with
+    a specific user, identified by the Firestore document ID of the user, which is set as the
+    subject reference of the QuestionnaireResponse.
+
+    Inherits from:
+        ResourceCreator: A base class for creating FHIR resources.
+
+    Initialization:
+        Calls the superclass initializer with FHIRResourceType.QUESTIONNAIRE_RESPONSE to specify
+        the type of FHIR resource.
+
+    Methods:
+        create_resources: Converts an iterable of Firestore document snapshots into a list of
+        QuestionnaireResponse instances, ensuring each QuestionnaireResponse references the
+        correct user.
+    """
+
     def __init__(self):
         super().__init__(FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
-    def _create_resources(
+    def create_resources(
         self, fhir_docs: list[DocumentSnapshot], user: DocumentReference
     ) -> list[QuestionnaireResponse]:
+        """
+        Converts Firestore documents into FHIR QuestionnaireResponse instances, setting the
+        subject reference to the user's Firestore document ID.
+
+        Parameters:
+            fhir_docs (list[DocumentSnapshot]): Iterable of Firestore document snapshots containing
+                FHIR observation data.
+            user (DocumentReference): Firestore reference to the user document.
+
+        Returns:
+            list[Any]: List of FHIR QuestionnaireResponse instances created from the Firestore
+            documents.
+        """
         resources = []
         for doc in fhir_docs:
             doc_dict = doc.to_dict()

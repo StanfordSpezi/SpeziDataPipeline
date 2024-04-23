@@ -5,8 +5,26 @@
 #
 # SPDX-License-Identifier: MIT
 #
+
+
 """
-Docstring to be added.
+This module contains unit tests for classes that manage and flatten FHIR (Fast Healthcare
+Interoperability Resources) data structures using pandas DataFrames, particularly focusing
+on the FHIRDataFrame and ObservationFlattener classes from the data_flattening library.
+
+The tests ensure the proper initialization, validation, and functionality of these classes.
+For the FHIRDataFrame, tests validate the correct setup and validation of data within a DataFrame
+tailored for FHIR resources, ensuring that data conforms to expected formats and structures. For
+the ObservationFlattener, tests confirm the accurate transformation of complex FHIR Observation
+resources into a simplified DataFrame format, suitable for further analysis or processing.
+
+These classes are crucial for handling healthcare data efficiently in a standardized format, and
+the tests help ensure robustness and correctness in their implementation.
+
+Classes:
+    TestFHIRDataFrame: Tests initialization and validation of FHIRDataFrame instances.
+    TestObservationFlattener: Tests the functionality of the ObservationFlattener class in
+        converting FHIR observations into a simplified DataFrame format.
 """
 
 # Standard library imports
@@ -16,6 +34,7 @@ from pathlib import Path
 # Related third-party imports
 import unittest
 from unittest.mock import MagicMock
+# pylint: disable=duplicate-code
 import pandas as pd
 
 # Local application/library specific imports
@@ -26,6 +45,7 @@ from data_flattening.fhir_resources_flattener import (
     ObservationFlattener,
 )
 
+# pylint: enable=duplicate-code
 class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
     """
     A test case for the FHIRDataFrame class, which is designed to handle and validate
@@ -52,7 +72,7 @@ class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
         """
 
         def custom_date_parser(date_str):
-            """Parses a date string into a datetime.date object. """
+            """Parses a date string into a datetime.date object."""
             return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
         data_file = Path(__file__).parent.parent / "sample_data" / "sample_df.csv"

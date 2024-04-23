@@ -5,70 +5,136 @@
 #
 # SPDX-License-Identifier: MIT
 #
+
+
 """
-Module for Flattening FHIR Resources
-print(flat
-This module provides functionalities to transform nested Fast Healthcare Interoperability Resources
-(FHIR) resources into flattened, tabular formats suitable for easier processing and analysis. It
-includes classes and functions that handle the conversion of complex FHIR JSON structures into
-pandas DataFrames, streamlining the manipulation of health-related information encoded in FHIR
-standards.
+This module provides utilities and classes for transforming FHIR (Fast Healthcare Interoperability
+Resources) data from its native hierarchical format into a flattened, tabular format. This
+transformation facilitates easier data manipulation, analysis, and visualization by converting
+complex FHIR resources into a more accessible and straightforward pandas DataFrame structure.
 
-Classes:
-    ColumnNames: An Enum for standardized column names used in the flattened DataFrames.
-    FHIRResourceType: An Enum for specifying FHIR resource types relevant to the application.
-    FHIRDataFrame: A class representing a DataFrame specifically for FHIR data, with methods for
-        validation and easy access to the data.
-    ResourceFlattener: An abstract base class for flattening resources, with subclasses for specific
-        resource types like ObservationFlattener.
+This module includes classes for processing specific types of FHIR resources, such as general
+Observations and ECG Observations, extracting relevant information and standardizing it into a
+consistent format. Additionally, it defines enums and helper functions to aid in the extraction
+and organization of data from these resources.
 
-Functions:
-    flatten_fhir_resources: A function to flatten a list of FHIR resources into a FHIRDataFrame,
-        utilizing the appropriate ResourceFlattener subclass based on the resource type.
+Main Components:
+- `KeyNames` and `ColumnNames`: Enums that define standardized keys and column names used in the
+    flattening process, ensuring consistency
+  across the application.
+- `ResourceFlattener`: An abstract base class designed to be extended for specific FHIR resource
+    types, providing a common interface
+  for the flattening operation.
+- `ObservationFlattener` and `ECGObservationFlattener`: Concrete implementations of
+    `ResourceFlattener` tailored to handle Observation
+  and ECG Observation resources, respectively.
+- `extract_coding_info` and `extract_component_info`: Helper functions for extracting detailed
+    information from Observation components and codings.
+- `flatten_fhir_resources`: A utility function that orchestrates the flattening process,
+    dynamically selecting the appropriate flattener based on the resource type.
+
+Usage:
+The module is intended for developers and data analysts working with FHIR data, particularly those
+looking to analyze health data within pandas or similar data analysis tools. By providing a
+standardized way to flatten FHIR resources, this module aims to lower the barrier to entry for
+healthcare data analysis and support a wide range of analytical applications.
 """
-
 
 # Standard library imports
 from datetime import date
 from enum import Enum
+import re
 
 # Related third-party imports
 from dataclasses import dataclass
 from typing import Any
 import pandas as pd
-from pandas.api.types import is_string_dtype, is_object_dtype
-import json
+from fhir.resources.R4B.observation import Observation
 
-# Local application/library specific imports
+
+class KeyNames(Enum):
+    """
+    Enumerates standardized key names for fetching FHIR resources.
+
+    These keys represent common attributes found within FHIR resources that are relevant for ECG and
+    other health data manipulations. This enumeration facilitates the consistent access to these
+    attributes across various parts of an application dealing with FHIR data.
+
+    Attributes:
+        EFFECTIVE_DATE_TIME: The effective date and time of an observation or event.
+        EFFECTIVE_PERIOD: The effective period over which an observation or event occurred.
+        START: Start time within an effective period.
+        CODE: The code that identifies the observation or measurement.
+        CODING: The coding system used for the code attribute.
+        DISPLAY: The display text associated with the code.
+        VALUE_QUANTITY: The quantitative value of an observation.
+        UNIT: The units of the VALUE_QUANTITY.
+        VALUE: The actual value for VALUE_QUANTITY.
+        ORIGIN: The origin point for VALUE_SAMPLED_DATA.
+        DATA: The sampled data points in VALUE_SAMPLED_DATA.
+        VALUE_SAMPLED_DATA: The complex datatype for sampled data.
+        COMPONENT: The component part of an observation.
+        VALUE_STRING: A string value associated with an observation.
+        SYSTEM: The system that defines the coding system.
+        RESOURCE_TYPE: The type of the FHIR resource.
+    """
+
+    EFFECTIVE_DATE_TIME = "effectiveDateTime"
+    EFFECTIVE_PERIOD = "effectivePeriod"
+    START = "start"
+    CODE = "code"
+    CODING = "coding"
+    DISPLAY = "display"
+    VALUE_QUANTITY = "valueQuantity"
+    UNIT = "unit"
+    VALUE = "value"
+    ORIGIN = "origin"
+    DATA = "data"
+    VALUE_SAMPLED_DATA = "valueSampledData"
+    COMPONENT = "component"
+    VALUE_STRING = "valueString"
+    SYSTEM = "system"
+    RESOURCE_TYPE = "resourceType"
 
 
 class ColumnNames(Enum):
     """
     Enumerates standardized column names for use in flattened DataFrames.
 
-    These column names represent common fields extracted from FHIR resources,
-    ensuring consistency across the application.
+    These column names are designed for handling data extracted from FHIR resources, especially for
+    observations related to ECG and other health metrics. Standardizing these names helps ensure
+    consistency in data processing and analysis tasks.
+
+    Attributes:
+        USER_ID: Identifier for the patient or subject of the observation.
+        EFFECTIVE_DATE_TIME: The datetime when the observation was effective.
+        QUANTITY_NAME: Name or description of the observed quantity.
+        QUANTITY_UNIT: Units of the observed quantity.
+        QUANTITY_VALUE: Numeric value of the observed quantity.
+        LOINC_CODE: LOINC code associated with the observation.
+        DISPLAY: Display text associated with the LOINC or other code.
+        APPLE_HEALTH_KIT_CODE: Specific code used in Apple HealthKit.
+        NUMBER_OF_MEASUREMENTS: Number of measurements taken.
+        SAMPLING_FREQUENCY: Frequency at which data was sampled.
+        SAMPLING_FREQUENCY_UNIT: Unit for the sampling frequency.
+        ELECTROCARDIOGRAM_CLASSIFICATION: Classification of the ECG observation.
+        HEART_RATE: Observed heart rate.
+        HEART_RATE_UNIT: Unit of the observed heart rate.
+        ECG_RECORDING_UNIT: Unit for ECG recording data.
+        ECG_RECORDINGJ: Represents a series of ECG recording columns.
+        ECG_RECORDING1: First set of ECG recording data.
+        ECG_RECORDING2: Second set of ECG recording data.
+        ECG_RECORDING3: Third set of ECG recording data.
     """
 
-    USER_ID = "UserId"  # Represents a user's unique identifier.
-    EFFECTIVE_DATE_TIME = (
-        "EffectiveDateTime"  # The datetime when an observation was effective.
-    )
-    QUANTITY_NAME = (
-        "QuantityName"  # The name of the measured quantity (e.g., Heart Rate).
-    )
-    QUANTITY_UNIT = (
-        "QuantityUnit"  # The unit of the measured quantity (e.g., beats/minute).
-    )
-    QUANTITY_VALUE = "QuantityValue"  # The value of the measured quantity.
-    LOINC_CODE = "LoincCode"  # The LOINC code associated with the observation.
-    DISPLAY = (
-        "Display"  # The display text associated with the observation's LOINC code.
-    )
-    APPLE_HEALTH_KIT_CODE = (
-        "AppleHealthKitCode"  # A code used in Apple HealthKit for the observation.
-    )
-
+    USER_ID = "UserId"
+    EFFECTIVE_DATE_TIME = "EffectiveDateTime"
+    QUANTITY_NAME = "QuantityName"
+    QUANTITY_UNIT = "QuantityUnit"
+    QUANTITY_VALUE = "QuantityValue"
+    LOINC_CODE = "LoincCode"
+    DISPLAY = "Display"
+    APPLE_HEALTH_KIT_CODE = "AppleHealthKitCode"
     NUMBER_OF_MEASUREMENTS = "NumberOfMeasurements"
     SAMPLING_FREQUENCY = "SamplingFrequency"
     SAMPLING_FREQUENCY_UNIT = "SamplingFrequencyUnit"
@@ -76,13 +142,26 @@ class ColumnNames(Enum):
     HEART_RATE = "HeartRate"
     HEART_RATE_UNIT = "HeartRateUnit"
     ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
-    ECG_RECORDING1 = "ECGRecording1"
-    ECG_RECORDING2 = "ECGRecording2"
-    ECG_RECORDING3 = "ECGRecording3"
-    ECG_RECORDINGS_COMBINED = "ECGRecordingsCombined"
+    ECG_RECORDING = "ECGRecording"
+    
+    SURVEY_TITLE = "SurveyTitle"
+    SURVEY_DATE = "Date"
+    SURVEY_ID = "SurveyID"
+    QUESTION_ID = "QuestionID"
+    QUESTION_TEXT = "QuestionText"
+    ANSWER_TEXT = "AnswerText"
 
+class ECGObservation:    # pylint: disable=unused-variable
+    """
+    A wrapper class for FHIR ECG observations.
 
-class ECGObservation:
+    This class provides a convenient interface to interact with ECG observation data encapsulated
+    within FHIR resources. It abstracts away the complexities of the FHIR data model, offering
+    direct access to attributes relevant for ECG data processing and visualization.
+
+    Parameters:
+        observation (Obervation): The original FHIR observation object containing ECG data.
+    """
     def __init__(self, observation: Any):
         """
         Initializes an ECGObservation wrapper for FHIR ECG observations.
@@ -97,39 +176,33 @@ class ECGObservation:
 
     def __getattr__(self, name):
         """
-        Delegate attribute access to the underlying FHIR resource object. This method
-        is called if the requested attribute is not found in the ECGObservation's
-        dictionary.
+        Allows attribute access to be delegated to the underlying FHIR observation object.
+
+        This method provides dynamic access to the observation's attributes, making it easier
+        to retrieve values for standard and custom attributes defined within the FHIR resource.
 
         Parameters:
-            name (str): The name of the attribute being accessed.
+            name (str): The attribute name to access from the observation object.
 
         Returns:
-            The value of the attribute from the underlying resource object.
+            The value of the attribute if it exists; otherwise, AttributeError is raised.
         """
         return getattr(self.observation, name)
-
-    def __repr__(self):
-        """
-        Returns a string representation of the ECGObservation, including its type
-        and some identifiable information from the underlying resource.
-        """
-        return f"<ECGObservation type={self.resource_type}, resource={repr(self.observation)}>"
 
 
 class FHIRResourceType(Enum):
     """
-    Enumeration of FHIR resource types.
+    Enumeration of FHIR resource types relevant to the application.
 
-    This enum provides a list of FHIR resource types used in the application, ensuring
-    consistency and preventing typos in resource type handling.
+    This enum helps ensure that the application works with a consistent set of FHIR resource
+    types, reducing the risk of errors due to typos and providing a centralized definition
+    of resource types used throughout the codebase.
 
     Attributes:
-        OBSERVATION (str): Represents an observation resource type.
-        QUESTIONNAIRE_RESPONSE (str): Represents a questionnaire response resource type.
-
-    Note:
-        The `.value` attribute is used to access the string value of the enum members.
+        OBSERVATION: Represents observation resources, commonly used for measurements and
+            findings.
+        ECG_OBSERVATION: A specialized observation type for electrocardiogram data.
+        QUESTIONNAIRE_RESPONSE: Represents responses to questionnaires.
     """
 
     OBSERVATION = "Observation"
@@ -140,22 +213,16 @@ class FHIRResourceType(Enum):
 @dataclass
 class FHIRDataFrame:
     """
-    Encapsulates a pandas DataFrame tailored for handling FHIR data.
+    Represents a DataFrame specifically designed to handle FHIR data.
 
-    This class provides a structured format for FHIR data, making it easier to
-    manipulate and analyze health-related information encoded in FHIR resources.
-    It includes validation to ensure that the DataFrame contains required columns
-    and that these columns have appropriate data types.
+    This class wraps around a pandas DataFrame, organizing FHIR data into a structured,
+    tabular format that is easy to manipulate and analyze. It includes methods for validating
+    the data structure and ensuring it meets expected requirements for FHIR-based analysis.
 
-    Attributes:
-        data_frame (pd.DataFrame): The underlying DataFrame storing the FHIR data.
-        resource_type (FHIRResourceType): The type of FHIR resources contained in the DataFrame.
-        resource_columns (dict): Maps resource types to their respective columns in the DataFrame.
-
-    Methods:
-        df: Returns the underlying pandas DataFrame.
-        validate_columns: Validates the presence and data types of required columns in
-            the DataFrame.
+    Parameters:
+        data (pd.DataFrame): The DataFrame containing structured FHIR data.
+        resource_type (FHIRResourceType): The type of FHIR resources represented in the
+            DataFrame.
     """
 
     def __init__(
@@ -164,11 +231,7 @@ class FHIRDataFrame:
         resource_type: FHIRResourceType,
     ) -> None:
         """
-        Initializes a FHIRDataFrame with given data and resource type.
-
-        Parameters:
-            data (pd.DataFrame): The pandas DataFrame containing FHIR data.
-            resource_type (FHIRResourceType): The type of FHIR resource.
+        Initializes the FHIRDataFrame with structured FHIR data and resource type.
         """
         self.data_frame = data
         self.resource_type = resource_type
@@ -229,20 +292,14 @@ class FHIRDataFrame:
 @dataclass
 class ResourceFlattener:
     """
-    Abstract base class for flattening FHIR resources into a structured DataFrame format.
+    Base class for transforming FHIR resources into a structured DataFrame format.
 
-    Subclasses of ResourceFlattener should implement the `flatten` method to convert
-    specific types of FHIR resources (e.g., Observations, QuestionnaireResponses) into
-    a flattened format suitable for analysis.
+    Subclasses of ResourceFlattener should implement specific logic for flattening
+    different types of FHIR resources, converting them into a format that's suitable
+    for data analysis and processing tasks.
 
-    Attributes:
-        resource_type (FHIRResourceType): The FHIR resource type that the flattener handles.
-        resource_columns (dict): Maps FHIRResourceType to a list of ColumnNames relevant for
-            the resource.
-
-    Methods:
-        flatten: Abstract method to be implemented by subclasses, performing the actual
-            flattening process.
+    Parameters:
+        resource_type (FHIRResourceType): The type of FHIR resources this flattener handles.
     """
 
     def __init__(self, resource_type: FHIRResourceType):
@@ -282,24 +339,26 @@ class ResourceFlattener:
                 ColumnNames.HEART_RATE,
                 ColumnNames.HEART_RATE_UNIT,
                 ColumnNames.ECG_RECORDING_UNIT,
-                ColumnNames.ECG_RECORDINGS_COMBINED,
+                ColumnNames.ECG_RECORDING,
                 ColumnNames.LOINC_CODE,
                 ColumnNames.DISPLAY,
                 ColumnNames.APPLE_HEALTH_KIT_CODE,
             ],
             FHIRResourceType.QUESTIONNAIRE_RESPONSE: [
                 ColumnNames.USER_ID,
-                ColumnNames.EFFECTIVE_DATE_TIME,
-                ColumnNames.QUANTITY_NAME,
-                ColumnNames.QUANTITY_VALUE,
-                ColumnNames.LOINC_CODE,
+                ColumnNames.SURVEY_TITLE,
+                ColumnNames.SURVEY_DATE,
+                ColumnNames.SURVEY_ID,
+                ColumnNames.QUESTION_ID,
+                ColumnNames.QUESTION_TEXT,
+                ColumnNames.ANSWER_TEXT
             ],
         }
 
         if resource_type not in self.resource_columns:
             raise ValueError(f"Unsupported resource type: {resource_type.name}")
 
-    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+    def flatten(self, resources: list[Any], survey_path: list[str] = None) -> FHIRDataFrame:
         """
         Abstract method intended to transform a list of FHIR resources into a flattened
         FHIRDataFrame.
@@ -327,186 +386,258 @@ class ResourceFlattener:
 @dataclass
 class ObservationFlattener(ResourceFlattener):
     """
-    Flattens FHIR Observation resources into a structured DataFrame.
+    Handles the flattening of FHIR Observation resources into a structured DataFrame
+    format, facilitating analysis and visualization. It extracts crucial information such
+    as patient IDs, observation timestamps, and measurement values, converting them from
+    the FHIR format into a more accessible tabular form.
 
-    Extends ResourceFlattener, specifically handling the conversion of Observation
-    resources into a tabular format, extracting key information such as user IDs,
-    effective date-times, quantities, and associated codes.
-
-    Methods:
-        flatten: Transforms a list of Observation resources into a FHIRDataFrame.
+    Inherits:
+        ResourceFlattener: The base class for resource flatteners, providing common
+        functionality and attributes.
     """
 
     def __init__(self):
+        """
+        Initializes the ObservationFlattener for processing FHIR Observation resources.
+        """
         super().__init__(FHIRResourceType.OBSERVATION)
 
-    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+    def flatten(self, resources: list[Observation]) -> FHIRDataFrame:
         """
-        Transforms a list of Observation resources into a flattened FHIRDataFrame.
-
-        This method processes each Observation resource, extracting key information such as
-        effective date-time, quantities, and codes into a structured tabular format. The resulting
-        DataFrame is suitable for analysis and further data processing tasks.
+        Converts a list of FHIR Observation resources into a structured DataFrame.
+        Extracts and organizes information from observations into a format suitable for analysis.
 
         Parameters:
-            resources (list[Any]): A list of FHIR Observation resources to be flattened.
+            resources (list[Observation]): A collection of FHIR Observation resources to be
+                flattened.
 
         Returns:
-            FHIRDataFrame: A structured DataFrame containing the flattened data from the Observation
+            FHIRDataFrame: A DataFrame containing structured data extracted from the input
                 resources.
         """
+
         flattened_data = []
         for observation in resources:
 
-            effective_datetime = observation.dict().get("effectiveDateTime")
-            if not effective_datetime:
-                effective_period = observation.dict().get("effectivePeriod", {})
-                effective_datetime = effective_period.get("start", None)
+            if not (
+                effective_datetime := observation.dict().get(
+                    KeyNames.EFFECTIVE_DATE_TIME.value
+                )
+            ):
+                effective_period = observation.dict().get(
+                    KeyNames.EFFECTIVE_PERIOD.value, {}
+                )
+                effective_datetime = effective_period.get(KeyNames.START.value, None)
 
-            coding = observation.dict().get("code", {}).get("coding", [])
-
-            loinc_code = coding[0]["code"] if len(coding) > 0 else None
-            display = coding[0]["display"] if len(coding) > 0 else None
-
-            apple_healthkit_code = (
-                coding[1]["code"]
-                if len(coding) > 1
-                else (coding[0]["code"] if len(coding) > 0 else None)
-            )
-            quantity_name = (
-                coding[1]["display"]
-                if len(coding) > 1
-                else (coding[0]["display"] if len(coding) > 0 else None)
-            )
+            coding_info = extract_coding_info(observation)
 
             flattened_entry = {
                 ColumnNames.USER_ID.value: observation.subject.id,
                 ColumnNames.EFFECTIVE_DATE_TIME.value: (
                     effective_datetime if effective_datetime else None
                 ),
-                ColumnNames.QUANTITY_NAME.value: quantity_name,
+                **coding_info,
                 ColumnNames.QUANTITY_UNIT.value: observation.dict()
-                .get("valueQuantity", {})
-                .get("unit", None),
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.UNIT.value, None),
                 ColumnNames.QUANTITY_VALUE.value: observation.dict()
-                .get("valueQuantity", {})
-                .get("value", None),
-                ColumnNames.LOINC_CODE.value: loinc_code,
-                ColumnNames.DISPLAY.value: display,
-                ColumnNames.APPLE_HEALTH_KIT_CODE.value: apple_healthkit_code,
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.VALUE.value, None),
             }
 
             flattened_data.append(flattened_entry)
 
         flattened_df = pd.DataFrame(flattened_data)
-        flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-            flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value], errors="coerce"
-        ).dt.date
+
+        # Convert to UTC, remove timezone info, and then extract the date
+        flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = (
+            pd.to_datetime(
+                flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value],
+                errors="coerce",
+                utc=True,
+            )
+            .dt.tz_convert(None)
+            .dt.date
+        )
 
         return FHIRDataFrame(flattened_df, FHIRResourceType.OBSERVATION)
 
 
 @dataclass
 class ECGObservationFlattener(ResourceFlattener):
+    """
+    Specializes in flattening FHIR ECG Observation resources, transforming complex ECG data
+    into a structured DataFrame. This includes handling multi-component observations and
+    extracting relevant metrics for further analysis.
+
+    Inherits:
+        ResourceFlattener: The base class providing foundational flattening functionality.
+    """
+
     def __init__(self):
+        """
+        Initializes the ECGObservationFlattener specifically for ECG Observation resources.
+        """
         super().__init__(FHIRResourceType.ECG_OBSERVATION)
 
-    def flatten(self, resources: list[Any]) -> FHIRDataFrame:
+    def flatten(self, resources: list[ECGObservation]) -> FHIRDataFrame:
+        """
+        Flattens a list of ECG Observation resources, extracting ECG data and related metrics
+        into a structured, analyzable DataFrame format.
+
+        Parameters:
+            resources (list[ECGObservation]): A collection of FHIR ECG Observation resources.
+
+        Returns:
+            FHIRDataFrame: A DataFrame containing structured ECG data from the input resources.
+        """
         flattened_data = []
         for observation in resources:
 
-            effective_datetime = observation.dict().get("effectiveDateTime")
-            if not effective_datetime:
-                effective_period = observation.dict().get("effectivePeriod", {})
-                effective_datetime = effective_period.get("start", None)
+            if not (
+                effective_datetime := observation.dict().get(
+                    KeyNames.EFFECTIVE_DATE_TIME.value
+                )
+            ):
+                effective_period = observation.dict().get(
+                    KeyNames.EFFECTIVE_PERIOD.value, {}
+                )
+                effective_datetime = effective_period.get(KeyNames.START.value, None)
 
-            coding = observation.dict().get("code", {}).get("coding", [])
-
-            apple_healthkit_code = coding[0]["code"] if len(coding) > 0 else None
-            display = coding[0]["display"] if len(coding) > 0 else None
-
-            loinc_code = (
-                coding[1]["code"]
-                if len(coding) > 1
-                else (coding[0]["code"] if len(coding) > 0 else None)
-            )
-            quantity_name = (
-                coding[1]["display"]
-                if len(coding) > 1
-                else (coding[0]["display"] if len(coding) > 0 else None)
-            )
-
-            components = observation.dict().get("component", [])
-            ecg_data_list = []
-
-            for i in [5, 6, 7]:
-                if i < len(components):
-                    data = components[i].get("valueSampledData", {}).get("data", None)
-                    if data is not None:
-                        ecg_data_list.append(data)
-
-            ecg_recordings_combined = " ".join(ecg_data_list)
-            ecg_recording_unit = (
-                components[5]
-                .get("valueSampledData", {})
-                .get("origin", {})
-                .get("unit", None)
-                if len(components) > 5
-                else None
-            )
+            coding_info = extract_coding_info(observation)
+            component_info = extract_component_info(observation)
 
             flattened_entry = {
                 ColumnNames.USER_ID.value: observation.subject.id,
-                ColumnNames.EFFECTIVE_DATE_TIME.value: (
-                    effective_datetime if effective_datetime else None
-                ),
-                ColumnNames.QUANTITY_NAME.value: quantity_name,
+                ColumnNames.EFFECTIVE_DATE_TIME.value: effective_datetime,
                 ColumnNames.NUMBER_OF_MEASUREMENTS.value: observation.dict()
-                .get("component", [{}])[0]
-                .get("valueQuantity", {})
-                .get("value", None),
+                .get(KeyNames.COMPONENT.value, [{}])[0]
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.VALUE.value, None),
                 ColumnNames.SAMPLING_FREQUENCY.value: observation.dict()
-                .get("component", [{}])[1]
-                .get("valueQuantity", {})
-                .get("value", None),
+                .get(KeyNames.COMPONENT.value, [{}])[1]
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.VALUE.value, None),
                 ColumnNames.SAMPLING_FREQUENCY_UNIT.value: observation.dict()
-                .get("component", [{}])[1]
-                .get("valueQuantity", {})
-                .get("unit", None),
+                .get(KeyNames.COMPONENT.value, [{}])[1]
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.UNIT.value, None),
                 ColumnNames.ELECTROCARDIOGRAM_CLASSIFICATION.value: observation.dict()
-                .get("component", [{}])[2]
-                .get("valueString", None),
+                .get(KeyNames.COMPONENT.value, [{}])[2]
+                .get(KeyNames.VALUE_STRING.value, None),
                 ColumnNames.HEART_RATE.value: observation.dict()
-                .get("component", [{}])[3]
-                .get("valueQuantity", {})
-                .get("value", None),
+                .get(KeyNames.COMPONENT.value, [{}])[3]
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.VALUE.value, None),
                 ColumnNames.HEART_RATE_UNIT.value: observation.dict()
-                .get("component", [{}])[3]
-                .get("valueQuantity", {})
-                .get("unit", None),
-                ColumnNames.ECG_RECORDING_UNIT.value: ecg_recording_unit,
-                ColumnNames.ECG_RECORDINGS_COMBINED.value: (
-                    ecg_recordings_combined if ecg_data_list else None
-                ),
-                ColumnNames.LOINC_CODE.value: loinc_code,
-                ColumnNames.DISPLAY.value: display,
-                ColumnNames.APPLE_HEALTH_KIT_CODE.value: apple_healthkit_code,
+                .get(KeyNames.COMPONENT.value, [{}])[3]
+                .get(KeyNames.VALUE_QUANTITY.value, {})
+                .get(KeyNames.UNIT.value, None),
+                **coding_info,
+                **component_info,
             }
-
             flattened_data.append(flattened_entry)
 
         flattened_df = pd.DataFrame(flattened_data)
-        flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-            flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value], errors="coerce"
-        ).dt.date
+        flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = (
+            pd.to_datetime(
+                flattened_df[ColumnNames.EFFECTIVE_DATE_TIME.value],
+                errors="coerce",
+                utc=True,
+            )
+            .dt.tz_convert(None)
+            .dt.date
+        )
 
         return FHIRDataFrame(flattened_df, FHIRResourceType.ECG_OBSERVATION)
 
 
+def extract_coding_info(observation: Observation | ECGObservation) -> dict:
+    """
+    Extracts coding information from an Observation resource, focusing on key details
+    like LOINC codes (numeric) and Apple HealthKit codes (alphabetic).
+
+    Parameters:
+        observation (Observation | ECGObservation): The FHIR Observation resource from
+            which to extract coding information.
+
+    Returns:
+        dict: A dictionary containing extracted coding details such as LOINC code,
+            Apple HealthKit code, and display text.
+    """
+    coding = (
+        observation.dict().get(KeyNames.CODE.value, {}).get(KeyNames.CODING.value, [])
+    )
+
+    loinc_code = None
+    apple_health_kit_code = None
+    display_text = None
+    quantity_name = None
+
+    if coding:
+        quantity_name = (
+            coding[1][KeyNames.DISPLAY.value]
+            if len(coding) > 1
+            else (coding[0][KeyNames.DISPLAY.value] if len(coding) > 0 else None)
+        )
+
+    for code_info in coding:
+        code = code_info.get(KeyNames.CODE.value, "")
+        display = code_info.get(KeyNames.DISPLAY.value, "")
+
+        if re.fullmatch(r"\d+(-\d+)?", code):
+            loinc_code = code
+            display_text = display
+
+        elif re.fullmatch(r"[A-Za-z]+", code):
+            apple_health_kit_code = code
+
+    return {
+        ColumnNames.QUANTITY_NAME.value: quantity_name,
+        ColumnNames.LOINC_CODE.value: loinc_code,
+        ColumnNames.DISPLAY.value: display_text,
+        ColumnNames.APPLE_HEALTH_KIT_CODE.value: apple_health_kit_code,
+    }
+
+
+def extract_component_info(observation: ECGObservation) -> dict:
+    """
+    Extracts information from components of an ECG Observation, relevant for detailed ECG
+    data analysis.
+
+    Parameters:
+        observation (ECGObservation): The FHIR ECG Observation resource containing component data.
+
+    Returns:
+        dict: A dictionary with structured information extracted from ECG components,
+        including a single merged ECG recording data string and the unit of measurement.
+    """
+    component_info = {}
+    components = observation.dict().get(KeyNames.COMPONENT.value, [])
+
+    merged_ecg_data = ""
+    unit = None
+
+    for component in components:
+        value_sampled_data = component.get(KeyNames.VALUE_SAMPLED_DATA.value, {})
+
+        data = value_sampled_data.get(KeyNames.DATA.value, None)
+        if data is not None:  # pylint: disable=consider-using-assignment-expr
+            merged_ecg_data += data + " "  # Adding a space for separation
+
+        if unit is None:
+            origin = value_sampled_data.get(KeyNames.ORIGIN.value, {})
+            unit = origin.get(KeyNames.UNIT.value, None)
+
+    component_info[ColumnNames.ECG_RECORDING.value] = merged_ecg_data.strip()
+    component_info[ColumnNames.ECG_RECORDING_UNIT.value] = unit
+
+    return component_info
+
 class QuestionnaireResponseFlattener:
 
     def flatten(self, resources: list[Any], survey_paths: list[str]) -> FHIRDataFrame:
-
+        flattened_data = []
         def extract_mappings(json_content):
 
             question_mapping = {}
@@ -537,8 +668,12 @@ class QuestionnaireResponseFlattener:
                 question_mapping, answer_mapping = extract_mappings(json.load(file))
                 all_question_mappings.update(question_mapping)
                 all_answer_mappings.update(answer_mapping)
-
-        data = []
+        
+        for file_path in survey_paths:
+            with open(file_path, 'r') as file:
+                title_json = json.load(file)
+                title = title_json.get('title')
+        
         for response in resources:
             for item in response.item:
                 question_id = item.linkId
@@ -571,30 +706,22 @@ class QuestionnaireResponseFlattener:
                         answer_value = "No Answer"
 
                 responseDict = response.dict()
-                date = responseDict["authored"]
+                date = responseDict['authored']
+                    
+                user_id = getattr(response.subject, 'id', None)
+                
+                flattened_entry = {
+                    ColumnNames.USER_ID.value: user_id,
+                    ColumnNames.SURVEY_TITLE.value: title,
+                    ColumnNames.SURVEY_ID.value: response.id,
+                    ColumnNames.QUESTION_ID.value: question_id,
+                    ColumnNames.QUESTION_TEXT.value: question_text,
+                    ColumnNames.ANSWER_TEXT.value: answer_value
+                }
+                
+                flattened_data.append(flattened_entry)
 
-                user_id = getattr(response.subject, "id", None)
-
-                data.append(
-                    {
-                        "UserID": user_id,
-                        "Date": date,
-                        "SurveyID": response.id,
-                        "QuestionID": question_id,
-                        "QuestionText": question_text,
-                        "Answer": answer_value,
-                    }
-                )
-
-        df = pd.DataFrame(data)
-
-        # index_columns = ["UserID", "SurveyID", "Date", "QuestionID"]
-        # df = df.pivot(
-        #     index=index_columns, columns="QuestionText", values="Answer"
-        # ).reset_index()
-        # df.to_csv("all_questionnaire_responses.csv", index=False)
-
-        return FHIRDataFrame(df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
+        return FHIRDataFrame(flattened_df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
 
 def flatten_fhir_resources(
@@ -625,7 +752,7 @@ def flatten_fhir_resources(
     flattener_classes = {
         FHIRResourceType.OBSERVATION: ObservationFlattener,
         FHIRResourceType.ECG_OBSERVATION: ECGObservationFlattener,
-        FHIRResourceType.QUESTIONNAIRE_RESPONSE: QuestionnaireResponseFlattener,
+        FHIRResourceType.QUESTIONNAIRE_RESPONSE: QuestionnaireResponseFlattener
     }
 
     resource_type = FHIRResourceType(
@@ -638,7 +765,5 @@ def flatten_fhir_resources(
     else:
         raise ValueError(f"No flattener found for resource type: {resource_type}")
 
-    if resource_type == FHIRResourceType.QUESTIONNAIRE_RESPONSE:
-        return flattener.flatten(resources, survey_path)
+    return flattener.flatten(resources, survey_path)
 
-    return flattener.flatten(resources)

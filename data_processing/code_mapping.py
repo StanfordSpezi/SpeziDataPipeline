@@ -7,17 +7,35 @@
 #
 
 """
-This module contains the CodeProcessor, a utility class that manages mappings between LOINC codes
-and their corresponding processing functions and value ranges. It facilitates the dynamic
-association of health metrics with their processing logic, enhancing the module's flexibility
-and extensibility.
+This module introduces the `CodeProcessor` class, designed to handle the mapping and processing of
+healthcare data identifiers, primarily LOINC codes, within the context of FHIR (Fast Healthcare
+Interoperability Resources) data processing. The class plays a pivotal role in associating health
+data metrics with appropriate processing functions, display names, and acceptable value ranges,
+facilitating dynamic data analysis, normalization, and quality control.
+
+The `CodeProcessor` serves as a foundational component within a larger data processing pipeline,
+enabling customizable handling of diverse health metrics. By providing mappings from LOINC codes
+and similar healthcare identifiers to processing details, it supports a wide range of operations,
+including outlier detection, data aggregation, and trend analysis. The class enhances the
+flexibility and adaptability of health data analysis workflows, making it easier to address the
+specific requirements of different health metrics and data sources.
+
+Key Features:
+- Dynamic Association: Links LOINC codes and similar identifiers to their processing logic,
+  allowing for tailored data analysis based on the health metric being examined.
+- Customizable Processing: Facilitates the association of health metrics with specific data
+  processing functions, supporting operations such as daily totals calculation, averaging,
+  and moving average analysis.
+- Outlier Filtering: Employs default value ranges for various health metrics to identify and
+  filter outliers, ensuring data quality and reliability.
+
 """
 
 # Related third-party imports
 from dataclasses import dataclass
 
 # Local application/library specific imports
-from .observation_processing import calculate_daily_data, calculate_average_data
+from .observation_processor import calculate_daily_data, calculate_average_data
 
 
 @dataclass
@@ -82,68 +100,64 @@ class CodeProcessor:  # pylint: disable=unused-variable
         # Maps LOINC codes and similar identifiers to processing functions
         self.code_to_function = {
             # Summed up per day
-            "9052-2": calculate_daily_data,  # Calorie intake total (kcal)
-            "55423-8": calculate_daily_data,  # Step count (steps)
-            "HKQuantityTypeIdentifierDietaryProtein": calculate_daily_data,  # Dietary Protein (g)
-            "41981-2": calculate_daily_data,  # Active Energy Burned (kcal)
-            "HKQuantityTypeIdentifierAppleExerciseTime": calculate_daily_data,  # Apple Exercise Time (min)
-            "HKQuantityTypeIdentifierAppleMoveTime": calculate_daily_data,  # Apple Move Time (min)
-            "HKQuantityTypeIdentifierAppleStandTime": calculate_daily_data,  # Apple Stand Time (min)
-            "HKQuantityTypeIdentifierBasalEnergyBurned": calculate_daily_data,  # Basal Energy Burned (kcal)
-            "HKQuantityTypeIdentifierDietaryBiotin": calculate_daily_data,  # Dietary Biotin (ug)
-            "HKQuantityTypeIdentifierDietaryCaffeine": calculate_daily_data,  # Dietary Caffeine (mg)
-            "HKQuantityTypeIdentifierDietaryCalcium": calculate_daily_data,  # Dietary Calcium (mg)
-            "HKQuantityTypeIdentifierDietaryCarbohydrates": calculate_daily_data,  # Dietary Carbohydrates (g)
-            "HKQuantityTypeIdentifierDietaryChloride": calculate_daily_data,  # Dietary Chloride (mg)
-            "HKQuantityTypeIdentifierDietaryChoresterol": calculate_daily_data,  # Dietary Choresterol (mg)
-            "HKQuantityTypeIdentifierDietaryChromium": calculate_daily_data,  # Dietary Chromium (ug)
-            "HKQuantityTypeIdentifierDietaryCopper": calculate_daily_data,  # Dietary Copper (ug)
-            "HKQuantityTypeIdentifierDietaryFatMonounsaturated": calculate_daily_data,  # Dietary Fat Monounsaturated (g)
-            "HKQuantityTypeIdentifierDietaryFatPolyunsaturated": calculate_daily_data,  # Dietary Fat Polyunsaturated (g)
-            "HKQuantityTypeIdentifierDietaryFatSaturated": calculate_daily_data,  # Dietary Fat Saturated (g)
-            "HKQuantityTypeIdentifierDietaryFat": calculate_daily_data,  # Dietary Fat Total (g)
-            "HKQuantityTypeIdentifierDietaryFiber": calculate_daily_data,  # Dietary Fiber (g)
-            "HKQuantityTypeIdentifierDietaryFolate": calculate_daily_data,  # Dietary Folate (ug)
-            "HKQuantityTypeIdentifierDietaryIodine": calculate_daily_data,  # Dietary Iodine (ug)
-            "HKQuantityTypeIdentifierDietaryIron": calculate_daily_data,  # Dietary Iron (mg)
-            "HKQuantityTypeIdentifierDietaryMagnesium": calculate_daily_data,  # Dietary Magnesium (mg)
-            "HKQuantityTypeIdentifierDietaryManganese": calculate_daily_data,  # DietaryManganese (mg)
-            "HKQuantityTypeIdentifierDietaryMolybdenum": calculate_daily_data,  # Dietary Molybdenum (ug)
-            "HKQuantityTypeIdentifierDietaryNiacin": calculate_daily_data,  # Dietary Niacin (mg)
-            "HKQuantityTypeIdentifierDietaryPantothenicAcid": calculate_daily_data,  # Dietary Pantothenic Acid (mg)
-            "HKQuantityTypeIdentifierDietaryPhosphorus": calculate_daily_data,  # Dietary Phosphorus (mg)
-            "HKQuantityTypeIdentifierDietaryPotassium": calculate_daily_data,  # Dietary Potassium (mg)
-            "HKQuantityTypeIdentifierDietaryProtein": calculate_daily_data,  # Dietary Protein (g)
-            "HKQuantityTypeIdentifierDietaryRiboflavin": calculate_daily_data,  # Dietary Riboflavin (mg)
-            "HKQuantityTypeIdentifierDietarySelenium": calculate_daily_data,  # Dietary Selenium (ug)
-            "HKQuantityTypeIdentifierDietarySodium": calculate_daily_data,  # Dietary Sodium (mg)
-            "HKQuantityTypeIdentifierDietarySugar": calculate_daily_data,  # Dietary Sugar (g)
-            "HKQuantityTypeIdentifierDietaryThiamin": calculate_daily_data,  # Dietary Thiamin (mg)
-            "HKQuantityTypeIdentifierDietaryVitaminA": calculate_daily_data,  # Dietary Vitamin A (ug)
-            "HKQuantityTypeIdentifierDietaryVitaminB12": calculate_daily_data,  # Dietary Vitamin B12 (ug)
-            "HKQuantityTypeIdentifierDietaryVitaminB6": calculate_daily_data,  # Dietary Vitamin B6 (mg)
-            "HKQuantityTypeIdentifierDietaryVitaminC": calculate_daily_data,  # Dietary Vitamin C (mg)
-            "HKQuantityTypeIdentifierDietaryVitaminD": calculate_daily_data,  # Dietary Vitamin D (ug)
-            "HKQuantityTypeIdentifierDietaryVitaminE": calculate_daily_data,  # Dietary Vitamin E (mg)
-            "HKQuantityTypeIdentifierDietaryVitaminK": calculate_daily_data,  # Dietary Vitamin K (ug)
-            "HKQuantityTypeIdentifierDietaryWater": calculate_daily_data,  # Dietary Water (l)
-            "HKQuantityTypeIdentifierDietaryZinc": calculate_daily_data,  # Dietary Zinc (mg)
-            "9052-2": calculate_daily_data,  # Dietary Energy Consumed (kcal)
-            "HKQuantityTypeIdentifierDistanceCycling": calculate_daily_data,  # Distance Cycling (m)
-            "HKQuantityTypeIdentifierDistanceDownhillSnowSports": calculate_daily_data,  # Distance Downhill Snow Sports (m)
-            "93816-7": calculate_daily_data,  # Distance Swimming (m)
-            "HKQuantityTypeIdentifierDistanceWalkingRunning": calculate_daily_data,  # Distance Walking Running (m)
-            "HKQuantityTypeIdentifierDistanceWheelchair": calculate_daily_data,  # Distance Wheelchair (m)
-            "100304-5": calculate_daily_data,  # Flights Climbed (flights)
-            "HKQuantityTypeIdentifierSwimmingStrokeCount": calculate_daily_data,  # Swimming Stroke Count (strokes)
+            "9052-2": calculate_daily_data,
+            "55423-8": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryProtein": calculate_daily_data,
+            "41981-2": calculate_daily_data,
+            "HKQuantityTypeIdentifierAppleExerciseTime": calculate_daily_data,
+            "HKQuantityTypeIdentifierAppleMoveTime": calculate_daily_data,
+            "HKQuantityTypeIdentifierAppleStandTime": calculate_daily_data,
+            "HKQuantityTypeIdentifierBasalEnergyBurned": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryBiotin": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryCaffeine": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryCalcium": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryCarbohydrates": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryChloride": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryChoresterol": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryChromium": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryCopper": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryFatMonounsaturated": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryFatPolyunsaturated": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryFatSaturated": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryFat": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryFiber": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryFolate": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryIodine": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryIron": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryMagnesium": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryManganese": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryMolybdenum": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryNiacin": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryPantothenicAcid": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryPhosphorus": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryPotassium": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryRiboflavin": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietarySelenium": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietarySodium": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietarySugar": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryThiamin": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminA": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminB12": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminB6": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminC": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminD": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminE": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryVitaminK": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryWater": calculate_daily_data,
+            "HKQuantityTypeIdentifierDietaryZinc": calculate_daily_data,
+            "HKQuantityTypeIdentifierDistanceCycling": calculate_daily_data,
+            "HKQuantityTypeIdentifierDistanceDownhillSnowSports": calculate_daily_data,
+            "93816-7": calculate_daily_data,
+            "HKQuantityTypeIdentifierDistanceWalkingRunning": calculate_daily_data,
+            "HKQuantityTypeIdentifierDistanceWheelchair": calculate_daily_data,
+            "100304-5": calculate_daily_data,
+            "HKQuantityTypeIdentifierSwimmingStrokeCount": calculate_daily_data,
             # Averaged per day
-            "8867-4": calculate_average_data,  # Heart Rate (bpm)
-            "80404-7": calculate_average_data,  # Heart Rate Variability SDNN (ms)
-            "59408-5": calculate_average_data,  # Oxygen Saturation (%)
-            "61006-3": calculate_average_data,  # Peripheral Perfusion Index (%)
-            "9279-1": calculate_average_data,  # Respiratory Rate (breaths per minute)
-            "40443-4": calculate_average_data,  # Resting Heart Rate (bpm)
-            "HKQuantityTypeIdentifierWalkingHeartRateAverage": calculate_average_data,  # Walking Heart Rate Average (bpm)
+            "59408-5": calculate_average_data,
+            "61006-3": calculate_average_data,
+            "9279-1": calculate_average_data,
+            "40443-4": calculate_average_data,
+            "HKQuantityTypeIdentifierWalkingHeartRateAverage": calculate_average_data,
         }
 
         # Example of ranges that could be used for filtering
@@ -175,10 +189,12 @@ class CodeProcessor:  # pylint: disable=unused-variable
             "39156-5": (5, 40),  # Body Mass Index (kg/m^2)
             "41982-0": (5, 60),  # Body Fat Percentage (%)
             "HKQuantityTypeIdentifierElectrodermalActivity": (),  # Electrodermal Activity (siemens)
-            "HKQuantityTypeIdentifierEnvironmentalAudioExposure": (),  # Environmental Audio Exposure (dB(SPL))
+            # Environmental Audio Exposure (dB(SPL))
+            "HKQuantityTypeIdentifierEnvironmentalAudioExposure": (),
             "20150-9": (1, 6),  # Forced Expiratory Volume1 (L)
             "19870-5": (),  # Forced Vital Capacity (L)
-            "HKQuantityTypeIdentifierHeadphoneAudioExposure": (),  # Headphone Audio Exposure (dB(SPL))
+            # Headphone Audio Exposure (dB(SPL))
+            "HKQuantityTypeIdentifierHeadphoneAudioExposure": (),
             "8302-2": (),  # Height (in)
             "HKQuantityTypeIdentifierInhalerUsage": (),  # Inhaler Usage (count)
             "91557-9": (),  # Lean Body Mass (lbs)

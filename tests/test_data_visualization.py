@@ -7,7 +7,20 @@
 #
 
 """
-Docstring to be added.
+This module provides test cases for the DataVisualizer class from the data_visualization module.
+
+The tests focus on the initialization and configuration of the DataVisualizer instance, including
+the capabilities to set specific date ranges, user IDs, and y-axis boundaries for data
+visualization plots. It includes methods to test both the setting of parameters and the generation
+of static plots, ensuring the correct application of combined and individual plotting based on the
+instance's state.
+
+The module makes use of unittest framework for structuring the test cases, employing mocks to
+isolate and test functionality effectively without dependence on external data or the actual
+plotting libraries.
+
+Classes:
+    TestDataVisualizer: Contains all the unit tests for testing the DataVisualizer functionalities.
 """
 
 # Standard library imports
@@ -38,9 +51,11 @@ class TestDataVisualizer(unittest.TestCase):  # pylint: disable=unused-variable
         Ensures that the start and end dates are correctly set in the DataVisualizer instance.
         """
         visualizer = DataVisualizer()
-        visualizer.set_date_range("2021-01-01", "2021-01-31")
-        self.assertEqual(visualizer.start_date, "2021-01-01")
-        self.assertEqual(visualizer.end_date, "2021-01-31")
+        start_date = "2021-01-01"
+        end_date = "2021-01-31"
+        visualizer.set_date_range(start_date, end_date)
+        self.assertEqual(visualizer.start_date.strftime("%Y-%m-%d"), start_date)
+        self.assertEqual(visualizer.end_date.strftime("%Y-%m-%d"), end_date)
 
     def test_set_user_ids(self):
         """
@@ -67,7 +82,7 @@ class TestDataVisualizer(unittest.TestCase):  # pylint: disable=unused-variable
 
     @patch("data_visualization.data_visualizer.DataVisualizer.plot_combined")
     @patch("data_visualization.data_visualizer.DataVisualizer.plot_individual")
-    def test_create_static_plot_combined(
+    def test_create_static_plot_combined(  # pylint: disable=no-self-use
         self, mock_plot_individual, mock_plot_combined
     ):
         """

@@ -7,93 +7,192 @@
 #
 
 """
- This module defines the DataExporter class, which extends the DataVisualizer
- class to provide additional functionality for exporting FHIR (Fast Healthcare 
- Interoperability Resources) data. The DataExporter allows for exporting
- flattened FHIR data frames to CSV files and generating plots from the data.
- It supports setting various parameters such as date ranges, user IDs, and
- plot properties to customize  the export and visualization processes according 
- to specific requirements.
- Features include:
- - Exporting data to CSV with `export_to_csv`.
- - Creating and saving plots with customized parameters through
- `create_and_save_plot`.
- """
+This module encompasses the DataExporter class, an extension of the DataVisualizer class,
+tailored for the exportation and visualization of FHIR (Fast Healthcare Interoperability Resources)
+data. The DataExporter class enhances the capability to work with flattened FHIR data by
+facilitating the exportation of such data into CSV format and the generation of visual plots from
+this data catering to varied analysis and reporting needs.
+
+The class is designed to support a wide range of functionalities for manipulating, filtering,
+and visualizing FHIR data. Users can specify parameters such as date ranges and user IDs to narrow
+down the data of interest. Additionally, the class offers customization options for the visual
+representation of data, including deciding whether to combine data from multiple users.
+
+Key Features:
+- Exporting Filtered FHIR Data: Allows for the exportation of FHIR data filtered by custom
+  parameters (e.g., date range, user IDs) to CSV files, facilitating further data analysis or
+  archiving.
+- Enhanced Visualization Capabilities: Supports the generation of plots from FHIR data, with
+  options to customize plot aesthetics such as Y-axis bounds. The class can handle both general
+  observation data and ECG-specific data, offering specialized plotting functions for ECG
+  waveforms.
+- Parameter Customization: Users can set various parameters (e.g., start and end dates, user IDs,
+  Y-axis bounds) to tailor the data exportation and visualization processes to specific
+  requirements, enhancing the utility and flexibility of data analysis workflows.
+- Support for ECG Data: Includes specialized functionalities for visualizing ECG (electrocardiogram)
+  data, making it a valuable tool for healthcare data analysts and researchers focusing on
+  cardiac health.
+
+The DataExporter class builds on the foundational capabilities of the DataVisualizer class,
+providing a seamless interface for users to both visualize and export FHIR data with ease. It is
+a crucial component of the data analysis pipeline, offering streamlined processes for handling
+FHIR data.
+
+Example Usage:
+    # Assuming fhir_dataframe is an instance of FHIRDataFrame containing the data to be
+    visualized/exported
+    data_exporter = DataExporter(fhir_dataframe)
+    data_exporter.set_date_range("2021-01-01", "2021-01-31")
+    data_exporter.set_user_ids(["user1", "user2"])
+    data_exporter.export_to_csv("filtered_data.csv")
+    data_exporter.create_and_save_plot("data_visualization.png")
+"""
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import FHIRDataFrame
-from data_visualization.data_visualizer import DataVisualizer
+from data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from data_visualization.data_visualizer import (
+    DataVisualizer,
+    ECGVisualizer,
+    DEFAULT_DPI_VALUE,
+)
 
 
-class DataExporter(DataVisualizer):  # pylint: disable=unused-variable
+class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-variable
     """
-    Extends the DataVisualizer class to enable data exporting functionalities, allowing
-    for the export of FHIR data into CSV files and the creation and saving of visualizations
-    as image files. This class handles the preparation and configuration of data for export
-    based on specified parameters.
+    Extends DataVisualizer to provide functionalities for exporting FHIR data to CSV
+    files and saving visualizations as image files. This class enables data export
+    and visualization with customized parameters such as date ranges, user IDs, and
+    Y-axis bounds, catering to specific requirements for data analysis and reporting.
 
     Attributes:
-        flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing flattened FHIR
-                                            data for export or visualization.
-        start_date (str): The start date for filtering the data, defaulting to "2022-01-01".
-        end_date (str): The end date for filtering the data, defaulting to "2022-12-31".
-        user_ids (List[str], optional): A list of user IDs for filtering the data.
-                                    If None, all users are considered.
-        y_lower (int): The lower bound for the y-axis of the plot, defaulting to 50.
-        y_upper (int): The upper bound for the y-axis of the plot, defaulting to 100.
-        combine_plots (bool): Indicates whether to combine multiple users' data into a single plot.
-                        Defaults to False.
+        flattened_fhir_dataframe (FHIRDataFrame): A flattened FHIRDataFrame intended
+            for export or visualization.
+        start_date (str, optional): Start date for data filtering; used to define the
+            beginning of the date range of interest.
+        end_date (str, optional): End date for data filtering; used to define the end
+            of the date range of interest.
+        user_ids (List[str], optional): List of user IDs for filtering the data. If None,
+            data for all users is considered.
+        y_lower (int): Lower bound for the Y-axis of the plots.
+        y_upper (int): Upper bound for the Y-axis of the plots.
+        combine_plots (bool): Indicates whether to combine data from multiple users into
+            a single plot. Defaults to False to create separate plots for each user.
     """
 
     def __init__(self, flattened_fhir_dataframe: FHIRDataFrame):
         """
-        Initializes the DataExporter with a specified FHIRDataFrame and default parameters
+        Initializes the DataExporter with the given FHIRDataFrame and default parameters
         for data export and visualization.
 
         Parameters:
             flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame to be used for
-            data export and visualization.
+                data export and visualization.
         """
         super().__init__()
         self.flattened_fhir_dataframe = flattened_fhir_dataframe
-        # Default values
-        self.start_date = None
-        self.end_date = None
-        self.user_ids = None
-        self.y_lower = 50
-        self.y_upper = 100
-        self.combine_plots = False
+        # self.start_date = None
+        # self.end_date = None
+        # self.user_ids = None
+        # self.y_lower = None
+        # self.y_upper = None
+        # self.combine_plots = False
 
     def export_to_csv(self, filename):
         """
-        Exports the FHIR data to a CSV file.
+        Exports the filtered FHIR data to a CSV file. Filtering is based on the
+        specified date range and user IDs.
 
         Parameters:
-            filename (str): The path or filename where the CSV file will be saved.
+            filename (str): The filename or path where the CSV file will be saved.
         """
         self.flattened_fhir_dataframe.df.to_csv(filename, index=False)
 
-    def create_and_save_plot(self, filename):
+    def create_filename(self, base_filename, user_id, idx=None):
         """
-        Generates a plot for the specified FHIR data and saves it to a file. Only supports
-        creating and saving plots for data related to a single user. If multiple user IDs are
-        present or no user ID is specified, it prompts to select a single user.
+        Constructs a filename incorporating the user ID and date or date range. If an
+        index is provided, it is appended to ensure uniqueness of filenames, especially
+        useful when saving multiple plots for the same parameters.
 
         Parameters:
-            filename (str): The path or filename where the plot image will be saved.
+            base_filename (str): The base filename or path for saving the image.
+            user_id (str): User ID to include in the filename for personalized exports.
+            idx (int, optional): Index to append to the filename for distinguishing
+                between multiple plots.
 
-        Raises:
-            TypeError: If an unsupported type is encountered in the plotting data.
-            ValueError: If the data values are outside the expected ranges or if plotting
-            parameters are incorrect.
+        Returns:
+            str: The constructed filename including the user ID and date or date range.
         """
-        try:
-            if self.user_ids is None or len(self.user_ids) > 1:
-                print("Select a single user for enabling figure saving.")
-            else:
-                fig = super().create_static_plot(self.flattened_fhir_dataframe)
-                fig.savefig(filename, dpi=300)
-                print("Plot saved successfully.")
+        date_range = "all_dates"
+        if self.start_date and self.end_date:
+            date_range = f"{self.start_date}_to_{self.end_date}"
+        elif self.start_date:
+            date_range = f"from_{self.start_date}"
+        elif self.end_date:
+            date_range = f"to_{self.end_date}"
 
-        except (TypeError, ValueError) as e:
-            print(f"An error occurred while generating the plot: {e}")
+        # Construct the filename with optional index for multiple figures
+        filename_parts = [base_filename.rstrip(".png"), f"user_{user_id}", date_range]
+        if idx is not None:
+            filename_parts.append(f"fig{idx}")
+        filename = "_".join(filename_parts) + ".png"
+
+        return filename
+
+    def create_and_save_plot(self, base_filename: str):
+        """
+        Generates and saves plots for the FHIR data based on the set parameters, including
+        date range and user IDs. The method decides between static plots or ECG subplots
+        depending on the data type and saves the generated plots using customized filenames.
+
+        Parameters:
+            base_filename (str): The base filename or path for saving the plot images.
+
+        Note:
+            This method dynamically handles the creation and saving of either a single plot
+            or multiple plots based on the filtering parameters. It supports customization
+            through class attributes set prior to calling this method.
+        """
+        user_ids = (
+            self.user_ids if self.user_ids else [None]
+        )  # Handle None as a case for all users
+        if not self.user_ids:
+            return  # Do not proceed with plot creation.
+
+        # Assuming that figs can either be a single figure or
+        # a list of (list of figures, user_id) tuples
+        figs = []
+        if self.flattened_fhir_dataframe.resource_type in [
+            FHIRResourceType.OBSERVATION,
+            FHIRResourceType.ECG_OBSERVATION,
+        ]:
+            for user_id in user_ids:
+                if (
+                    self.flattened_fhir_dataframe.resource_type
+                    == FHIRResourceType.OBSERVATION
+                ):
+                    data_visualizer = DataVisualizer()
+                    data_visualizer.set_user_ids(
+                        [user_id]
+                    )  # Filter for one user at a time if multiple are provided
+                    fig_list = data_visualizer.create_static_plot(
+                        self.flattened_fhir_dataframe
+                    )
+                    if fig_list:
+                        figs.extend([(fig, user_id) for fig in fig_list])
+                else:  # FHIRResourceType.ECG_OBSERVATION
+                    ecg_data_visualizer = ECGVisualizer()
+                    ecg_data_visualizer.set_user_ids(
+                        [user_id]
+                    )  # Filter for one user at a time if multiple are provided
+                    fig_list = ecg_data_visualizer.plot_ecg_subplots(
+                        self.flattened_fhir_dataframe
+                    )
+                    if fig_list:
+                        figs.extend([(fig, user_id) for fig in fig_list])
+
+        for idx, (fig, user_id) in enumerate(figs, start=1):
+            filename = self.create_filename(base_filename, user_id, idx)
+            fig.savefig(filename, dpi=DEFAULT_DPI_VALUE)
+            print(f"Plot saved successfully to: {filename}")
+        if not figs:
+            print("No plots were generated.")

@@ -1,3 +1,4 @@
+# pylint: disable=unused-variable
 #
 # This source file is part of the Stanford Spezi open-source project
 #

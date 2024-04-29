@@ -10,4 +10,9 @@ Copyright: 2024 Stanford University and the project authors (see CONTRIBUTORS.md
 License: MIT
 Comment: All files are part of the Stanford Spezi Data Pipeline Template open source project.
 
+Files: tests/*
+Copyright: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+License: MIT
+Comment: All files are part of the Stanford Spezi Data Pipeline Template open source project.
+
 

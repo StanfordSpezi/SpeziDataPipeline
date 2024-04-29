@@ -51,6 +51,9 @@ from dataclasses import dataclass
 from typing import Any
 import pandas as pd
 from fhir.resources.R4B.observation import Observation
+from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
+
+NO_ANSWER_STRING = "No Answer"
 
 
 class KeyNames(Enum):
@@ -99,6 +102,11 @@ class KeyNames(Enum):
     RESOURCE_TYPE = "resourceType"
     VALUE_CODING = "valueCoding"
     VALUE_INTEGER = "valueInteger"
+    ITEM = "item"
+    LINK_ID = "linkId"
+    TEXT = "text"
+    UNKNOWN_QUESTION = "Unknown Question"
+    ANSWER_OPTION = "answerOption"
 
 
 class ColumnNames(Enum):
@@ -156,6 +164,7 @@ class ColumnNames(Enum):
     ANSWER_TEXT = "AnswerText"
 
 
+# pylint: disable=too-few-public-methods
 class ECGObservation:  # pylint: disable=unused-variable
     """
     A wrapper class for FHIR ECG observations.
@@ -365,7 +374,7 @@ class ResourceFlattener:
             raise ValueError(f"Unsupported resource type: {resource_type.name}")
 
     def flatten(
-        self, resources: list[Any], survey_path: list[str] = None
+        self, resources: list[Any], survey_path: list[str] | None = None
     ) -> FHIRDataFrame:
         """
         Abstract method intended to transform a list of FHIR resources into a flattened
@@ -380,7 +389,8 @@ class ResourceFlattener:
             resources (list[Any]): A list of FHIR resource objects to be flattened. The exact type
                                     of objects in the list should correspond to the FHIR resource
                                     type the subclass is designed to handle.
-            survey_path (list[str]): Survey paths used in the QuestionnaireResponseFlattener to create survey mappings.
+            survey_path (list[str]): Survey paths used in the QuestionnaireResponseFlattener to
+                create survey mappings.
 
         Returns:
             FHIRDataFrame: A FHIRDataFrame object containing the flattened data from the resources,
@@ -412,7 +422,7 @@ class ObservationFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.OBSERVATION)
 
     def flatten(
-        self, resources: list[Observation], survey_path: list[str] = None
+        self, resources: list[Observation], survey_path: list[str] | None = None
     ) -> FHIRDataFrame:
         """
         Converts a list of FHIR Observation resources into a structured DataFrame.
@@ -649,102 +659,51 @@ def extract_component_info(observation: ECGObservation) -> dict:
 
     return component_info
 
+
 @dataclass
-class QuestionnaireResponseFlattener:
+class QuestionnaireResponseFlattener(ResourceFlattener):
     """
-    Flattens questionnaire and creates a structured DataFrame by mapping 
+    Flattens questionnaire and creates a structured DataFrame by mapping
     question and answer IDs to the original Phoenix-generated surveys.
 
     Inherits:
         ResourceFlattener: The base class providing foundational flattening functionality.
     """
-    def flatten(self, resources: list[Any], survey_path: list[str]) -> FHIRDataFrame:
+
+    def flatten(
+        self, resources: list[QuestionnaireResponse], survey_path: list[str] = None
+    ) -> FHIRDataFrame:
         """
-        Flattens a list of QuestionnaireResponse resources, extracting all question and answers 
+        Flattens a list of QuestionnaireResponse resources, extracting all question and answers
         for each user and converting it into text to create the DataFrame
 
         Parameters:
-            resources (list[Any]): A collection of QuestionnaireResponse resources.
-            survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys used to extract relevant mappings.
+            resources (list[QuestionnaireResponse]): A collection of QuestionnaireResponse
+                resources.
+            survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys used to extract
+                relevant mappings.
 
         Returns:
-            FHIRDataFrame: A DataFrame containing structured QuestionnaireResponse data from the input resources.
+            FHIRDataFrame: A DataFrame containing structured QuestionnaireResponse data from the
+                input resources.
         """
+
+        if not survey_path:
+            print("The path(s) to Phoenix-generated JSON surveys is missing.")
+            return None
+        all_question_mappings, all_answer_mappings = extract_mappings(survey_path)
         flattened_data = []
 
-        def extract_mappings(json_content):
-
-            question_mapping = {}
-            answer_mapping = {}
-
-            for section in json_content.get("item", []):
-                question_id = section.get("linkId")
-                question_mapping[question_id] = section.get("text", "Unknown Question")
-
-                for answer_option in section.get("answerOption", []):
-                    value = answer_option.get("valueCoding", {})
-                    code = value.get("code")
-                    display = value.get("display")
-
-                    system = value.get("system")
-
-                    if code and display and system:
-                        combined_id = f"{system}|{code}"
-                        answer_mapping[combined_id] = display
-
-            return question_mapping, answer_mapping
-
-        all_question_mappings = {}
-        all_answer_mappings = {}
-
-        for file_path in survey_path:
-            with open(file_path, "r") as file:
-                question_mapping, answer_mapping = extract_mappings(json.load(file))
-                all_question_mappings.update(question_mapping)
-                all_answer_mappings.update(answer_mapping)
-
-        for file_path in survey_path:
-            with open(file_path, "r") as file:
-                title_json = json.load(file)
-                title = title_json.get("title")
-
         for response in resources:
+            title = get_survey_title(survey_path)
+            user_id = getattr(response.subject, KeyNames.ID.value, None)
+
             for item in response.item:
                 question_id = item.linkId
                 question_text = all_question_mappings.get(
-                    question_id, "Unknown Question"
+                    question_id, KeyNames.UNKNOWN_QUESTION.value
                 )
-
-                answer_value = "No Answer"
-
-                if item.answer and len(item.answer) > 0:
-
-                    answer = item.answer[0]
-
-                    answer = answer.dict()
-
-                    if KeyNames.VALUE_CODING.value in answer:
-                        system_id = answer[KeyNames.VALUE_CODING.value].get(
-                            KeyNames.SYSTEM.value
-                        )
-                        code = answer[KeyNames.VALUE_CODING.value].get(
-                            KeyNames.CODE.value
-                        )
-                        if system_id and code:
-                            combined_id = f"{system_id}|{code}"
-                            answer_value = all_answer_mappings.get(
-                                combined_id, "No Answer"
-                            )
-
-                    elif KeyNames.VALUE_STRING.value in answer:
-                        answer_value = answer[KeyNames.VALUE_STRING.value]
-                    elif KeyNames.VALUE_INTEGER.value in answer:
-                        answer_value = answer[KeyNames.VALUE_INTEGER.value]
-                    else:
-                        answer_value = "No Answer"
-
-                user_id = getattr(response.subject, KeyNames.ID.value, None)
-                print(user_id)
+                answer_value = get_answer_value(item, all_answer_mappings)
 
                 flattened_entry = {
                     ColumnNames.USER_ID.value: user_id,
@@ -756,8 +715,96 @@ class QuestionnaireResponseFlattener:
                 }
 
                 flattened_data.append(flattened_entry)
+
         flattened_df = pd.DataFrame(flattened_data)
         return FHIRDataFrame(flattened_df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
+
+
+def extract_mappings(survey_path: list[str]) -> tuple[dict[str, str], dict[str, str]]:
+    """
+    Extracts question and answer mappings from Phoenix-generated JSON surveys.
+
+    Parameters:
+        survey_path (List[str]): The path(s) to Phoenix-generated JSON surveys.
+
+    Returns:
+        tuple[dict[str, str], dict[str, str]]: A tuple containing question and answer mappings.
+    """
+    question_mapping = {}
+    answer_mapping = {}
+
+    for file_path in survey_path:
+        with open(file_path, "r", encoding="utf-8") as file:
+            json_content = json.load(file)
+            for section in json_content.get(KeyNames.ITEM.value, []):
+                question_id = section.get(KeyNames.LINK_ID.value)
+                question_mapping[question_id] = section.get(
+                    KeyNames.TEXT.value, KeyNames.UNKNOWN_QUESTION.value
+                )
+
+                for answer_option in section.get(KeyNames.ANSWER_OPTION.value, []):
+                    value = answer_option.get(KeyNames.VALUE_CODING.value, {})
+                    code = value.get(KeyNames.CODE.value)
+                    display = value.get(KeyNames.DISPLAY.value)
+
+                    system = value.get(KeyNames.SYSTEM.value)
+
+                    if code and display and system:
+                        combined_id = f"{system}|{code}"
+                        answer_mapping[combined_id] = display
+
+    return question_mapping, answer_mapping
+
+
+def get_survey_title(survey_path: list[str]) -> str:
+    """
+    Gets the survey title from a Phoenix-generated JSON survey file.
+
+    Parameters:
+        survey_path (List[str]): The path(s) to Phoenix-generated JSON surveys.
+
+    Returns:
+        str: The survey title.
+    """
+    for file_path in survey_path:
+        with open(file_path, "r", encoding="utf-8") as file:
+            title_json = json.load(file)
+            if title := title_json.get("title"):
+                return title
+    return ""
+
+
+def get_answer_value(
+    item: QuestionnaireResponse, all_answer_mappings: dict[str, str]
+) -> str:
+    """
+    Gets the answer value for a QuestionnaireResponse item.
+
+    Parameters:
+        item: The QuestionnaireResponse item.
+        all_answer_mappings: A dictionary containing all answer mappings.
+
+    Returns:
+        str: The answer value.
+    """
+    answer_value = NO_ANSWER_STRING
+
+    if item.answer and len(item.answer) > 0:
+        answer = item.answer[0].dict()
+
+        if KeyNames.VALUE_CODING.value in answer:
+            system_id = answer[KeyNames.VALUE_CODING.value].get(KeyNames.SYSTEM.value)
+            code = answer[KeyNames.VALUE_CODING.value].get(KeyNames.CODE.value)
+            if system_id and code:
+                combined_id = f"{system_id}|{code}"
+                answer_value = all_answer_mappings.get(combined_id, NO_ANSWER_STRING)
+
+        elif KeyNames.VALUE_STRING.value in answer:
+            answer_value = answer[KeyNames.VALUE_STRING.value]
+        elif KeyNames.VALUE_INTEGER.value in answer:
+            answer_value = answer[KeyNames.VALUE_INTEGER.value]
+
+    return answer_value
 
 
 def flatten_fhir_resources(  # pylint: disable=unused-variable
@@ -773,7 +820,8 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
 
     Parameters:
         resources (list[Any]): A list of FHIR resource objects to be flattened.
-        survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys used to extract relevant mappings.
+        survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys used to
+            extract relevant mappings.
 
     Returns:
         FHIRDataFrame | None: A structured DataFrame containing the flattened FHIR data,

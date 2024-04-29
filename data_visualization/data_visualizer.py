@@ -297,7 +297,6 @@ class DataVisualizer:  # pylint: disable=unused-variable
         plt.show()
         return fig
 
-
 def plot_data_based_on_condition(user_df, user_id):
     """
     Dynamically plots data using either plt.scatter or plt.bar based on the condition

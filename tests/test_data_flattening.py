@@ -6,7 +6,6 @@
 # SPDX-License-Identifier: MIT
 #
 
-
 """
 This module contains unit tests for classes that manage and flatten FHIR (Fast Healthcare
 Interoperability Resources) data structures using pandas DataFrames, particularly focusing
@@ -37,6 +36,7 @@ from unittest.mock import MagicMock
 # pylint: disable=duplicate-code
 import pandas as pd
 
+
 # Local application/library specific imports
 from data_flattening.fhir_resources_flattener import (
     FHIRDataFrame,
@@ -44,8 +44,8 @@ from data_flattening.fhir_resources_flattener import (
     ColumnNames,
     ObservationFlattener,
 )
-
 # pylint: enable=duplicate-code
+
 class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
     """
     A test case for the FHIRDataFrame class, which is designed to handle and validate
@@ -54,6 +54,7 @@ class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
     Attributes:
         None.
     """
+
     def test_initialization_and_validation(self):
         """
         Tests the initialization and validation of the FHIRDataFrame object. This includes loading
@@ -99,6 +100,7 @@ class TestObservationFlattener(unittest.TestCase):  # pylint: disable=unused-var
     Attributes:
         None.
     """
+
     def test_flatten(self):
         """
         Tests the functionality of the ObservationFlattener's flatten method. This method is

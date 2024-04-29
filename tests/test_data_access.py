@@ -33,7 +33,6 @@ from unittest.mock import patch
 # Local application/library specific imports
 from data_access.firebase_fhir_data_access import FirebaseFHIRAccess
 
-
 class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-variable
     """
     Test suite for testing the FirebaseFHIRAccess class.

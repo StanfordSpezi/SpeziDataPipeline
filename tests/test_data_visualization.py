@@ -72,8 +72,8 @@ class TestDataVisualizer(unittest.TestCase):  # pylint: disable=unused-variable
         """
         Test setting the y-axis bounds for the plot.
 
-        Checks that the lower and upper bounds of the y-axis are properly set in the DataVisualizer
-        instance.
+        Checks that the lower and upper bounds of the y-axis are properly set in the
+        DataVisualizer instance.
         """
         visualizer = DataVisualizer()
         visualizer.set_y_bounds(0, 500)
@@ -102,6 +102,8 @@ class TestDataVisualizer(unittest.TestCase):  # pylint: disable=unused-variable
         visualizer.create_static_plot(mock_fhir_df)
         mock_plot_combined.assert_called_once()
         mock_plot_individual.assert_not_called()
+
+    # Add tests to handle incorrect date formats, empty user IDs, and edge cases
 
 
 if __name__ == "__main__":

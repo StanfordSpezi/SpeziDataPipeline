@@ -28,13 +28,17 @@ Classes:
 
 # Standard library imports
 import datetime
+import json
 from pathlib import Path
 
 # Related third-party imports
 import unittest
-from unittest.mock import MagicMock
+
 # pylint: disable=duplicate-code
 import pandas as pd
+from fhir.resources.R4B.observation import Observation
+from fhir.resources.R4B.reference import Reference
+from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
 
 # Local application/library specific imports
@@ -42,109 +46,300 @@ from data_flattening.fhir_resources_flattener import (
     FHIRDataFrame,
     FHIRResourceType,
     ColumnNames,
+    ECGObservation,
     ObservationFlattener,
+    ECGObservationFlattener,
+    QuestionnaireResponseFlattener,
 )
+
 # pylint: enable=duplicate-code
+
 
 class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
     """
     A test case for the FHIRDataFrame class, which is designed to handle and validate
-    FHIR data in a pandas DataFrame format.
-
-    Attributes:
-        None.
+    FHIR data in a pandas DataFrame format. This class ensures that the FHIRDataFrame
+    can correctly initialize with data from a CSV file and that it contains all required columns.
     """
 
-    def test_initialization_and_validation(self):
+    def test_initialization(self):
         """
-        Tests the initialization and validation of the FHIRDataFrame object. This includes loading
-        sample FHIR data from a CSV file, initializing a FHIRDataFrame with this data, and
-        validating the correct setup of the DataFrame and its columns.
-
-        It checks that the data frame is correctly initialized with the given FHIR resource type,
-        and validates the columns of the data frame to ensure they meet expected criteria.
-
-        Steps:
-        - Load data from a CSV file using pandas, with custom date parsing.
-        - Initialize the FHIRDataFrame with loaded data and specify the resource type as
-            OBSERVATION.
-        - Validate that the data frame and resource type are correctly set.
-        - Check column validation is successful.
+        Test the initialization of FHIRDataFrame with data loaded from a CSV file.
+        Ensures that the DataFrame can be created and is recognized as an instance of FHIRDataFrame.
         """
 
         def custom_date_parser(date_str):
             """Parses a date string into a datetime.date object."""
             return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
-        data_file = Path(__file__).parent.parent / "sample_data" / "sample_df.csv"
+        data_file = (
+            Path(__file__).resolve().parent.parent / "sample_data" / "sample_df.csv"
+        )
         data = pd.read_csv(
             data_file, parse_dates=["EffectiveDateTime"], date_parser=custom_date_parser
         )
 
-        # Initialize FHIRDataFrame with sample data and a resource type
         df = FHIRDataFrame(data, FHIRResourceType.OBSERVATION)
+        self.assertIsInstance(df, FHIRDataFrame)
 
-        # Check that the DataFrame and resource type are correctly set
-        self.assertTrue(isinstance(df.data_frame, pd.DataFrame))
-        self.assertEqual(df.resource_type, FHIRResourceType.OBSERVATION)
+    def test_column_validation(self):
+        """
+        Tests the column validation of FHIRDataFrame to ensure that it correctly raises
+        an error when required columns are missing or incorrect.
+        """
 
-        # Validate columns
-        self.assertTrue(df.validate_columns())
+        def custom_date_parser(date_str):
+            """Parses a date string into a datetime.date object."""
+            return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+
+        data_file = (
+            Path(__file__).resolve().parent.parent / "sample_data" / "sample_df.csv"
+        )
+        data = pd.read_csv(
+            data_file, parse_dates=["EffectiveDateTime"], date_parser=custom_date_parser
+        )
+
+        # Remove a required column to simulate the error condition
+        data.drop(ColumnNames.USER_ID.value, axis=1, inplace=True)
+
+        df = FHIRDataFrame(data, FHIRResourceType.OBSERVATION)
+        with self.assertRaises(ValueError):
+            df.validate_columns()
 
 
 class TestObservationFlattener(unittest.TestCase):  # pylint: disable=unused-variable
     """
-    A test case for the ObservationFlattener class, responsible for flattening FHIR Observation
-    resources into a simplified DataFrame structure.
-
-    Attributes:
-        None.
+    Tests for the ObservationFlattener class, which processes a collection of Observation objects
+    and converts them into a structured pandas DataFrame.
     """
 
-    def test_flatten(self):
+    def test_flatten_observations(self):
         """
-        Tests the functionality of the ObservationFlattener's flatten method. This method is
-        supposed to take a list of mocked FHIR Observation instances, flatten them into a simpler
-        data structure, and validate the output.
-
-        Steps:
-        - Mock FHIR Observation instances with predetermined data.
-        - Flatten these observations using the ObservationFlattener.
-        - Validate the structure and contents of the resulting FHIRDataFrame to ensure it matches
-            expectations.
+        Ensures that the ObservationFlattener can correctly flatten a list of Observation objects
+        into a pandas DataFrame, verifying both the structure and content of the DataFrame.
         """
-        # Assuming we create or mock FHIR Observation instances
-        # observations = [mock_observation1, mock_observation2]
+        # Generate mock observations using the updated function
+        resources = create_mock_observations()
 
+        # Check if resources is a list and not an error message
+        if isinstance(resources, str):
+            self.fail(f"Failed to create mock observations: {resources}")
+
+        # Create an instance of the ObservationFlattener
         flattener = ObservationFlattener()
 
-        # Mock the Observation instances
-        mock_observation1 = MagicMock()
-        mock_observation2 = MagicMock()
+        # Flatten the resources
+        result = flattener.flatten(resources)
 
-        # Set return values for dict() to simulate observation data
-        mock_observation1.dict.return_value = {
-            "subject": {"id": "user1"},
-            "effectiveDateTime": "2021-01-01",
-            "valueQuantity": {"value": 100, "unit": "beats/min"},
-            "code": {"coding": [{"code": "1234-5", "display": "Heart Rate"}]},
-        }
-        mock_observation2.dict.return_value = {
-            "subject": {"id": "user2"},
-            "effectiveDateTime": "2021-01-02",
-            "valueQuantity": {"value": 120, "unit": "beats/min"},
-            "code": {"coding": [{"code": "1234-5", "display": "Heart Rate"}]},
-        }
+        # Test the number of rows in the dataframe
+        # Assuming there are two observations and the flatten method retains this count
+        self.assertEqual(len(result.df), 2)
 
-        # Flatten the mock observations
-        flattened_df = flattener.flatten([mock_observation1, mock_observation2])
+        # Check if 'UserId' is one of the columns in the resulting dataframe
+        self.assertTrue(ColumnNames.USER_ID.value in result.df.columns)
 
-        # Validate the flattened DataFrame
-        self.assertTrue(isinstance(flattened_df, FHIRDataFrame))
+
+class TestECGObservationFlattener(unittest.TestCase):  # pylint: disable=unused-variable
+    """
+    Tests for the ECGObservationFlattener class, specifically designed to handle ECG observations,
+    converting them into a structured DataFrame with appropriate ECG-specific fields.
+    """
+
+    def test_flatten_ecg_observations(self):
+        """
+        Validates that ECGObservationFlattener correctly processes ECG observations, ensuring that
+        the resulting DataFrame contains the correct number of rows and the specific column
+        "ECGRecording".
+        """
+        resources = create_mock_ecg_observations()
+
+        flattener = ECGObservationFlattener()
+        result = flattener.flatten(resources)
+        self.assertEqual(len(result.df), 2)
+        self.assertTrue(ColumnNames.ECG_RECORDING.value in result.df.columns)
+
+
+class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
+    unittest.TestCase
+):
+    """
+    A test suite for the QuestionnaireResponseFlattener class, which is responsible for
+    transforming FHIR QuestionnaireResponse resources into a structured DataFrame format.
+
+    The tests ensure that the flattening process correctly handles multiple questionnaire
+    responses, translating them into a single DataFrame with accurate representation of
+    each response item as a separate row.
+    """
+    def test_flatten_questionnaire_responses(self):
+        """
+        Tests the functionality of the QuestionnaireResponseFlattener.flatten() method
+        to ensure it accurately processes a list of QuestionnaireResponse objects into
+        a structured DataFrame.
+
+        This test checks:
+        - That the flatten operation does not return None, confirming successful processing.
+        - The number of rows in the resulting DataFrame matches the total number of items
+          across all provided QuestionnaireResponse resources, ensuring that each item is
+          correctly represented as a separate row in the DataFrame.
+
+        The resources are created using a mock function, create_mock_questionnaire_responses(),
+        which should return a list of QuestionnaireResponse objects or an error message if
+        the resources cannot be generated.
+        """
+        resources = create_mock_questionnaire_responses()
+        if isinstance(resources, str):
+            self.fail(f"Failed to create mock questionnaire responses: {resources}")
+
+        flattener = QuestionnaireResponseFlattener()
+        result = flattener.flatten(
+            resources, survey_path=["SocialSupportQuestionnaire.json"]
+        )
+
+        self.assertIsNotNone(result, "The resulting DataFrame should not be None")
+
+        # Calculate the expected number of rows
+        expected_rows = sum(
+            len(response.item) for response in resources if hasattr(response, "item")
+        )
         self.assertEqual(
-            flattened_df.df.shape[0], 2
-        )  # Assuming 2 observations were flattened
-        self.assertTrue(ColumnNames.USER_ID.value in flattened_df.df.columns)
+            len(result.df),
+            expected_rows,
+            "The number of rows in the DataFrame should match the total number"
+            "of items across all resources",
+        )
+
+
+def create_mock_observations() -> list[Observation] | str:
+    """
+    Simulates the creation of Observation objects from JSON files. This function reads multiple
+    JSON files, each representing a mock observation, and converts them into Observation instances.
+
+    Returns:
+        List[Observation]: A list of Observation objects if successful.
+        str: Error message if the files cannot be read or parsed.
+    """
+    # Paths to the JSON files
+    file_paths = [
+        "sample_data/XrftRMc358NndzcRWEQ7P2MxvabZ_sample_data1.json",
+        "sample_data/XrftRMc358NndzcRWEQ7P2MxvabZ_sample_data2.json",
+    ]
+
+    observations = []
+
+    for file_path in file_paths:
+        # Open and read each JSON file
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                # Load data from JSON file
+                data = json.load(file)
+
+                # Convert dictionary to JSON string
+                resource_str = json.dumps(data)
+
+                # Create an Observation object from the JSON string
+                resource_obj = Observation.parse_raw(resource_str)
+                resource_obj.subject = Reference(id="XrftRMc358NndzcRWEQ7P2MxvabZ")
+
+                observations.append(resource_obj)
+        except FileNotFoundError:
+            return f"The file {file_path} was not found."
+        except json.JSONDecodeError:
+            return "Failed to decode JSON from file."
+
+    return observations
+
+
+def create_mock_ecg_observations() -> list[ECGObservation] | str:
+    """
+    Creates a list of ECGObservation objects by reading and parsing JSON files that contain
+    ECG data.
+
+    Each JSON file is expected to represent an ECG observation, which includes various attributes
+    necessary for constructing an ECGObservation object.
+
+    If any file is not found or contains invalid JSON, the function will return an error message
+    indicating the nature of the issue.
+
+    Returns:
+        List[ECGObservation]: A list of ECGObservation objects if all files are successfully read
+            and parsed.
+        str: An error message if an exception is encountered (e.g., file not found, JSON decode
+            error).
+    """
+    # Paths to the JSON files
+    file_paths = [
+        "sample_data/3aX1qRKWQKTRDQZqr5vg5N7yWU12_sample_ecg_data1.json",
+        "sample_data/3aX1qRKWQKTRDQZqr5vg5N7yWU12_sample_ecg_data2.json",
+    ]
+
+    ecg_observations = []
+
+    for file_path in file_paths:
+        # Open and read each JSON file
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                # Load data from JSON file
+                data = json.load(file)
+                data.pop("issued", None)
+                data.pop("document_id", None)
+                data.pop("physicianAssignedDiagnosis", None)
+                data.pop("physician", None)
+                data.pop("tracingQuality", None)
+                # Convert dictionary to JSON string
+                resource_str = json.dumps(data)
+
+                # Create an Observation object from the JSON string
+                resource_obj = Observation.parse_raw(resource_str)
+                resource_obj.subject = Reference(id="3aX1qRKWQKTRDQZqr5vg5N7yWU12")
+                ecg_resource_obj = ECGObservation(resource_obj)
+                ecg_observations.append(ecg_resource_obj)
+        except FileNotFoundError:
+            return f"The file {file_path} was not found."
+        except json.JSONDecodeError:
+            return "Failed to decode JSON from file."
+
+    return ecg_observations
+
+
+def create_mock_questionnaire_responses() -> list[QuestionnaireResponse] | str:
+    """
+    Simulates the creation of QuestionnaireResponse objects from JSON files. This function
+    reads multiple JSON files, each representing a mock questionnaire response, and converts
+    them into QuestionnaireResponse instances.
+
+    Returns:
+        List[QuestionnaireResponse]: A list of QuestionnaireResponse objects if successful.
+        str: Error message if the files cannot be read or parsed.
+    """
+    # Paths to the JSON files
+    file_paths = [
+        "sample_data/5tTYsEWMIKNq4EJEf24suVINGI12_sample_questionnaire_response_data1.json",
+        "sample_data/5tTYsEWMIKNq4EJEf24suVINGI12_sample_questionnaire_response_data2.json",
+    ]
+
+    questionnaire_responses = []
+
+    for file_path in file_paths:
+        # Open and read each JSON file
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                # Load data from JSON file
+                data = json.load(file)
+
+                # Convert dictionary to JSON string
+                resource_str = json.dumps(data)
+
+                # Create a QuestionnaireResponse object from the JSON string
+                resource_obj = QuestionnaireResponse.parse_raw(resource_str)
+                resource_obj.subject = Reference(id="5tTYsEWMIKNq4EJEf24suVINGI12")
+
+                questionnaire_responses.append(resource_obj)
+        except FileNotFoundError:
+            return f"The file {file_path} was not found."
+        except json.JSONDecodeError:
+            return "Failed to decode JSON from file."
+
+    return questionnaire_responses
 
 
 if __name__ == "__main__":

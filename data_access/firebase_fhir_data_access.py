@@ -100,11 +100,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         if self.db is not None:
             return
 
-        # if not os.path.exists(self.service_account_key_file):
-        #     logging.error(
-        #         f"Service account key file not found: {self.service_account_key_file}"
-        #     )
-        #     return None
         try:
             # Attempt to retrieve the default app.
             app = firebase_admin.get_app()
@@ -160,7 +155,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             print("Reinitialize the Firebase app.")
             return None
 
-        if loinc_codes.count(ECG_RECORDING_LOINC_CODE) > 0 and len(loinc_codes) > 1:
+        if (
+            loinc_codes is not None
+            and loinc_codes.count(ECG_RECORDING_LOINC_CODE) > 0
+            and len(loinc_codes) > 1
+        ):
             print("HealthKit quantity types and ECG recordings cannot be downloaded ")
             print("simultaneously. Please review and adjust your selection to include ")
             print("only the necessary LOINC codes.")

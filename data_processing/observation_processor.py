@@ -20,7 +20,7 @@ healthcare data. This module emphasizes the flexibility in data analysis tasks, 
 aggregations to more sophisticated time-series analysis techniques such as moving averages.
 
 Key Features:
-- `_finalize_group`: Merges aggregated data with non-numeric attributes and applies prefixes to
+- `finalize_group`: Merges aggregated data with non-numeric attributes and applies prefixes to
   descriptive columns, enhancing the readability and interpretability of the results.
 - `calculate_daily_data`: Aggregates data on a daily basis, summing up values to provide daily
   totals for specified health metrics, aiding in the analysis of daily trends and variations.
@@ -63,7 +63,7 @@ from data_flattening.fhir_resources_flattener import (
 )
 
 
-def _finalize_group(
+def finalize_group(
     original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str
 ) -> pd.DataFrame:
     """
@@ -150,7 +150,7 @@ def calculate_daily_data(  # pylint: disable=unused-variable
     )[ColumnNames.QUANTITY_VALUE.value].sum()
 
     return FHIRDataFrame(
-        data=_finalize_group(fhir_dataframe.df, aggregated_df, "Total daily"),
+        data=finalize_group(fhir_dataframe.df, aggregated_df, "Total daily"),
         resource_type=FHIRResourceType.OBSERVATION,
     )
 
@@ -191,7 +191,7 @@ def calculate_average_data(  # pylint: disable=unused-variable
     )[ColumnNames.QUANTITY_VALUE.value].mean()
 
     return FHIRDataFrame(
-        _finalize_group(fhir_dataframe.df, np.round(aggregated_df, 0), "Daily average"),
+        finalize_group(fhir_dataframe.df, np.round(aggregated_df, 0), "Daily average"),
         FHIRResourceType.OBSERVATION,
     )
 

@@ -33,6 +33,7 @@ from unittest.mock import patch
 # Local application/library specific imports
 from data_access.firebase_fhir_data_access import FirebaseFHIRAccess
 
+
 class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-variable
     """
     Test suite for testing the FirebaseFHIRAccess class.
@@ -78,40 +79,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_exists.assert_called_once_with(dummy_key_path)
         mock_certificate.assert_called_once_with(dummy_key_path)
         mock_initialize_app.assert_called_once()
-
-    # @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=False)
-    # @patch(
-    #     "data_access.firebase_fhir_data_access.logging.error"
-    # )  # Ensure this matches the actual import path
-    # @patch.dict("os.environ", {"CI": "true"}, clear=True)
-    # def test_connect_handles_missing_key_in_ci(
-    #     self, mock_exists, mock_log  # pylint: disable=unused-argument
-    # ):
-    #     dummy_project_id = "dummy_project"
-    #     dummy_key_path = "invalid/path/to/service_account_key.json"
-    #     access = FirebaseFHIRAccess(
-    #         project_id=dummy_project_id, service_account_key_file=dummy_key_path
-    #     )
-    #     access.connect()
-    #     mock_log.assert_called_once_with(dummy_key_path)
-    #     self.assertIsNone(access.db)
-
-    # @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=False)
-    # @patch(
-    #     "data_access.firebase_fhir_data_access.logging.error"
-    # )  # Ensure this matches the actual import path
-    # @patch.dict("os.environ", {"FIRESTORE_EMULATOR_HOST": "localhost:8080"}, clear=True)
-    # def test_connect_handles_missing_key_with_emulator(
-    #     self, mock_exists, mock_log  # pylint: disable=unused-argument
-    # ):
-    #     dummy_project_id = "dummy_project"
-    #     dummy_key_path = "invalid/path/to/service_account_key.json"
-    #     access = FirebaseFHIRAccess(
-    #         project_id=dummy_project_id, service_account_key_file=dummy_key_path
-    #     )
-    #     access.connect()
-    #     mock_log.assert_called_once_with(dummy_key_path)
-    #     self.assertIsNone(access.db)
 
 
 if __name__ == "__main__":

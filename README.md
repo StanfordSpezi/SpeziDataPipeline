@@ -72,12 +72,18 @@ spezi_data_pipeline/
 │   │       │   └── flatten(self, resources: list[Any]) -> FHIRDataFrame
 │   │       ├── class ObservationFlattener(ResourceFlattener)
 │   │       │   ├── __init__(self)
-│   │       │   └── flatten(self, resources: list[Any]) -> FHIRDataFrame
+│   │       │   └── flatten(self, resources: list[Observation]) -> FHIRDataFrame
 │   │       ├── class ECGObservationFlattener(ResourceFlattener)
 │   │       │   ├── __init__(self)
-│   │       │   └── flatten(self, resources: list[Any]) -> FHIRDataFrame
+│   │       │   └── flatten(self, resources: list[ECGObservartion]) -> FHIRDataFrame
+│   │       ├── class QuestionnaireResponseFlattener(ResourceFlattener)
+│   │       │   ├── __init__(self)
+│   │       │   └── flatten(self, resources: list[QuestionnaireResponse]) -> FHIRDataFrame
 │   │       ├── def extract_coding_info(observation: Any) -> dict
 │   │       ├── def extract_component_info(observation: Any) -> dict
+│   │       ├── extract_mappings(survey_path: list[str]) -> tuple[dict[str, str], dict[str, str]]
+│   │       ├── get_survey_title(survey_path: list[str]) -> str
+│   │       ├── get_answer_value(item: QuestionnaireResponse, all_answer_mappings: dict[str, str]) -> str
 │   │       └── def flatten_fhir_resources(resources: list[Any]) -> FHIRDataFrame | None
 │   |
 │   ├── data_processing/

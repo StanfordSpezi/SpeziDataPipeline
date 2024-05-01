@@ -100,9 +100,9 @@ spezi_data_pipeline/
 │   │   │   │   ├── __init__(self)
 │   │   └── observation_processor.py
 │   │        ├── def _finalize_group(original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str) -> pd.DataFrame
-│   │       ├── def calculate_daily_data(fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
-│   │       ├── def calculate_average_data(fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
-│   │       └── def calculate_moving_average(fhir_dataframe: FHIRDataFrame, n=7) -> FHIRDataFrame
+│   │        ├── def calculate_daily_data(fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
+│   │        ├── def calculate_average_data(fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
+│   │        └── def calculate_moving_average(fhir_dataframe: FHIRDataFrame, n=7) -> FHIRDataFrame
 │   |
 │   |
 │   ├── data_visualization/

@@ -33,7 +33,6 @@ import json
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
-
 # Local application/library specific imports
 from data_access.firebase_fhir_data_access import (
     FirebaseFHIRAccess,
@@ -41,7 +40,6 @@ from data_access.firebase_fhir_data_access import (
     ECGObservation,
     QuestionnaireResponseCreator,
 )
-
 
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
 LOCAL_HOST_URL = "localhost:8080"
@@ -54,15 +52,16 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
     """
     Unit tests for the FirebaseFHIRAccess class.
 
-    These tests verify the connection handling of the FirebaseFHIRAccess class, 
+    These tests verify the connection handling of the FirebaseFHIRAccess class,
     ensuring it correctly manages Firestore connections under various scenarios including:
     - Connection attempts in CI environments without a service account.
     - Connection attempts with a valid service account.
     - Data fetching from Firestore with valid and invalid LOINC code combinations.
     """
+
     def setUp(self):
         self.project_id = "test-project"
-        self.service_account_key_file = "/fake/path/to/service/account.json"
+        self.service_account_key_file = "/path/to/service/account.json"
 
     @patch("os.path.exists")
     @patch("os.environ")
@@ -171,6 +170,7 @@ class TestObservationCreator(unittest.TestCase):  # pylint: disable=unused-varia
     """
     Test the successful creation of an Observation object.
     """
+
     def test_create_resources(self):
         # Mock the DocumentSnapshot and DocumentReference
         doc_snapshot = MagicMock()
@@ -214,10 +214,13 @@ class TestObservationCreator(unittest.TestCase):  # pylint: disable=unused-varia
         self.assertEqual(results[0].subject.id, user_ref.id)
 
 
-class TestQuestionnaireResponseCreator(unittest.TestCase):  # pylint: disable=unused-variable
+class TestQuestionnaireResponseCreator(
+    unittest.TestCase
+):  # pylint: disable=unused-variable
     """
     Test the successful creation of a QuestionnaireResponse object.
     """
+
     def test_create_resources(self):
         # Mock the DocumentSnapshot and DocumentReference
         doc_snapshot = MagicMock()

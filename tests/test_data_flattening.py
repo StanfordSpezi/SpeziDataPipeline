@@ -67,16 +67,13 @@ class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
         Test the initialization of FHIRDataFrame with data loaded from a CSV file.
         Ensures that the DataFrame can be created and is recognized as an instance of FHIRDataFrame.
         """
-
-        def custom_date_parser(date_str):
-            """Parses a date string into a datetime.date object."""
-            return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-
         data_file = (
             Path(__file__).resolve().parent.parent / "sample_data" / "sample_df.csv"
         )
-        data = pd.read_csv(
-            data_file, parse_dates=["EffectiveDateTime"], date_parser=custom_date_parser
+
+        data = pd.read_csv(data_file, dtype={"EffectiveDateTime": "object"})
+        data["EffectiveDateTime"] = pd.to_datetime(
+            data["EffectiveDateTime"], errors="coerce"
         )
 
         df = FHIRDataFrame(data, FHIRResourceType.OBSERVATION)
@@ -87,16 +84,12 @@ class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
         Tests the column validation of FHIRDataFrame to ensure that it correctly raises
         an error when required columns are missing or incorrect.
         """
-
-        def custom_date_parser(date_str):
-            """Parses a date string into a datetime.date object."""
-            return datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-
         data_file = (
             Path(__file__).resolve().parent.parent / "sample_data" / "sample_df.csv"
         )
-        data = pd.read_csv(
-            data_file, parse_dates=["EffectiveDateTime"], date_parser=custom_date_parser
+        data = pd.read_csv(data_file, dtype={"EffectiveDateTime": "object"})
+        data["EffectiveDateTime"] = pd.to_datetime(
+            data["EffectiveDateTime"], errors="coerce"
         )
 
         # Remove a required column to simulate the error condition
@@ -170,6 +163,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
     responses, translating them into a single DataFrame with accurate representation of
     each response item as a separate row.
     """
+
     def test_flatten_questionnaire_responses(self):
         """
         Tests the functionality of the QuestionnaireResponseFlattener.flatten() method

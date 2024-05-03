@@ -31,13 +31,13 @@ Main Features:
   multiple users, and customize line widths and tick intervals for ECG waveforms.
 
 Usage Example:
-from ecg_visualization_module import ECGVisualizer, FHIRDataFrame
+from ecg_visualization_module import ECGExplorer, FHIRDataFrame
 
 # Load your ECG data into a FHIRDataFrame
 fhir_dataframe = FHIRDataFrame(load_your_data_here())
 
 # Initialize the ECG visualizer
-ecg_visualizer = ECGVisualizer()
+ecg_visualizer = ECGExplorer()
 
 # Set visualization parameters
 ecg_visualizer.set_user_ids(['user123'])
@@ -80,7 +80,7 @@ DEFAULT_AMPLITUDE_ECG = 1.8
 DEFAULT_TIME_TICKS = 0.2
 
 
-class DataVisualizer:  # pylint: disable=unused-variable
+class DataExplorer:  # pylint: disable=unused-variable
     """
     Provides functionalities to visualize FHIR data. Supports setting up visualization
     parameters such as date range, user IDs for filtering, Y-axis bounds, and the option
@@ -100,7 +100,7 @@ class DataVisualizer:  # pylint: disable=unused-variable
     """
 
     def __init__(self):
-        """Initializes the DataVisualizer with default parameters for data visualization."""
+        """Initializes the DataExplorer with default parameters for data visualization."""
         self.start_date = None
         self.end_date = None
         self.user_ids = None
@@ -330,9 +330,9 @@ def plot_data_based_on_condition(user_df, user_id):
     return {"plot_type": plot_type, "data_frame": user_df}
 
 
-class ECGVisualizer:  # pylint: disable=unused-variable
+class ECGExplorer:  # pylint: disable=unused-variable
     """
-    A visualization tool for electrocardiogram (ECG) data that extends the DataVisualizer class.
+    A visualization tool for electrocardiogram (ECG) data that extends the DataExplorer class.
     This class provides specialized plotting functions to render ECG waveforms from FHIR data frames
     that contain ECG observations for individual patients.
 
@@ -343,7 +343,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
 
     def __init__(self):
         """
-        Initializes the ECGVisualizer with default parameters for ECG data visualization.
+        Initializes the ECGExplorer with default parameters for ECG data visualization.
         Sets line width, date range, user IDs, amplitude scale, and time ticks for plotting.
         """
         self.lwidth = DEFAULT_LINE_WIDTH_VALUE
@@ -555,7 +555,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
 
 def visualizer_factory(  # pylint: disable=unused-variable
     fhir_dataframe: FHIRDataFrame,
-) -> DataVisualizer | ECGVisualizer:
+) -> DataExplorer | ECGExplorer:
     """
     Factory function to create a visualizer based on the resource_type attribute of
     FHIRDataFrame.
@@ -565,11 +565,11 @@ def visualizer_factory(  # pylint: disable=unused-variable
             data and resource_type attribute.
 
     Returns:
-        An instance of either DataVisualizer or ECGVisualizer based on the
+        An instance of either DataExplorer or ECGExplorer based on the
             resource_type.
     """
     if fhir_dataframe.resource_type == FHIRResourceType.OBSERVATION:
-        return DataVisualizer()
+        return DataExplorer()
     if fhir_dataframe.resource_type == FHIRResourceType.ECG_OBSERVATION:
-        return ECGVisualizer()
+        return ECGExplorer()
     raise ValueError(f"Unsupported resource type: {fhir_dataframe.resource_type}")

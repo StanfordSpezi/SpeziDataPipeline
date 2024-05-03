@@ -136,7 +136,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         firebase_access = FirebaseFHIRAccess(self.project_id)
         firebase_access.db = mock_db
 
-        # Execute
         result = firebase_access.fetch_data(
             "users", "HealthKit", [ECG_RECORDING_LOINC_CODE, "9999-4"]
         )
@@ -163,7 +162,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
             []
         )  # Simulate no data within "HealthKit"
 
-        # Execute
         result = firebase_access.fetch_data(
             "users", "HealthKit", [ECG_RECORDING_LOINC_CODE]
         )
@@ -179,7 +177,6 @@ class TestObservationCreator(unittest.TestCase):  # pylint: disable=unused-varia
     """
 
     def test_create_resources(self):
-        # Mock the DocumentSnapshot and DocumentReference
         doc_snapshot = MagicMock()
         file_path = "sample_data/XrftRMc358NndzcRWEQ7P2MxvabZ_sample_data1.json"
         with open(file_path, "r", encoding="utf-8") as file:
@@ -188,19 +185,15 @@ class TestObservationCreator(unittest.TestCase):  # pylint: disable=unused-varia
         user_ref = MagicMock()
         user_ref.id = "XrftRMc358NndzcRWEQ7P2MxvabZ"
 
-        # Initialize the creator
         creator = ObservationCreator()
 
-        # Execute the method
         results = creator.create_resources([doc_snapshot], user_ref)
 
-        # Assert results
         self.assertEqual(len(results), 1)
         self.assertIsInstance(results[0], Observation)
         self.assertEqual(results[0].subject.id, user_ref.id)
 
     def test_ecg_resources(self):
-        # Mock the DocumentSnapshot and DocumentReference
         doc_snapshot = MagicMock()
         file_path = "sample_data/3aX1qRKWQKTRDQZqr5vg5N7yWU12_sample_ecg_data1.json"
         with open(file_path, "r", encoding="utf-8") as file:
@@ -209,13 +202,10 @@ class TestObservationCreator(unittest.TestCase):  # pylint: disable=unused-varia
         user_ref = MagicMock()
         user_ref.id = "3aX1qRKWQKTRDQZqr5vg5N7yWU12"
 
-        # Initialize the creator
         creator = ObservationCreator()
 
-        # Execute the method
         results = creator.create_resources([doc_snapshot], user_ref)
 
-        # Assert results
         self.assertEqual(len(results), 1)
         self.assertIsInstance(results[0], ECGObservation)
         self.assertEqual(results[0].subject.id, user_ref.id)
@@ -229,7 +219,6 @@ class TestQuestionnaireResponseCreator(
     """
 
     def test_create_resources(self):
-        # Mock the DocumentSnapshot and DocumentReference
         doc_snapshot = MagicMock()
         user_id = "5tTYsEWMIKNq4EJEf24suVINGI12"
         file_path = f"sample_data/{user_id}_sample_questionnaire_response_data1.json"
@@ -239,13 +228,10 @@ class TestQuestionnaireResponseCreator(
         user_ref = MagicMock()
         user_ref.id = user_id
 
-        # Initialize the creator
         creator = QuestionnaireResponseCreator()
 
-        # Execute the method
         results = creator.create_resources([doc_snapshot], user_ref)
 
-        # Assert results
         self.assertEqual(len(results), 1)
         self.assertIsInstance(results[0], QuestionnaireResponse)
         self.assertEqual(results[0].subject.id, user_ref.id)

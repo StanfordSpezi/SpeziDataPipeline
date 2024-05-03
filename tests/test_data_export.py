@@ -64,6 +64,11 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
         ]
 
     def test_initialization(self):
+        """
+        This test checks whether the DataExporter object is initialized correctly. It asserts that
+        the flattened_fhir_dataframe attribute of the exporter is set to the FHIRDataFrame object
+        passed during initialization, and it verifies that the user_ids attribute is set correctly.
+        """
         self.assertIs(self.exporter.flattened_fhir_dataframe, self.fhir_df)
         self.assertEqual(
             self.exporter.user_ids,
@@ -72,6 +77,12 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
 
     @patch("pandas.DataFrame.to_csv")
     def test_export_to_csv(self, mock_to_csv):
+        """
+        This test ensures that the export_to_csv method of the DataExporter class correctly calls
+        the to_csv method of the pandas.DataFrame object with the specified filename and
+        index=False. It uses the patch decorator from the unittest.mock module to mock the to_csv
+        method.
+        """
         filename = "test.csv"
         self.exporter.export_to_csv(filename)
         mock_to_csv.assert_called_once_with(filename, index=False)

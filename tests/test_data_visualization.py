@@ -103,8 +103,5 @@ class TestDataVisualizer(unittest.TestCase):  # pylint: disable=unused-variable
         mock_plot_combined.assert_called_once()
         mock_plot_individual.assert_not_called()
 
-    # Add tests to handle incorrect date formats, empty user IDs, and edge cases
-
-
 if __name__ == "__main__":
     unittest.main()

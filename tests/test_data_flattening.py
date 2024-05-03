@@ -27,7 +27,6 @@ Classes:
 """
 
 # Standard library imports
-import datetime
 import json
 from pathlib import Path
 
@@ -118,10 +117,7 @@ class TestObservationFlattener(unittest.TestCase):  # pylint: disable=unused-var
         if isinstance(resources, str):
             self.fail(f"Failed to create mock observations: {resources}")
 
-        # Create an instance of the ObservationFlattener
         flattener = ObservationFlattener()
-
-        # Flatten the resources
         result = flattener.flatten(resources)
 
         # Test the number of rows in the dataframe
@@ -212,7 +208,6 @@ def create_mock_observations() -> list[Observation] | str:
         List[Observation]: A list of Observation objects if successful.
         str: Error message if the files cannot be read or parsed.
     """
-    # Paths to the JSON files
     file_paths = [
         "sample_data/XrftRMc358NndzcRWEQ7P2MxvabZ_sample_data1.json",
         "sample_data/XrftRMc358NndzcRWEQ7P2MxvabZ_sample_data2.json",
@@ -221,16 +216,12 @@ def create_mock_observations() -> list[Observation] | str:
     observations = []
 
     for file_path in file_paths:
-        # Open and read each JSON file
         try:
             with open(file_path, "r", encoding="utf-8") as file:
-                # Load data from JSON file
                 data = json.load(file)
 
-                # Convert dictionary to JSON string
                 resource_str = json.dumps(data)
 
-                # Create an Observation object from the JSON string
                 resource_obj = Observation.parse_raw(resource_str)
                 resource_obj.subject = Reference(id="XrftRMc358NndzcRWEQ7P2MxvabZ")
 
@@ -260,7 +251,6 @@ def create_mock_ecg_observations() -> list[ECGObservation] | str:
         str: An error message if an exception is encountered (e.g., file not found, JSON decode
             error).
     """
-    # Paths to the JSON files
     file_paths = [
         "sample_data/3aX1qRKWQKTRDQZqr5vg5N7yWU12_sample_ecg_data1.json",
         "sample_data/3aX1qRKWQKTRDQZqr5vg5N7yWU12_sample_ecg_data2.json",
@@ -269,20 +259,17 @@ def create_mock_ecg_observations() -> list[ECGObservation] | str:
     ecg_observations = []
 
     for file_path in file_paths:
-        # Open and read each JSON file
         try:
             with open(file_path, "r", encoding="utf-8") as file:
-                # Load data from JSON file
                 data = json.load(file)
                 data.pop("issued", None)
                 data.pop("document_id", None)
                 data.pop("physicianAssignedDiagnosis", None)
                 data.pop("physician", None)
                 data.pop("tracingQuality", None)
-                # Convert dictionary to JSON string
+
                 resource_str = json.dumps(data)
 
-                # Create an Observation object from the JSON string
                 resource_obj = Observation.parse_raw(resource_str)
                 resource_obj.subject = Reference(id="3aX1qRKWQKTRDQZqr5vg5N7yWU12")
                 ecg_resource_obj = ECGObservation(resource_obj)
@@ -305,7 +292,6 @@ def create_mock_questionnaire_responses() -> list[QuestionnaireResponse] | str:
         List[QuestionnaireResponse]: A list of QuestionnaireResponse objects if successful.
         str: Error message if the files cannot be read or parsed.
     """
-    # Paths to the JSON files
     file_paths = [
         "sample_data/5tTYsEWMIKNq4EJEf24suVINGI12_sample_questionnaire_response_data1.json",
         "sample_data/5tTYsEWMIKNq4EJEf24suVINGI12_sample_questionnaire_response_data2.json",
@@ -314,16 +300,12 @@ def create_mock_questionnaire_responses() -> list[QuestionnaireResponse] | str:
     questionnaire_responses = []
 
     for file_path in file_paths:
-        # Open and read each JSON file
         try:
             with open(file_path, "r", encoding="utf-8") as file:
-                # Load data from JSON file
                 data = json.load(file)
 
-                # Convert dictionary to JSON string
                 resource_str = json.dumps(data)
 
-                # Create a QuestionnaireResponse object from the JSON string
                 resource_obj = QuestionnaireResponse.parse_raw(resource_str)
                 resource_obj.subject = Reference(id="5tTYsEWMIKNq4EJEf24suVINGI12")
 

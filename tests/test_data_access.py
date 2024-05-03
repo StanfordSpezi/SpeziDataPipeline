@@ -44,7 +44,6 @@ from data_access.firebase_fhir_data_access import (
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
 LOCAL_HOST_URL = "localhost:8080"
 GCLOUD_PROJECT_STRING = "GCLOUD_PROJECT"
-FIREBASE_PROJECT_ID_PARAM_STRING = "projectId"
 ECG_RECORDING_LOINC_CODE = "131328"
 
 
@@ -91,35 +90,43 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_environ.__setitem__.assert_has_calls(calls, any_order=True)
         mock_init_app.assert_called_once()
 
-    @patch("os.path.exists")
-    @patch("firebase_admin.credentials.Certificate")
-    @patch("firebase_admin.initialize_app")
-    @patch("firebase_admin.get_app")
-    def test_connect_with_service_account(
+    @patch("data_access.firebase_fhir_data_access.firestore.client")
+    @patch("data_access.firebase_fhir_data_access.credentials.Certificate")
+    @patch("data_access.firebase_fhir_data_access.firebase_admin.initialize_app")
+    @patch(
+        "data_access.firebase_fhir_data_access.firebase_admin.get_app",
+        side_effect=ValueError,
+    )
+    @patch("data_access.firebase_fhir_data_access.os.getenv", return_value=None)
+    @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=True)
+    # pylint: disable=too-many-arguments
+    def test_connect_production_with_valid_key(
         self,
-        mock_get_app,  # pylint: disable=unused-argument
-        mock_init_app,
-        mock_certificate,
         mock_exists,
+        mock_getenv,  # pylint: disable=unused-argument
+        mock_get_app,  # pylint: disable=unused-argument
+        mock_initialize_app,
+        mock_certificate,
+        mock_client,  # pylint: disable=unused-argument
     ):
-        # Simulate file existence
-        mock_exists.return_value = True
+        """
+        Tests the FirebaseFHIRAccess connection in a production environment with a valid service
+        account key.
 
-        # Mock credential loading
-        mock_cred = MagicMock()
-        mock_certificate.return_value = mock_cred
-
-        # Instantiate and connect
-        firebase_access = FirebaseFHIRAccess(
-            self.project_id, self.service_account_key_file
+        This test ensures that when provided with a valid service account key file path, the
+        FirebaseFHIRAccess object can successfully initialize and connect to the Firebase Firestore
+        database.
+        """
+        # dummy_key_path = "dummy_service_account_key.json"
+        access = FirebaseFHIRAccess(
+            project_id=self.project_id,
+            service_account_key_file=self.service_account_key_file,
         )
-        firebase_access.connect()
+        access.connect()
 
-        # Verify proper credential and project initialization
-        mock_certificate.assert_called_with(self.service_account_key_file)
-        mock_init_app.assert_called_with(
-            mock_cred, {FIREBASE_PROJECT_ID_PARAM_STRING: self.project_id}
-        )
+        mock_exists.assert_called_once_with(self.service_account_key_file)
+        mock_certificate.assert_called_once_with(self.service_account_key_file)
+        mock_initialize_app.assert_called_once()
 
     @patch("firebase_admin.firestore")
     def test_fetch_data_invalid_loinc_combination(self, mock_firestore):

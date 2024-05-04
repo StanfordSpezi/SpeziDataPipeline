@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=40.6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spezi_data_pipeline"
+version = "0.1.0"
+description = "A detailed description of what your package does."
+authors = [
+    { name = "Vasiliki Bikia", email = "bikia@stanford.edu" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+dependencies = [
+    "pandas>=1.1.0",
+    "numpy",
+    "matplotlib",
+    "firebase-admin",
+    "fhir.resources",
+    "pytest>=7.0",
+    "coverage",
+    "pytest>=6.0",
+    "pytest-cov>=2.10.0"
+]
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+[tool.setuptools]
+packages = find:
+package_dir =
+    = "src"

@@ -29,23 +29,6 @@ Main Features:
   patient's ECG data).
 - Visualization Customization: Provides options to set Y-axis bounds, combine or separate plots for
   multiple users, and customize line widths and tick intervals for ECG waveforms.
-
-Usage Example:
-from ecg_visualization_module import ECGExplorer, FHIRDataFrame
-
-# Load your ECG data into a FHIRDataFrame
-fhir_dataframe = FHIRDataFrame(load_your_data_here())
-
-# Initialize the ECG visualizer
-ecg_visualizer = ECGExplorer()
-
-# Set visualization parameters
-ecg_visualizer.set_user_ids(['user123'])
-ecg_visualizer.set_date_range('2021-01-01', '2021-01-31')
-ecg_visualizer.set_y_bounds(-1.0, 1.0)
-
-# Generate and display the ECG plots
-ecg_visualizer.plot_ecg_subplots(fhir_dataframe)
 """
 
 # Standard library imports
@@ -296,6 +279,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         fig = plt.gcf()
         plt.show()
         return fig
+
 
 def plot_data_based_on_condition(user_df, user_id):
     """
@@ -573,3 +557,55 @@ def visualizer_factory(  # pylint: disable=unused-variable
     if fhir_dataframe.resource_type == FHIRResourceType.ECG_OBSERVATION:
         return ECGExplorer()
     raise ValueError(f"Unsupported resource type: {fhir_dataframe.resource_type}")
+
+
+def explore_total_records_number(  # pylint: disable=unused-variable
+    df: pd.DataFrame,
+    start_date: str = None,
+    end_date: str = None,
+    user_ids: str | list = None,
+) -> None:
+    """
+    Create a bar plot showing the count of rows with the same LoincCode column value
+    within the specified date range and for the specified user IDs. If start_date or
+    end_date is None, no date filtering is applied. If user_ids is None, no filtering
+    based on user IDs is applied.
+
+    Args:
+    - df (pd.DataFrame): Input DataFrame.
+    - start_date (str, optional): Start date (format: 'YYYY-MM-DD') for filtering
+        EffectiveDateTime. Default is None.
+    - end_date (str, optional): End date (format: 'YYYY-MM-DD') for filtering
+        EffectiveDateTime. Default is None.
+    - user_ids (str or list of str, optional): User ID or list of user IDs to filter by.
+        Default is None.
+
+    Returns:
+    - None
+    """
+
+    df["EffectiveDateTime"] = pd.to_datetime(df["EffectiveDateTime"])
+
+    if start_date is not None and end_date is not None:
+        df = df[
+            (df["EffectiveDateTime"] >= start_date)
+            & (df["EffectiveDateTime"] <= end_date)
+        ]
+
+    if isinstance(user_ids, str):
+        user_ids = [user_ids]
+
+    if user_ids is not None:
+        df = df[df["UserId"].isin(user_ids)]
+
+    counts = df.groupby(["LoincCode", "UserId"]).size().unstack(fill_value=0)
+
+    plt.figure(figsize=(20, 10))
+    counts.plot(kind="bar")
+    plt.title("Number of records by Loinc code", fontsize=16)
+    plt.xlabel("Loinc code", fontsize=14)
+    plt.ylabel("Count", fontsize=14)
+    plt.xticks(rotation=45, ha="right", fontsize=12)
+    plt.legend(title="User ID", fontsize=12, title_fontsize=14)
+    plt.tight_layout()
+    plt.show()

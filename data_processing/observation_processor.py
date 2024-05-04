@@ -196,7 +196,7 @@ def calculate_average_data(  # pylint: disable=unused-variable
     )
 
 
-def calculate_moving_average(  # pylint: disable=unused-variable
+def calculate_activity_index(  # pylint: disable=unused-variable
     fhir_dataframe: FHIRDataFrame, n=7
 ) -> FHIRDataFrame:
     """

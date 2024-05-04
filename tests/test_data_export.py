@@ -53,7 +53,6 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
     """
 
     def setUp(self):
-        # Load sample data
         data_file = Path(__file__).parent.parent / "sample_data" / "sample_df.csv"
         self.sample_data = pd.read_csv(data_file)
         self.fhir_df = FHIRDataFrame(self.sample_data, FHIRResourceType.OBSERVATION)
@@ -100,7 +99,6 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
 
     @patch("matplotlib.figure.Figure.savefig")
     def test_create_and_save_plot(self, mock_savefig):
-        # Setup plot creation based on real data
         self.exporter.create_and_save_plot("plot_base")
         # As plots creation depends on data, check calls based on expected conditions
         # This assumes at least one plot should be created given the loaded data and user_ids

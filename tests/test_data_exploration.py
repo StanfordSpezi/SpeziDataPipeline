@@ -30,13 +30,9 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import ColumnNames
-from data_exploration.data_explorer import DataExplorer, explore_total_records_number
-
-USER1 = "user1"
+from data_exploration.data_explorer import DataExplorer
 
 
 class TestDataExplorer(unittest.TestCase):  # pylint: disable=unused-variable

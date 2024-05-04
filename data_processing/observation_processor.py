@@ -62,6 +62,11 @@ from data_flattening.fhir_resources_flattener import (
     ColumnNames,
 )
 
+STEP_COUNT_LOINC_CODE = "55423-8"
+APPLE_HEALTH_KIT_STEP_COUNT = "HKQuantityTypeIdentifierStepCount"
+DISPLAY_STEP_COUNT = "Number of steps in unspecified time Pedometer"
+QUANTITY_UNIT_STEPS = "steps"
+
 
 def finalize_group(
     original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str
@@ -197,33 +202,25 @@ def calculate_average_data(  # pylint: disable=unused-variable
 
 
 def calculate_activity_index(  # pylint: disable=unused-variable
-    fhir_dataframe: FHIRDataFrame, n=7
+    fhir_dataframe: FHIRDataFrame, n: int = 7
 ) -> FHIRDataFrame:
     """
-    Calculates a moving average of the QUANTITY_VALUE over a specified number of days (n)
-    for each unique combination of USER_ID and LOINC_CODE. This method is useful
-    for smoothing out data series and identifying long-term trends.
+    Calculate the n-day moving average of step counts for each user in the given FHIRDataFrame,
+    ensuring that non-numeric values are propagated correctly across all rows.
 
-    Parameters:
-        fhir_dataframe (FHIRDataFrame): A DataFrame containing flattened FHIR data
-                                        with columns for USER_ID, EFFECTIVE_DATE_TIME,
-                                        LOINC_CODE, and QUANTITY_VALUE.
-        n (int, optional): The window size in days over which the moving average is
-                        calculated. Defaults to 7 days.
+    Args:
+    fhir_dataframe (FHIRDataFrame): A FHIRDataFrame containing step count observation data.
+    n (int): The number of days over which to calculate the moving average.
 
     Returns:
-        FHIRDataFrame: A DataFrame identical to the input but with 'QuantityValue' replaced
-                    by its n-day moving average. All other columns are preserved as is.
+    FHIRDataFrame: A new FHIRDataFrame containing the updated data.
 
-    Note:
-        This method assumes that the input DataFrame's EFFECTIVE_DATE_TIME column is already
-        normalized to date-only values. If EFFECTIVE_DATE_TIME includes time components,
-        they should be removed or normalized beforehand to ensure accurate calculations.
+    Raises:
+    ValueError: If the resource type is not 'Observation' or required columns are missing.
     """
     if fhir_dataframe.resource_type != FHIRResourceType.OBSERVATION:
         raise ValueError(
-            f"Resource type must be 'Observation' for outlier filtering,"
-            f"got '{fhir_dataframe.resource_type}'."
+            f"Resource type must be 'Observation', got '{fhir_dataframe.resource_type}'."
         )
 
     if not fhir_dataframe.validate_columns():
@@ -232,33 +229,57 @@ def calculate_activity_index(  # pylint: disable=unused-variable
 
     fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
         fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
-    ).dt.date
-
-    moving_avg_df = fhir_dataframe.df.groupby(
-        [ColumnNames.USER_ID.value, ColumnNames.LOINC_CODE.value]
-    ).apply(
-        lambda x: x.sort_values(ColumnNames.EFFECTIVE_DATE_TIME.value)
-        .rolling(window=n, on=ColumnNames.EFFECTIVE_DATE_TIME.value)[
-            ColumnNames.QUANTITY_VALUE.value
-        ]
-        .mean()
-        .reset_index(drop=True)
     )
 
-    moving_avg_df = moving_avg_df.reset_index()
-    result_df = pd.merge(
-        fhir_dataframe.df,
-        moving_avg_df,
-        on=[
-            ColumnNames.USER_ID.value,
-            ColumnNames.LOINC_CODE.value,
-            ColumnNames.EFFECTIVE_DATE_TIME.value,
-        ],
-        suffixes=("", "_moving_avg"),
-    )
-    result_df.rename(
-        columns={"QuantityValue_moving_avg": ColumnNames.QUANTITY_VALUE.value},
+    if not (
+        fhir_dataframe.df[ColumnNames.LOINC_CODE.value] == STEP_COUNT_LOINC_CODE
+    ).all():
+        print("The function receives as input only step count data.")
+        return None
+
+    if fhir_dataframe.df.duplicated(
+        subset=[ColumnNames.USER_ID.value, ColumnNames.EFFECTIVE_DATE_TIME.value]
+    ).any():
+        print(
+            "Duplicate entries detected for the same UserId and EffectiveDateTime. "
+            "Use process_fhir_data() function before calling calculate_activity_index."
+        )
+        return None
+
+    fhir_dataframe.df.sort_values(
+        by=[ColumnNames.USER_ID.value, ColumnNames.EFFECTIVE_DATE_TIME.value],
         inplace=True,
     )
 
-    return FHIRDataFrame(result_df, FHIRResourceType.OBSERVATION)
+    def calculate_moving_average(group, n):
+        # Ensure every day is accounted for in the range
+        group.set_index(ColumnNames.EFFECTIVE_DATE_TIME.value, inplace=True)
+        # Resample to daily data, explicitly setting numeric_only=True
+        daily = group.resample(
+            "D"
+        ).asfreq()  # Change from mean() to asfreq() to retain original values
+        # Calculate n-day moving average
+        daily["MovingAverage"] = (
+            daily[ColumnNames.QUANTITY_VALUE.value]
+            .rolling(window=n, min_periods=1)
+            .mean()
+        )
+        # Reset index to move EffectiveDateTime back to a column
+        daily.reset_index(inplace=True)
+        # Include UserId in the output
+        daily[ColumnNames.USER_ID.value] = group.name
+        # Set constant values
+        daily[ColumnNames.LOINC_CODE.value] = STEP_COUNT_LOINC_CODE
+        daily[ColumnNames.APPLE_HEALTH_KIT_CODE.value] = APPLE_HEALTH_KIT_STEP_COUNT
+        daily[ColumnNames.QUANTITY_UNIT.value] = QUANTITY_UNIT_STEPS
+        daily[ColumnNames.DISPLAY.value] = DISPLAY_STEP_COUNT
+        daily[ColumnNames.QUANTITY_NAME.value] = f"{n}-day moving average Step Count"
+        return daily
+
+    result = fhir_dataframe.df.groupby(ColumnNames.USER_ID.value).apply(
+        lambda group: calculate_moving_average(group, n)
+    )
+    result[ColumnNames.QUANTITY_VALUE.value] = result["MovingAverage"]
+    result.reset_index(level=0, drop=True, inplace=True)
+
+    return FHIRDataFrame(result, fhir_dataframe.resource_type)

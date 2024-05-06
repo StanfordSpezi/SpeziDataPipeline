@@ -165,8 +165,7 @@ spezi_data_pipeline/
 ├── pyproject.toml
 ├── .gitignore
 ├── README.md
-├── LICENSE
-└── setup.cfg (optional, if not using pyproject.toml fully)
+└── LICENSE
 
 ```
 

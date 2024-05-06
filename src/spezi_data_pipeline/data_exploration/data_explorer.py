@@ -44,10 +44,10 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import AutoMinorLocator
 
 # Local application/library specific imports
-from data_processing.data_processor import (
+from spezi_data_pipeline.data_processing.data_processor import (
     select_data_by_dates,
 )
-from data_flattening.fhir_resources_flattener import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRResourceType,
     FHIRDataFrame,
     ColumnNames,

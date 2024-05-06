@@ -56,7 +56,7 @@ import pandas as pd
 import numpy as np
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRDataFrame,
     FHIRResourceType,
     ColumnNames,

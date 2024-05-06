@@ -21,18 +21,18 @@ from unittest.mock import MagicMock
 import pandas as pd
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRDataFrame,
     FHIRResourceType,
     ColumnNames,
 )
-from data_processing.data_processor import (
+from spezi_data_pipeline.data_processing.data_processor import (
     FHIRDataProcessor,
     select_data_by_dates,
     select_data_by_user,
 )
 
-from data_processing.observation_processor import (
+from spezi_data_pipeline.data_processing.observation_processor import (
     calculate_daily_data,
 )
 

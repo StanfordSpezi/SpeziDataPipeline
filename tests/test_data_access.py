@@ -34,7 +34,7 @@ from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
 # Local application/library specific imports
-from data_access.firebase_fhir_data_access import (
+from spezi_data_pipeline.data_access.firebase_fhir_data_access import (
     FirebaseFHIRAccess,
     ObservationCreator,
     ECGObservation,
@@ -90,15 +90,25 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_environ.__setitem__.assert_has_calls(calls, any_order=True)
         mock_init_app.assert_called_once()
 
-    @patch("data_access.firebase_fhir_data_access.firestore.client")
-    @patch("data_access.firebase_fhir_data_access.credentials.Certificate")
-    @patch("data_access.firebase_fhir_data_access.firebase_admin.initialize_app")
+    @patch("spezi_data_pipeline.data_access.firebase_fhir_data_access.firestore.client")
     @patch(
-        "data_access.firebase_fhir_data_access.firebase_admin.get_app",
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access.credentials.Certificate"
+    )
+    @patch(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access.firebase_admin.initialize_app"
+    )
+    @patch(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access.firebase_admin.get_app",
         side_effect=ValueError,
     )
-    @patch("data_access.firebase_fhir_data_access.os.getenv", return_value=None)
-    @patch("data_access.firebase_fhir_data_access.os.path.exists", return_value=True)
+    @patch(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access.os.getenv",
+        return_value=None,
+    )
+    @patch(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access.os.path.exists",
+        return_value=True,
+    )
     # pylint: disable=too-many-arguments
     def test_connect_production_with_valid_key(
         self,

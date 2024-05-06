@@ -1,32 +1,21 @@
 [build-system]
-requires = ["setuptools>=40.6.0", "wheel"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "spezi_data_pipeline"
 version = "0.1.0"
-description = "A detailed description of what your package does."
+description = "A comprehensive data pipeline for processing and analyzing FHIR data using Firebase and FHIR standards."
 authors = [
     { name = "Vasiliki Bikia", email = "bikia@stanford.edu" }
 ]
-readme = "README.md"
 license = { file = "LICENSE" }
-dependencies = [
-    "pandas>=1.1.0",
-    "numpy",
-    "matplotlib",
-    "firebase-admin",
-    "fhir.resources",
-    "pytest>=7.0",
-    "coverage",
-    "pytest>=6.0",
-    "pytest-cov>=2.10.0"
-]
+readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development :: Build Tools",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "Topic :: Software Development :: Libraries",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
@@ -34,8 +23,24 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
+dependencies = [
+    "pandas>=1.3.0",
+    "numpy>=1.20.0",
+    "matplotlib>=3.4.0",
+    "firebase-admin>=5.0.0",
+    "fhir.resources>=6.0.0"
+]
 
-[tool.setuptools]
-packages = find:
-package_dir =
-    = "src"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "coverage",
+    "pytest-cov>=2.10.0"
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]

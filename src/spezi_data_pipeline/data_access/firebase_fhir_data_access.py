@@ -52,12 +52,12 @@ from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     ECGObservation,
     FHIRResourceType,
     KeyNames,
 )
-from data_processing.code_mapping import CodeProcessor
+from spezi_data_pipeline.data_processing.code_mapping import CodeProcessor
 
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
 CI_STRING = "CI"

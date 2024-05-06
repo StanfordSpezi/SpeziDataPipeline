@@ -49,8 +49,8 @@ Example Usage:
 """
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
-from data_exploration.data_explorer import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from spezi_data_pipeline.data_exploration.data_explorer import (
     DataExplorer,
     ECGExplorer,
     DEFAULT_DPI_VALUE,

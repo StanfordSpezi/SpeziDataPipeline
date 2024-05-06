@@ -38,8 +38,8 @@ from unittest.mock import patch
 import pandas as pd
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
-from data_export.data_exporter import DataExporter
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from spezi_data_pipeline.data_export.data_exporter import DataExporter
 
 
 class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable

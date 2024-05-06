@@ -32,7 +32,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 
 # Local application/library specific imports
-from data_exploration.data_explorer import DataExplorer
+from spezi_data_pipeline.data_exploration.data_explorer import DataExplorer
 
 
 class TestDataExplorer(unittest.TestCase):  # pylint: disable=unused-variable
@@ -80,8 +80,8 @@ class TestDataExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         self.assertEqual(visualizer.y_lower, 0)
         self.assertEqual(visualizer.y_upper, 500)
 
-    @patch("data_exploration.data_explorer.DataExplorer.plot_combined")
-    @patch("data_exploration.data_explorer.DataExplorer.plot_individual")
+    @patch("spezi_data_pipeline.data_exploration.data_explorer.DataExplorer.plot_combined")
+    @patch("spezi_data_pipeline.data_exploration.data_explorer.DataExplorer.plot_individual")
     def test_create_static_plot_combined(  # pylint: disable=no-self-use
         self, mock_plot_individual, mock_plot_combined
     ):

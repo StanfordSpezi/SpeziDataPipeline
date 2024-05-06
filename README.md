@@ -183,6 +183,12 @@ Required Python packages are included in the requirements.txt file and are outli
 
 **[fhir.resources](https://pypi.org/project/fhir.resources/)**
 
+**[pytest>=7.0](https://docs.pytest.org/en/8.2.x/)**
+
+**[coverage](https://pypi.org/project/coverage/)**
+
+**[pytest-cov>=2.10.0](https://pypi.org/project/pytest-cov/)**
+
 You can install all required external packages using pip by running the following command in your terminal:
 
 ```bash

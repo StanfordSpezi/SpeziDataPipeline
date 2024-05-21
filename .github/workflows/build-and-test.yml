@@ -103,7 +103,7 @@ jobs:
         name: SpeziDataPipelineTemplate.pdf
         path: SpeziDataPipelineTemplate.pdf
 
-   update_authors:
+  update_authors:
     name: Update Authors
     runs-on: ubuntu-latest
     

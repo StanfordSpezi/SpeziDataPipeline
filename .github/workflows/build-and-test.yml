@@ -121,16 +121,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install toml
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Update authors in pyproject.toml
         run: python update_authors.py
+
+      - name: Determine branch name
+        id: get_branch
+        run: |
+          if [[ "${GITHUB_REF}" == refs/pull/*/merge ]]; then
+            echo "Branch is a pull request merge ref"
+            BRANCH_NAME=$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")
+            echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          else
+            echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          fi
 
       - name: Commit and push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          BRANCH_NAME=${{ github.ref }}
           git pull origin $BRANCH_NAME
           git add pyproject.toml
           git commit -m "Update authors from CONTRIBUTORS.md"

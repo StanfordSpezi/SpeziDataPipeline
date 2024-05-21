@@ -5,9 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spezi_data_pipeline"
 version = "0.1.0"
-description = "A comprehensive data pipeline for processing and analyzing FHIR data using Firebase and FHIR standards."
+description = "A comprehensive data pipeline for accessing, downloading, restructuring, processing, and exporting FHIR-compatible health data from cloud storage platforms including Google Firebase."
 authors = [
-    { name = "Vasiliki Bikia", email = "bikia@stanford.edu" }
+    { name = "Vasiliki Bikia"},
+    { name = "Paul Schmiedmayer"},
+
 ]
 license = { file = "LICENSE" }
 readme = "README.md"

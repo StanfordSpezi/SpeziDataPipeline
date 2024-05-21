@@ -27,6 +27,7 @@ The Spezi Data Pipeline is engineered to improve workflows associated with data 
 The SpeziDataPipelineTemplate is organized into several directories, each serving a specific function as part of the overall application. This guide will walk you through the package structure, highlighting the key components and their usage based on your needs and challenges.
 
 1. `data_access/`
+
 _FirebaseFHIRAccess_
 - Purpose: Connects to a Firebase Firestore database and fetches the data stored as FHIR resources.
 - Usage: If you need to retrieve healthcare data from a Firestore database, this class provides methods to connect to the database and fetch data based on LOINC codes.
@@ -36,11 +37,13 @@ _ResourceCreator_
 - Usage: Use this when you need to convert raw FHIR-compatible Firestore documents into structured FHIR resources.
 
 2. `data_flattening/`
+
 _ResourceFlattener_
 - Purpose: Transforms nested FHIR resources objects into flat data structures suitable for analysis.
 - Usage: Essential for converting complex FHIR resources into a more analyzable DataFrame format.
 
 3. `data_processing/`
+
 _FHIRDataProcessor_
 - Purpose: Processes and filters flattened FHIR data.
 - Usage: Ideal for performing operations like filtering outliers, selecting data by user or date, averaging data by date, and general data processing tasks.
@@ -50,6 +53,7 @@ _CodeProcessor_
 - Usage: Use this when you need to map codes to meaningful representations. This class serves as a central repository for the mappings of LOINC codes to their display names, processing functions, and default value ranges for outlier filtering.
 
 4. `data_exploration/`
+
 _DataExplorer_
 - Purpose: Provides tools for visualizing and exploring FHIR data.
 - Usage: Useful for generating plots and visual representations of your data to gain insights, and detect user inactivity and missing values.
@@ -59,17 +63,19 @@ _ECGExplorer_
 - Usage: Use this for detailed ECG data analysis and visualization.
 
 5. `data_export/`
+
 _DataExporter_
 - Purpose: Exports processed and visualized data to various formats.
 - Usage: When you need to save your processed data or visualizations, this class provides methods to export to CSV and save plots in JPEG/PNG.
 
+
 ### How to Use Based on Your Needs
-- Fetching Data from Firestore: Start with FirebaseFHIRAccess to connect and fetch data.
-- Converting and Structuring Data: Use ResourceCreator and its subclasses to convert Firestore documents to FHIR resources.
-- Flattening Nested Data: Utilize ResourceFlattener and its specific implementations to transform data into flat DataFrames.
-- Processing Data: Apply FHIRDataProcessor for filtering, selecting, and general data processing tasks.
-- Exploring and Visualizing Data: Leverage DataExplorer and ECGExplorer to create visualizations and explore your data.
-- Exporting Data: Use DataExporter to save processed data and plots.
+- **Downloading Data from Firestore**: Start with FirebaseFHIRAccess to connect and fetch data.
+- **Converting and Structuring FHIR Data**: Use ResourceCreator and its subclasses to convert Firestore documents to FHIR resources.
+- **Flattening Nested FHIR Data**: Utilize ResourceFlattener and its specific implementations to transform data into flat DataFrames.
+- **Processing Data**: Apply FHIRDataProcessor for filtering, selecting, and general data processing tasks.
+- **Exploring and Visualizing Data**: Leverage DataExplorer and ECGExplorer to create visualizations and explore your data.
+- **Exporting Data**: Use DataExporter to save processed data and plots.
 
 
 ## Dependencies

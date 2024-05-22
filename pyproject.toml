@@ -8,6 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "spezi_data_pipeline"
+dynamic = ["version"]
 description = "A comprehensive data pipeline for accessing, downloading, restructuring, processing, and exporting FHIR-compatible health data from cloud storage platforms including Google Firebase."
 readme = "README.md"
 requires-python = ">=3.7"

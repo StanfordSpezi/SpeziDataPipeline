@@ -106,7 +106,7 @@ jobs:
   update_authors:
     name: Update Authors
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -138,6 +138,22 @@ jobs:
             echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           fi
 
+      - name: Stash changes
+        run: git stash
+
+      - name: Pull remote changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+          git pull origin $BRANCH_NAME --allow-unrelated-histories
+
+      - name: Apply stashed changes
+        run: git stash pop
+
       - name: Commit and push changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -145,10 +161,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global pull.rebase false
-          # Ensure the token is used for HTTPS authentication
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-          git pull origin $BRANCH_NAME --allow-unrelated-histories
           git add pyproject.toml
-          git commit -m "Update authors from CONTRIBUTORS.md"
+          git commit -m "Update authors from CONTRIBUTORS.md" || echo "No changes to commit"
           git push origin HEAD:$BRANCH_NAME

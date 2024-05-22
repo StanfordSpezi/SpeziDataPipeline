@@ -6,15 +6,46 @@
 # SPDX-License-Identifier: MIT
 #
 
+"""
+Module to automatically update the Hatch project version based on the latest Git tag.
+
+This module contains functions to retrieve the latest Git tag and update the 
+Hatch version in the `pyproject.toml` configuration file. The script is intended 
+to be run as a standalone program.
+
+Functions:
+    get_latest_git_tag(): Retrieves the latest Git tag from the repository.
+    update_hatch_version(tag): Updates the version in the Hatch configuration file 
+                               with the specified tag.
+
+Usage:
+    Run this script from the command line to automatically update the version in 
+    the `pyproject.toml` file based on the latest Git tag:
+    
+    $ python script_name.py
+    
+    The script will validate that the tag is in a valid semantic versioning format 
+    (e.g., "1.0.0"). If the tag is valid, it will update the version in 
+    `pyproject.toml`. If the tag is not valid, it will print an error message.
+"""
+
 import subprocess
 import re
 import toml
 
 
 def get_latest_git_tag():
-    """Function to get the latest git tag"""
+    """
+    Retrieves the latest Git tag from the repository.
+
+    This function runs the Git command `git describe --tags` to get the latest tag 
+    in the repository and returns it as a string.
+
+    Returns:
+        str: The latest Git tag.
+    """
     result = subprocess.run(
-        ["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True
+        ["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True, check=True
     )
     tag = result.stdout.strip()
     return tag
@@ -23,12 +54,12 @@ def get_latest_git_tag():
 def update_hatch_version(tag):
     """Function to update the version in the hatch configuration file"""
 
-    with open("pyproject.toml", "r") as file:
+    with open("pyproject.toml", "r", encoding="utf-8") as file:
         config = toml.load(file)
 
     config["tool"]["hatch"]["metadata"]["version"] = tag
 
-    with open("pyproject.toml", "w") as file:
+    with open("pyproject.toml", "w", encoding="utf-8") as file:
         toml.dump(config, file)
 
 

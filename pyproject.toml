@@ -29,16 +29,7 @@ dependencies = [
     "fhir.resources>=6.0.0"
 ]
 [[project.authors]]
-name = "Vicky Bikia"
-
-[[project.authors]]
-name = "Paul Schmiedmayer"
-
-[[project.authors]]
-name = "Adrit Rao"
-
-[[project.authors]]
-name = "Oliver Aalami"
+name = "Full Name"   # The authors' list is automatically updated by the update_authors.py script
 
 [project.license]
 file = "LICENSE"

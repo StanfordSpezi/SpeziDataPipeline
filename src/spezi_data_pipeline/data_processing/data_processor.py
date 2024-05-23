@@ -35,13 +35,13 @@ from typing import Any
 import pandas as pd
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRDataFrame,
     FHIRResourceType,
     ColumnNames,
 )
 # pylint: enable=duplicate-code
-from .code_mapping import CodeProcessor
+from spezi_data_pipeline.data_processing.code_mapping import CodeProcessor
 
 
 class FHIRDataProcessor:  # pylint: disable=unused-variable

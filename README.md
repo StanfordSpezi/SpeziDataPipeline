@@ -24,136 +24,61 @@ The Spezi Data Pipeline is engineered to improve workflows associated with data 
 
 ## Package Structure
 
-The SpeziDataPipelineTemplate is organized into several directories, each serving a specific function as part of the overall application.
+The SpeziDataPipelineTemplate is organized into several directories, each serving a specific function as part of the overall application. This guide will walk you through the package structure, highlighting the key components and their usage based on your needs and challenges.
 
-```kotlin
-spezi_data_pipeline/
-│
-├── spezi_data_pipeline/
-│   ├── __init__.py
-│   ├── data_access/
-│   │   ├── __init__.py
-│   │   ├── firebase_fhir_data_access.py
-│   │   │   ├── class EnhancedObservation
-│   │   │   │   ├── __init__(self, observation: Observation, UserId=None)
-│   │   │   ├── class FirebaseFHIRAccess
-│   │   │   │   ├── __init__(self, service_account_key_file: str, project_id: str) -> None
-│   │   │   │   ├── connect(self) -> None
-│   │   │   │   ├── fetch_data(self, collection_name: str, subcollection_name: str, loinc_codes: list[str] | None = None) -> list[Any]
-│   │   │   │   ├── _fetch_user_resources(self, user: DocumentReference, collection_name: str, subcollection_name: str, loinc_codes: list[str] | None) -> list[Any]
-│   │   │   │   ├── _process_loinc_codes(query: CollectionReference, user: DocumentReference, loinc_codes: list[str]) -> list[Any]
-│   │   │   │   └── _process_all_documents(query: CollectionReference, user: DocumentReference) -> list[Any]
-│   │   │   ├── class ResourceCreator
-│   │   │   │   ├── __init__(self, resource_type: FHIRResourceType)
-│   │   │   │   ├── create_resources(self, fhir_docs: list[DocumentSnapshot], user: DocumentReference) -> list[Any]
-│   │   │   ├── class ObservationCreator(ResourceCreator)
-│   │   │   │   ├── __init__(self)
-│   │   │   │   ├── create_resources(self, fhir_docs: list[DocumentSnapshot], user: DocumentReference) -> list[Observation]
-│   │   │   ├── class QuestionnaireResponseCreator(ResourceCreator)
-│   │   │   │   ├── __init__(self)
-│   │   │   │   ├── create_resources(self, fhir_docs: list[DocumentSnapshot], user: DocumentReference) -> list[QuestionnaireResponse]
-│   │   │   └── get_code_mappings(code: str) -> tuple[str, str, str]
-│   │
-│   ├── data_flattening/
-│   │   ├── __init__.py
-│   │   └── fhir_resources_flattener.py
-│   │       ├── class KeyNames(Enum)
-│   │       ├── class ColumnNames(Enum)
-│   │       ├── class ECGObservation
-│   │       │   ├── __init__(self, observation: Any)
-│   │       │   └── __getattr__(self, name)
-│   │       ├── class FHIRResourceType(Enum)
-│   │       ├── class FHIRDataFrame
-│   │       │   ├── __init__(self, data: pd.DataFrame, resource_type: FHIRResourceType) -> None
-│   │       │   ├── df(self) -> pd.DataFrame
-│   │       │   └── validate_columns(self) -> bool
-│   │       ├── class ResourceFlattener
-│   │       │   ├── __init__(self, resource_type: FHIRResourceType)
-│   │       │   └── flatten(self, resources: list[Any]) -> FHIRDataFrame
-│   │       ├── class ObservationFlattener(ResourceFlattener)
-│   │       │   ├── __init__(self)
-│   │       │   └── flatten(self, resources: list[Any]) -> FHIRDataFrame
-│   │       ├── class ECGObservationFlattener(ResourceFlattener)
-│   │       │   ├── __init__(self)
-│   │       │   └── flatten(self, resources: list[Any]) -> FHIRDataFrame
-│   │       ├── def extract_coding_info(observation: Any) -> dict
-│   │       ├── def extract_component_info(observation: Any) -> dict
-│   │       └── def flatten_fhir_resources(resources: list[Any]) -> FHIRDataFrame | None
-│   |
-│   ├── data_processing/
-│   │   ├── __init__.py
-│   │   ├── data_processor.py
-│   │   │   ├── class FHIRDataProcessor
-│   │   │   │   ├── __init__(self)
-│   │   │   │   ├── process_fhir_data(self, flattened_fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
-│   │   │   │   ├── filter_outliers(self, flattened_fhir_dataframe: FHIRDataFrame, value_range: Any | None = None) -> FHIRDataFrame
-│   │   │   │   ├── select_data_by_user(self, flattened_fhir_dataframe: FHIRDataFrame, user_id: str) -> FHIRDataFrame
-│   │   │   │   └── select_data_by_dates(self, flattened_fhir_dataframe: FHIRDataFrame, start_date: str, end_date: str) -> FHIRDataFrame
-│   │   ├── code_mapping.py
-│   │   │   ├── class CodeProcessor
-│   │   │   │   ├── __init__(self)
-│   │   └── observation_processor.py
-│   │        ├── def _finalize_group(original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str) -> pd.DataFrame
-│   │       ├── def calculate_daily_data(fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
-│   │       ├── def calculate_average_data(fhir_dataframe: FHIRDataFrame) -> FHIRDataFrame
-│   │       └── def calculate_moving_average(fhir_dataframe: FHIRDataFrame, n=7) -> FHIRDataFrame
-│   |
-│   |
-│   ├── data_visualization/
-│   │   ├── __init__.py
-│   │   └── data_visualizer.py
-│   │       ├── class DataVisualizer
-│   │       │   ├── __init__(self)
-│   │       │   ├── set_date_range(self, start_date: str, end_date: str)
-│   │       │   ├── set_user_ids(self, user_ids: List[str])
-│   │       │   ├── set_y_bounds(self, y_lower: float, y_upper: float)
-│   │       │   ├── set_combine_plots(self, combine_plots: bool)
-│   │       │   ├── create_static_plot(self, fhir_dataframe: FHIRDataFrame) -> list
-│   │       │   ├── plot_individual(self, df_loinc, user_id, loinc_code) -> plt.Figure
-│   │       │   ├── plot_combined(self, df_loinc, users_to_plot, loinc_code) -> plt.Figure
-│   │       │   └── plot_data_based_on_condition(self, user_df, user_id)
-│   │       ├── class ECGVisualizer
-│   │       │   ├── __init__(self)
-│   │       │   ├── set_date_range(self, start_date: str, end_date: str)
-│   │       │   ├── set_user_ids(self, user_ids: list[str])
-│   │       │   ├── _ax_plot(self, ax, x, y, secs)
-│   │       │   ├── plot_single_user_ecg(self, user_data, user_id)
-│   │       │   ├── plot_ecg_subplots(self, fhir_dataframe)
-│   │       │   └── _plot_single_lead_ecg(self)
-│   │       └── def visualizer_factory(fhir_dataframe) -> Union[DataVisualizer, ECGVisualizer]
-│   |
-│   |
-│   └── data_export/
-│       ├── __init__.py
-│       └── data_exporter.py
-│           └── class DataExporter(DataVisualizer, ECGVisualizer)
-│               ├── __init__(self, flattened_FHIRDataFrame: FHIRDataFrame)
-│               ├── export_to_csv(self, filename)
-│               ├── create_filename(self, base_filename, user_id, idx=None)
-│               └── create_and_save_plot(self, base_filename: str)
-│
-├── tests/
-│   ├── __init__.py
-│   ├── test_data_access.py/
-│   ├── test_data_flattening.py/
-│   ├── test_data_visualization.py/
-│   └── test_data_export/
-│
-├── docs/ (currently missing)
-│   ├── index.md
-│   ├── setup.md
-│   └── usage.md
-│
-├── examples/ (currently missing)
-│   └── example_usage.py
-│
-├── setup.py (currently missing)
-├── README.md
-├── LICENSE
-└── .gitignore
-```
+1. `data_access/`
 
-### Dependencies
+_FirebaseFHIRAccess_
+- Purpose: Connects to a Firebase Firestore database and fetches the data stored as FHIR resources.
+- Usage: If you need to retrieve healthcare data from a Firestore database, this class provides methods to connect to the database and fetch data based on LOINC codes.
+
+_ResourceCreator_
+- Purpose: Creates FHIR resource objects from Firestore documents in FHIR format.
+- Usage: Use this when you need to convert raw FHIR-compatible Firestore documents into structured FHIR resources.
+
+2. `data_flattening/`
+
+_ResourceFlattener_
+- Purpose: Transforms nested FHIR resources objects into flat data structures suitable for analysis.
+- Usage: Essential for converting complex FHIR resources into a more analyzable DataFrame format.
+
+3. `data_processing/`
+
+_FHIRDataProcessor_
+- Purpose: Processes and filters flattened FHIR data.
+- Usage: Ideal for performing operations like filtering outliers, selecting data by user or date, averaging data by date, and general data processing tasks.
+
+_CodeProcessor_
+- Purpose: Handles processing related to code mappings.
+- Usage: Use this when you need to map codes to meaningful representations. This class serves as a central repository for the mappings of LOINC codes to their display names, processing functions, and default value ranges for outlier filtering.
+
+4. `data_exploration/`
+
+_DataExplorer_
+- Purpose: Provides tools for visualizing and exploring FHIR data.
+- Usage: Useful for generating plots and visual representations of your data to gain insights, and detect user inactivity and missing values.
+
+_ECGExplorer_
+- Purpose: Specialized in visualizing ECG data.
+- Usage: Use this for detailed ECG data analysis and visualization.
+
+5. `data_export/`
+
+_DataExporter_
+- Purpose: Exports processed and visualized data to various formats.
+- Usage: When you need to save your processed data or visualizations, this class provides methods to export to CSV and save plots in JPEG/PNG.
+
+
+### How to Use Based on Your Needs
+- **Downloading Data from Firestore**: Start with FirebaseFHIRAccess to connect and fetch data.
+- **Converting and Structuring FHIR Data**: Use ResourceCreator and its subclasses to convert Firestore documents to FHIR resources.
+- **Flattening Nested FHIR Data**: Utilize ResourceFlattener and its specific implementations to transform data into flat DataFrames.
+- **Processing Data**: Apply FHIRDataProcessor for filtering, selecting, and general data processing tasks.
+- **Exploring and Visualizing Data**: Leverage DataExplorer and ECGExplorer to create visualizations and explore your data.
+- **Exporting Data**: Use DataExporter to save processed data and plots.
+
+
+## Dependencies
 
 Required Python packages are included in the requirements.txt file and are outlined in the list below:
 

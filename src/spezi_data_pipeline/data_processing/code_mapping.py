@@ -35,7 +35,10 @@ Key Features:
 from dataclasses import dataclass
 
 # Local application/library specific imports
-from .observation_processor import calculate_daily_data, calculate_average_data
+from spezi_data_pipeline.data_processing.observation_processor import (
+    calculate_daily_data,
+    calculate_average_data,
+)
 
 
 @dataclass

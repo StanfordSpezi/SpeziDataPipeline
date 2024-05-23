@@ -1,0 +1,48 @@
+#
+# This source file is part of the Stanford Spezi open-source project
+#
+# SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+#
+# SPDX-License-Identifier: MIT
+#
+
+name: Publish Python Package
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build_and_test:
+    uses: ./.github/workflows/build-and-test.yml
+
+  build_and_publish:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5  
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatch toml
+
+      - name: Update release version
+        run: python scripts/update_version.py
+
+      - name: Update authors
+        run: python scripts/update_authors.py
+
+      - name: Build and publish
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          hatch build
+          hatch publish

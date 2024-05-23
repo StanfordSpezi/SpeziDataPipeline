@@ -29,23 +29,6 @@ Main Features:
   patient's ECG data).
 - Visualization Customization: Provides options to set Y-axis bounds, combine or separate plots for
   multiple users, and customize line widths and tick intervals for ECG waveforms.
-
-Usage Example:
-from ecg_visualization_module import ECGVisualizer, FHIRDataFrame
-
-# Load your ECG data into a FHIRDataFrame
-fhir_dataframe = FHIRDataFrame(load_your_data_here())
-
-# Initialize the ECG visualizer
-ecg_visualizer = ECGVisualizer()
-
-# Set visualization parameters
-ecg_visualizer.set_user_ids(['user123'])
-ecg_visualizer.set_date_range('2021-01-01', '2021-01-31')
-ecg_visualizer.set_y_bounds(-1.0, 1.0)
-
-# Generate and display the ECG plots
-ecg_visualizer.plot_ecg_subplots(fhir_dataframe)
 """
 
 # Standard library imports
@@ -61,10 +44,10 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import AutoMinorLocator
 
 # Local application/library specific imports
-from data_processing.data_processor import (
+from spezi_data_pipeline.data_processing.data_processor import (
     select_data_by_dates,
 )
-from data_flattening.fhir_resources_flattener import (
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRResourceType,
     FHIRDataFrame,
     ColumnNames,
@@ -80,7 +63,7 @@ DEFAULT_AMPLITUDE_ECG = 1.8
 DEFAULT_TIME_TICKS = 0.2
 
 
-class DataVisualizer:  # pylint: disable=unused-variable
+class DataExplorer:  # pylint: disable=unused-variable
     """
     Provides functionalities to visualize FHIR data. Supports setting up visualization
     parameters such as date range, user IDs for filtering, Y-axis bounds, and the option
@@ -100,7 +83,7 @@ class DataVisualizer:  # pylint: disable=unused-variable
     """
 
     def __init__(self):
-        """Initializes the DataVisualizer with default parameters for data visualization."""
+        """Initializes the DataExplorer with default parameters for data visualization."""
         self.start_date = None
         self.end_date = None
         self.user_ids = None
@@ -297,6 +280,7 @@ class DataVisualizer:  # pylint: disable=unused-variable
         plt.show()
         return fig
 
+
 def plot_data_based_on_condition(user_df, user_id):
     """
     Dynamically plots data using either plt.scatter or plt.bar based on the condition
@@ -330,9 +314,9 @@ def plot_data_based_on_condition(user_df, user_id):
     return {"plot_type": plot_type, "data_frame": user_df}
 
 
-class ECGVisualizer:  # pylint: disable=unused-variable
+class ECGExplorer:  # pylint: disable=unused-variable
     """
-    A visualization tool for electrocardiogram (ECG) data that extends the DataVisualizer class.
+    A visualization tool for electrocardiogram (ECG) data that extends the DataExplorer class.
     This class provides specialized plotting functions to render ECG waveforms from FHIR data frames
     that contain ECG observations for individual patients.
 
@@ -343,7 +327,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
 
     def __init__(self):
         """
-        Initializes the ECGVisualizer with default parameters for ECG data visualization.
+        Initializes the ECGExplorer with default parameters for ECG data visualization.
         Sets line width, date range, user IDs, amplitude scale, and time ticks for plotting.
         """
         self.lwidth = DEFAULT_LINE_WIDTH_VALUE
@@ -555,7 +539,7 @@ class ECGVisualizer:  # pylint: disable=unused-variable
 
 def visualizer_factory(  # pylint: disable=unused-variable
     fhir_dataframe: FHIRDataFrame,
-) -> DataVisualizer | ECGVisualizer:
+) -> DataExplorer | ECGExplorer:
     """
     Factory function to create a visualizer based on the resource_type attribute of
     FHIRDataFrame.
@@ -565,11 +549,69 @@ def visualizer_factory(  # pylint: disable=unused-variable
             data and resource_type attribute.
 
     Returns:
-        An instance of either DataVisualizer or ECGVisualizer based on the
+        An instance of either DataExplorer or ECGExplorer based on the
             resource_type.
     """
     if fhir_dataframe.resource_type == FHIRResourceType.OBSERVATION:
-        return DataVisualizer()
+        return DataExplorer()
     if fhir_dataframe.resource_type == FHIRResourceType.ECG_OBSERVATION:
-        return ECGVisualizer()
+        return ECGExplorer()
     raise ValueError(f"Unsupported resource type: {fhir_dataframe.resource_type}")
+
+
+def explore_total_records_number(  # pylint: disable=unused-variable
+    df: pd.DataFrame,
+    start_date: str = None,
+    end_date: str = None,
+    user_ids: str | list = None,
+) -> None:
+    """
+    Create a bar plot showing the count of rows with the same LoincCode column value
+    within the specified date range and for the specified user IDs. If start_date or
+    end_date is None, no date filtering is applied. If user_ids is None, no filtering
+    based on user IDs is applied.
+
+    Args:
+    - df (pd.DataFrame): Input DataFrame.
+    - start_date (str, optional): Start date (format: 'YYYY-MM-DD') for filtering
+        EffectiveDateTime. Default is None.
+    - end_date (str, optional): End date (format: 'YYYY-MM-DD') for filtering
+        EffectiveDateTime. Default is None.
+    - user_ids (str or list of str, optional): User ID or list of user IDs to filter by.
+        Default is None.
+
+    Returns:
+    - None
+    """
+
+    df["EffectiveDateTime"] = pd.to_datetime(df["EffectiveDateTime"])
+
+    if start_date is not None and end_date is not None:
+        df = df[
+            (df["EffectiveDateTime"] >= start_date)
+            & (df["EffectiveDateTime"] <= end_date)
+        ]
+
+    if isinstance(user_ids, str):
+        user_ids = [user_ids]
+
+    if user_ids is not None:
+        df = df[df["UserId"].isin(user_ids)]
+
+    counts = df.groupby(["LoincCode", "UserId"]).size().unstack(fill_value=0)
+
+    plt.figure(figsize=(40, 50))
+    counts.plot(kind="bar")
+    plt.title("Number of records by Loinc code", fontsize=16)
+    plt.xlabel("Loinc code", fontsize=14)
+    plt.ylabel("Count", fontsize=14)
+    plt.xticks(rotation=45, ha="right", fontsize=12)
+    plt.legend(
+        title="User ID",
+        fontsize=12,
+        title_fontsize=14,
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left",
+    )
+    plt.tight_layout()
+    plt.show()

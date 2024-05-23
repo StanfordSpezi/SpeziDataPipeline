@@ -1,4 +1,3 @@
-# pylint: disable=unused-variable
 #
 # This source file is part of the Stanford Spezi open-source project
 #
@@ -670,6 +669,11 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
     Inherits:
         ResourceFlattener: The base class providing foundational flattening functionality.
     """
+    def __init__(self):
+        """
+        Initializes the ECGObservationFlattener specifically for ECG Observation resources.
+        """
+        super().__init__(FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
     def flatten(
         self, resources: list[QuestionnaireResponse], survey_path: list[str] = None

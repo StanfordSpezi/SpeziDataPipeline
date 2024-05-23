@@ -38,7 +38,7 @@ import re
 
 # Local application/library specific imports
 from scripts.update_authors import parse_contributors, update_pyproject_toml
-from scripts.update_release_version import get_latest_git_tag, update_hatch_version
+from scripts.update_version import get_latest_git_tag, update_hatch_version
 
 
 class TestContributorsFunctions(unittest.TestCase):  # pylint: disable=unused-variable

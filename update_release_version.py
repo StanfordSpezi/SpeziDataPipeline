@@ -38,7 +38,7 @@ def get_latest_git_tag():
     """
     Retrieves the latest Git tag from the repository.
 
-    This function runs the Git command `git describe --tags` to get the latest tag 
+    This function runs the Git command `git describe --tags` to get the latest tag
     in the repository and returns it as a string.
 
     Returns:

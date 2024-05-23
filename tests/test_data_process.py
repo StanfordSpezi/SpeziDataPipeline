@@ -7,9 +7,28 @@
 #
 
 """
-to be added.
-"""
+Unit tests for the FHIRDataProcessor class in the Spezi Data Pipeline.
 
+This module contains unit tests for the FHIRDataProcessor class, ensuring that data processing,
+including outlier filtering and processing based on specific LOINC code mappings, behaves as 
+expected.
+
+Classes:
+    TestFHIRDataProcessor: Contains unit tests for the FHIRDataProcessor class.
+
+Functions:
+    setUp(self): Initializes any pre-requisites for the tests.
+    test_process_fhir_data_valid_input(self): Tests processing of valid FHIR data.
+    test_filter_outliers(self): Tests outlier filtering based on specific value ranges.
+    test_select_data_by_user(self): Verifies the user ID filtering functionality.
+    test_select_data_by_dates(self): Verifies the date filtering functionality.
+
+Constants:
+    USER_ID1 (str): Example user ID used in tests.
+    OUTLIER_VALUE (float): Example outlier value used in tests.
+    LOWER_THRESHOLD (int): Lower threshold for outlier detection.
+    UPPER_THRESOLD (int): Upper threshold for outlier detection.
+"""
 
 # Standard library imports
 from pathlib import Path
@@ -48,6 +67,7 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
     including outlier filtering and processing based on specific LOINC code mappings, behaves as
     expected.
     """
+
     def setUp(self):
         """Initialize any pre-requisites for the tests."""
         self.processor = FHIRDataProcessor()

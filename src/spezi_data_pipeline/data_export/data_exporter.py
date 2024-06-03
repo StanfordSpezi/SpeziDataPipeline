@@ -7,8 +7,8 @@
 #
 
 """
-This module encompasses the DataExporter class, an extension of the DataVisualizer class,
-tailored for the exportation and visualization of FHIR (Fast Healthcare Interoperability Resources)
+This module encompasses the DataExporter class, an extension of the DataExporter class,
+tailored for the exportation and exploration of FHIR (Fast Healthcare Interoperability Resources)
 data. The DataExporter class enhances the capability to work with flattened FHIR data by
 facilitating the exportation of such data into CSV format and the generation of visual plots from
 this data catering to varied analysis and reporting needs.
@@ -22,18 +22,18 @@ Key Features:
 - Exporting Filtered FHIR Data: Allows for the exportation of FHIR data filtered by custom
   parameters (e.g., date range, user IDs) to CSV files, facilitating further data analysis or
   archiving.
-- Enhanced Visualization Capabilities: Supports the generation of plots from FHIR data, with
+- Enhanced exploration Capabilities: Supports the generation of plots from FHIR data, with
   options to customize plot aesthetics such as Y-axis bounds. The class can handle both general
   observation data and ECG-specific data, offering specialized plotting functions for ECG
   waveforms.
 - Parameter Customization: Users can set various parameters (e.g., start and end dates, user IDs,
-  Y-axis bounds) to tailor the data exportation and visualization processes to specific
+  Y-axis bounds) to tailor the data exportation and exploration processes to specific
   requirements, enhancing the utility and flexibility of data analysis workflows.
 - Support for ECG Data: Includes specialized functionalities for visualizing ECG (electrocardiogram)
   data, making it a valuable tool for healthcare data analysts and researchers focusing on
   cardiac health.
 
-The DataExporter class builds on the foundational capabilities of the DataVisualizer class,
+The DataExporter class builds on the foundational capabilities of the DataExporter class,
 providing a seamless interface for users to both visualize and export FHIR data with ease. It is
 a crucial component of the data analysis pipeline, offering streamlined processes for handling
 FHIR data.
@@ -45,28 +45,28 @@ Example Usage:
     data_exporter.set_date_range("2021-01-01", "2021-01-31")
     data_exporter.set_user_ids(["user1", "user2"])
     data_exporter.export_to_csv("filtered_data.csv")
-    data_exporter.create_and_save_plot("data_visualization.png")
+    data_exporter.create_and_save_plot("data_exploration.png")
 """
 
 # Local application/library specific imports
-from data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
-from data_visualization.data_visualizer import (
-    DataVisualizer,
-    ECGVisualizer,
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from spezi_data_pipeline.data_exploration.data_explorer import (
+    DataExplorer,
+    ECGExplorer,
     DEFAULT_DPI_VALUE,
 )
 
 
-class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-variable
+class DataExporter(DataExplorer, ECGExplorer):  # pylint: disable=unused-variable
     """
-    Extends DataVisualizer to provide functionalities for exporting FHIR data to CSV
-    files and saving visualizations as image files. This class enables data export
-    and visualization with customized parameters such as date ranges, user IDs, and
+    Extends DataExporter to provide functionalities for exporting FHIR data to CSV
+    files and saving explorations as image files. This class enables data export
+    and exploration with customized parameters such as date ranges, user IDs, and
     Y-axis bounds, catering to specific requirements for data analysis and reporting.
 
     Attributes:
         flattened_fhir_dataframe (FHIRDataFrame): A flattened FHIRDataFrame intended
-            for export or visualization.
+            for export or exploration.
         start_date (str, optional): Start date for data filtering; used to define the
             beginning of the date range of interest.
         end_date (str, optional): End date for data filtering; used to define the end
@@ -82,20 +82,14 @@ class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-var
     def __init__(self, flattened_fhir_dataframe: FHIRDataFrame):
         """
         Initializes the DataExporter with the given FHIRDataFrame and default parameters
-        for data export and visualization.
+        for data export and exploration.
 
         Parameters:
             flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame to be used for
-                data export and visualization.
+                data export and exploration.
         """
         super().__init__()
         self.flattened_fhir_dataframe = flattened_fhir_dataframe
-        # self.start_date = None
-        # self.end_date = None
-        # self.user_ids = None
-        # self.y_lower = None
-        # self.y_upper = None
-        # self.combine_plots = False
 
     def export_to_csv(self, filename):
         """
@@ -170,7 +164,7 @@ class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-var
                     self.flattened_fhir_dataframe.resource_type
                     == FHIRResourceType.OBSERVATION
                 ):
-                    data_visualizer = DataVisualizer()
+                    data_visualizer = DataExplorer()
                     data_visualizer.set_user_ids(
                         [user_id]
                     )  # Filter for one user at a time if multiple are provided
@@ -180,7 +174,7 @@ class DataExporter(DataVisualizer, ECGVisualizer):  # pylint: disable=unused-var
                     if fig_list:
                         figs.extend([(fig, user_id) for fig in fig_list])
                 else:  # FHIRResourceType.ECG_OBSERVATION
-                    ecg_data_visualizer = ECGVisualizer()
+                    ecg_data_visualizer = ECGExplorer()
                     ecg_data_visualizer.set_user_ids(
                         [user_id]
                     )  # Filter for one user at a time if multiple are provided

@@ -11,7 +11,7 @@ name: Publish Python Package
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build_and_test:
@@ -20,13 +20,13 @@ jobs:
   build_and_publish:
     needs: build_and_test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5  
+        uses: actions/setup-python@v5
 
       - name: Install dependencies
         run: |

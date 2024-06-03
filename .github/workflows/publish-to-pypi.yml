@@ -22,6 +22,9 @@ jobs:
   build_and_publish:
     needs: build_and_test
     runs-on: ubuntu-latest
+    environment: test
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -44,13 +47,7 @@ jobs:
       - name: Build package
         run: hatch build
 
-      - name: Upload release to Test PyPI
-        runs-on: ubuntu-latest
-        environment: test
-        permissions:
-          id-token: write
-        steps:
-          - name: Publish package distributions to Test PyPI
-            uses: pypa/gh-action-pypi-publish@release/v1
-            with:
-              repository-url: https://test.pypi.org/legacy/
+      - name: Publish package distributions to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

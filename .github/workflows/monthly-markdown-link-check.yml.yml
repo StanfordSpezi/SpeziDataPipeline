@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: MIT
 #
 
+---
 name: Monthly Markdown Link Check
 
 on:

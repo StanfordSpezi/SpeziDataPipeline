@@ -1,11 +1,13 @@
 #
 # This source file is part of the Stanford Spezi open-source project
 #
-# SPDX-FileCopyrightText: 2024 Stanford University and the project authors (see CONTRIBUTORS.md)
+# SPDX-FileCopyrightText: 2024 Stanford University and the project
+#                         authors (see CONTRIBUTORS.md)
 #
 # SPDX-License-Identifier: MIT
 #
 
+---
 name: Publish Python Package
 
 on:
@@ -23,10 +25,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: "actions/checkout@v4"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: "actions/setup-python@v5"
 
       - name: Install dependencies
         run: |
@@ -43,6 +45,7 @@ jobs:
         run: hatch build
 
       - name: Upload release to Test PyPI
+        runs-on: ubuntu-latest
         environment: test
         permissions:
           id-token: write

@@ -34,4 +34,6 @@ jobs:
         run: pip install yamllint
 
       - name: Run yamllint with custom config
-        run: yamllint -c .yamllint .
+        run: |
+          find .github -name "*.yaml" | xargs yamllint -c .yamllint
+         

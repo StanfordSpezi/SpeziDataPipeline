@@ -185,8 +185,8 @@ visualizer.set_date_range(selected_start_date, selected_end_date)
 figs = visualizer.create_static_plot(processed_fhir_dataframe)
 ```
 
-![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/Figures/daily_steps_data_plot.png)
-![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/Figures/heart_rate_data_plot.png)
+![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/daily_steps_data_plot.png)
+![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/heart_rate_data_plot.png)
 
 ### ECG recordings Example
 

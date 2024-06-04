@@ -12,6 +12,7 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
 
 jobs:
   build_and_test:
@@ -45,7 +46,24 @@ jobs:
       - name: Build package
         run: hatch build
 
-      - name: Publish package distributions to Test PyPI
+      - name: Determine target repository
+        id: get-repo
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
+            echo "environment=test" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
+            echo "environment=release" >> $GITHUB_ENV
+          elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$'; then
+            echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
+            echo "environment=test" >> $GITHUB_ENV
+          else
+            echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
+            echo "environment=test" >> $GITHUB_ENV
+          fi
+
+      - name: Publish package distributions to PyPI/Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/
+          repository-url: ${{ env.repo }}

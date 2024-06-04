@@ -212,7 +212,7 @@ visualizer.set_date_range(selected_start_date, selected_end_date)
 figs = visualizer.plot_ecg_subplots(processed_fhir_dataframe)
 ```
 
-![ecg_data_plot.png](Figures/ecg_data_plot.png)
+![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/ecg_data_plot.png)
 
 ## Contributing
 

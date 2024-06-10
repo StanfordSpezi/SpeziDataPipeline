@@ -119,6 +119,7 @@ class ColumnNames(Enum):
 
     Attributes:
         USER_ID: Identifier for the patient or subject of the observation.
+        RESOURCE_ID: Identifier for the resource.
         EFFECTIVE_DATE_TIME: The datetime when the observation was effective.
         QUANTITY_NAME: Name or description of the observed quantity.
         QUANTITY_UNIT: Units of the observed quantity.
@@ -140,6 +141,7 @@ class ColumnNames(Enum):
     """
 
     USER_ID = "UserId"
+    RESOURCE_ID = "ResourceId"
     EFFECTIVE_DATE_TIME = "EffectiveDateTime"
     QUANTITY_NAME = "QuantityName"
     QUANTITY_UNIT = "QuantityUnit"
@@ -335,6 +337,7 @@ class ResourceFlattener:
         self.resource_columns = {
             FHIRResourceType.OBSERVATION: [
                 ColumnNames.USER_ID,
+                ColumnNames.RESOURCE_ID,
                 ColumnNames.EFFECTIVE_DATE_TIME,
                 ColumnNames.QUANTITY_NAME,
                 ColumnNames.QUANTITY_UNIT,
@@ -345,6 +348,7 @@ class ResourceFlattener:
             ],
             FHIRResourceType.ECG_OBSERVATION: [
                 ColumnNames.USER_ID,
+                ColumnNames.RESOURCE_ID,
                 ColumnNames.EFFECTIVE_DATE_TIME,
                 ColumnNames.QUANTITY_NAME,
                 ColumnNames.NUMBER_OF_MEASUREMENTS,
@@ -455,6 +459,7 @@ class ObservationFlattener(ResourceFlattener):
 
             flattened_entry = {
                 ColumnNames.USER_ID.value: observation.subject.id,
+                ColumnNames.RESOURCE_ID.value: observation.id,
                 ColumnNames.EFFECTIVE_DATE_TIME.value: (
                     effective_datetime if effective_datetime else None
                 ),
@@ -534,6 +539,7 @@ class ECGObservationFlattener(ResourceFlattener):
 
             flattened_entry = {
                 ColumnNames.USER_ID.value: observation.subject.id,
+                ColumnNames.RESOURCE_ID.value: observation.id,
                 ColumnNames.EFFECTIVE_DATE_TIME.value: effective_datetime,
                 ColumnNames.NUMBER_OF_MEASUREMENTS.value: observation.dict()
                 .get(KeyNames.COMPONENT.value, [{}])[0]

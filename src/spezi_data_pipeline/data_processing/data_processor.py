@@ -31,6 +31,7 @@ Key Features:
 
 # Related third-party imports
 from typing import Any
+
 # pylint: disable=duplicate-code
 import pandas as pd
 
@@ -40,6 +41,7 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRResourceType,
     ColumnNames,
 )
+
 # pylint: enable=duplicate-code
 from spezi_data_pipeline.data_processing.code_mapping import CodeProcessor
 
@@ -96,10 +98,11 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
             )
             return flattened_fhir_dataframe
 
-        if not flattened_fhir_dataframe.validate_columns():
-            raise ValueError(
-                "The FHIRDataFrame does not meet the required structure for processing."
-            )
+        try:
+            flattened_fhir_dataframe.validate_columns()
+        except ValueError as e:
+            print(f"Validation failed: {str(e)}")
+            return None
 
         flattened_df = flattened_fhir_dataframe.df
 
@@ -177,8 +180,10 @@ class FHIRDataProcessor:  # pylint: disable=unused-variable
                 f"{flattened_fhir_dataframe.resource_type} are not supported for outlier filtering."
             )
 
-        if not flattened_fhir_dataframe.validate_columns():
-            print("Validation failed: Column requirement is not satisfied.")
+        try:
+            flattened_fhir_dataframe.validate_columns()
+        except ValueError as e:
+            print(f"Validation failed: {str(e)}")
             return None
 
         # Filter data points based on LOINC code specific value ranges
@@ -225,8 +230,10 @@ def select_data_by_user(  # pylint: disable=unused-variable
     Raises:
         ValueError: If the input data frame does not meet the required column structure.
     """
-    if not flattened_fhir_dataframe.validate_columns():
-        print("Validation failed: Column requirement is not satisfied.")
+    try:
+        flattened_fhir_dataframe.validate_columns()
+    except ValueError as e:
+        print(f"Validation failed: {str(e)}")
         return None
 
     flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
@@ -262,8 +269,10 @@ def select_data_by_dates(  # pylint: disable=unused-variable
         ValueError: If the input data frame does not meet the required column structure or if
                     date parameters are not in a valid format.
     """
-    if not flattened_fhir_dataframe.validate_columns():
-        print("Validation failed: Column requirement is not satisfied.")
+    try:
+        flattened_fhir_dataframe.validate_columns()
+    except ValueError as e:
+        print(f"Validation failed: {str(e)}")
         return None
 
     flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(

@@ -115,6 +115,9 @@ def finalize_group(
         ColumnNames.QUANTITY_NAME.value
     ].apply(lambda x: f"{prefix} {x}")
 
+    # Add a ResourceId column to pass validation requirements
+    final_df[ColumnNames.RESOURCE_ID.value] = "N/A"
+
     return final_df
 
 
@@ -137,8 +140,10 @@ def calculate_daily_data(  # pylint: disable=unused-variable
             f"got '{fhir_dataframe.resource_type}'."
         )
 
-    if not fhir_dataframe.validate_columns():
-        print("Validation failed: Column requirement is not satisfied.")
+    try:
+        fhir_dataframe.validate_columns()
+    except ValueError as e:
+        print(f"Validation failed: {str(e)}")
         return None
 
     fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
@@ -178,8 +183,10 @@ def calculate_average_data(  # pylint: disable=unused-variable
             f"got '{fhir_dataframe.resource_type}'."
         )
 
-    if not fhir_dataframe.validate_columns():
-        print("Validation failed: Column requirement is not satisfied.")
+    try:
+        fhir_dataframe.validate_columns()
+    except ValueError as e:
+        print(f"Validation failed: {str(e)}")
         return None
 
     fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
@@ -223,8 +230,10 @@ def calculate_activity_index(  # pylint: disable=unused-variable
             f"Resource type must be 'Observation', got '{fhir_dataframe.resource_type}'."
         )
 
-    if not fhir_dataframe.validate_columns():
-        print("Validation failed: Column requirement is not satisfied.")
+    try:
+        fhir_dataframe.validate_columns()
+    except ValueError as e:
+        print(f"Validation failed: {str(e)}")
         return None
 
     fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(

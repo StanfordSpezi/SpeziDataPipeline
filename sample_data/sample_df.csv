@@ -1,4 +1,4 @@
-UserId,EffectiveDateTime,QuantityName,QuantityUnit,QuantityValue,LoincCode,Display,AppleHealthKitCode
-XrftRMc358NndzcRWEQ7P2MxvabZ,2023-04-26,Step Count,steps,1,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
-XrftRMc358NndzcRWEQ7P2MxvabZ,2023-06-28,Step Count,steps,170.0,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
-sEmijWpn0vXe1cj60GO5kkjkrdT4,2023-03-10,Step Count,steps,129.0,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
+UserId,ResourceId,EffectiveDateTime,QuantityName,QuantityUnit,QuantityValue,LoincCode,Display,AppleHealthKitCode
+XrftRMc358NndzcRWEQ7P2MxvabZ,"00a82ffe-a40f-4fab-b14a-ed5b855c1547	",26.04.23,Step Count,steps,1,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
+XrftRMc358NndzcRWEQ7P2MxvabZ,"0aa42c3f-2e66-41d0-a3be-1e27f3d6f37c	",28.06.23,Step Count,steps,170,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount
+sEmijWpn0vXe1cj60GO5kkjkrdT4,"0bedf1f3-05bd-495c-b970-7498b8a03bd6	",10.03.23,Step Count,steps,129,55423-8,Number of steps in unspecified time Pedometer,HKQuantityTypeIdentifierStepCount

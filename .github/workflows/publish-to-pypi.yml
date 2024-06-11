@@ -13,15 +13,67 @@ on:
     tags:
       - "*"
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'The tag name when the workflow is manually triggered.'
+        type: string
+        required: true
 
 jobs:
+  determine_environment:
+    runs-on: ubuntu-latest
+
+    outpus: 
+      repo: ${{ steps.set-env.outputs.repo }}
+      environment: ${{ steps.set-env.outputs.environment }}
+      version: ${{ steps.set-env.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine target repository, environment, and version
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-b[0-9]+$ ]]; then
+              echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
+              echo "environment=test" >> $GITHUB_ENV
+              echo "version=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+              echo "::set-output name=repo::https://test.pypi.org/legacy/"
+              echo "::set-output name=environment::test"
+              echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
+            else
+              echo "Workflow dispatch without a valid beta tag. Failing job."
+              exit 1
+            fi
+          elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
+            echo "environment=release" >> $GITHUB_ENV
+            echo "version=${GITHUB_REF##*/}" >> $GITHUB_ENV
+            echo "::set-output name=repo::https://upload.pypi.org/legacy/"
+            echo "::set-output name=environment::release"
+            echo "::set-output name=version::${GITHUB_REF##*/}"
+          elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$'; then
+            echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
+            echo "environment=test" >> $GITHUB_ENV
+            echo "version=${GITHUB_REF##*/}" >> $GITHUB_ENV
+            echo "::set-output name=repo::https://test.pypi.org/legacy/"
+            echo "::set-output name=environment::test"
+            echo "::set-output name=version::${GITHUB_REF##*/}"
+          else
+            echo "Invalid ref for this workflow. Failing job."
+            exit 1
+          fi
+
   build_and_test:
+    needs: determine_environment
     uses: ./.github/workflows/build-and-test.yml
 
   build_and_publish:
-    needs: build_and_test
+    needs: [determine_environment, build_and_test]
     runs-on: ubuntu-latest
-    environment: test
+    environment: ${{ needs.determine_environment.outputs.environment }}
     permissions:
       id-token: write
 
@@ -46,24 +98,8 @@ jobs:
       - name: Build package
         run: hatch build
 
-      - name: Determine target repository
-        id: get-repo
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
-            echo "environment=test" >> $GITHUB_ENV
-          elif [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
-            echo "environment=release" >> $GITHUB_ENV
-          elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$'; then
-            echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
-            echo "environment=test" >> $GITHUB_ENV
-          else
-            echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
-            echo "environment=test" >> $GITHUB_ENV
-          fi
-
       - name: Publish package distributions to PyPI/Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: ${{ env.repo }}
+          repository-url: ${{ needs.determine_environment.outputs.repo }}
+          environmnet: environment: ${{ needs.determine_environment.outputs.environment }}

@@ -23,7 +23,7 @@ jobs:
   determine_environment:
     runs-on: ubuntu-latest
 
-    outpus: 
+    outputs:
       repo: ${{ steps.set-env.outputs.repo }}
       environment: ${{ steps.set-env.outputs.environment }}
       version: ${{ steps.set-env.outputs.version }}
@@ -102,4 +102,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: ${{ needs.determine_environment.outputs.repo }}
-          environmnet: environment: ${{ needs.determine_environment.outputs.environment }}
+          environmnet: ${{ needs.determine_environment.outputs.environment }}

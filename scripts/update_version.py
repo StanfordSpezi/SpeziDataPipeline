@@ -29,6 +29,7 @@ Usage:
     `pyproject.toml`. If the tag is not valid, it will print an error message.
 """
 
+import os
 import subprocess
 import re
 import toml
@@ -64,9 +65,16 @@ def update_hatch_version(tag):
 
 
 if __name__ == "__main__":
-    latest_tag = get_latest_git_tag()
-    if re.match(r"^\d+\.\d+\.\d+$", latest_tag):
-        update_hatch_version(latest_tag)
-        print(f"Updated pyproject.toml with version {latest_tag}")
+    # Check if a tag is provided from the workflow_dispatch input
+    provided_tag = os.getenv("INPUT_TAG_NAME")
+
+    if provided_tag and re.match(r"^\d+\.\d+\.\d+$", provided_tag):
+        update_hatch_version(provided_tag)
+        print(f"Updated pyproject.toml with version {provided_tag}")
     else:
-        print(f"Invalid tag format: {latest_tag}")
+        latest_tag = get_latest_git_tag()
+        if re.match(r"^\d+\.\d+\.\d+$", latest_tag):
+            update_hatch_version(latest_tag)
+            print(f"Updated pyproject.toml with version {latest_tag}")
+        else:
+            print(f"Invalid tag format: {latest_tag}")

@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'The tag name when the workflow is manually triggered.'
+        description: "The tag name when the workflow is manually triggered."
         type: string
         required: true
 
@@ -90,6 +90,8 @@ jobs:
           pip install hatch toml
 
       - name: Update release version
+        env:
+          INPUT_TAG_NAME: ${{ github.event.inputs.tag_name }}
         run: python scripts/update_version.py
 
       - name: Update authors

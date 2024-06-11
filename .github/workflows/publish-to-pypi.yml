@@ -102,4 +102,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: ${{ needs.determine_environment.outputs.repo }}
-          environmnet: ${{ needs.determine_environment.outputs.environment }}
+          environment: ${{ needs.determine_environment.outputs.environment }}

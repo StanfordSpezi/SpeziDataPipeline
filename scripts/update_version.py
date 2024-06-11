@@ -34,7 +34,6 @@ import subprocess
 import re
 import toml
 
-
 def get_latest_git_tag():
     """
     Retrieves the latest Git tag from the repository.
@@ -43,14 +42,16 @@ def get_latest_git_tag():
     in the repository and returns it as a string.
 
     Returns:
-        str: The latest Git tag.
+        str: The latest Git tag or None if no tag is found.
     """
-    result = subprocess.run(
-        ["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True, check=True
-    )
-    tag = result.stdout.strip()
-    return tag
-
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True, check=True
+        )
+        tag = result.stdout.strip()
+        return tag
+    except subprocess.CalledProcessError:
+        return None
 
 def update_hatch_version(tag):
     """Function to update the version in the hatch configuration file"""
@@ -63,18 +64,17 @@ def update_hatch_version(tag):
     with open("pyproject.toml", "w", encoding="utf-8") as file:
         toml.dump(config, file)
 
-
 if __name__ == "__main__":
     # Check if a tag is provided from the workflow_dispatch input
     provided_tag = os.getenv("INPUT_TAG_NAME")
-
+    
     if provided_tag and re.match(r"^\d+\.\d+\.\d+$", provided_tag):
         update_hatch_version(provided_tag)
         print(f"Updated pyproject.toml with version {provided_tag}")
     else:
         latest_tag = get_latest_git_tag()
-        if re.match(r"^\d+\.\d+\.\d+$", latest_tag):
+        if latest_tag and re.match(r"^\d+\.\d+\.\d+$", latest_tag):
             update_hatch_version(latest_tag)
             print(f"Updated pyproject.toml with version {latest_tag}")
         else:
-            print(f"Invalid tag format: {latest_tag}")
+            print(f"No valid tag found. Unable to update version.")

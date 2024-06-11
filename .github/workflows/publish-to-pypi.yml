@@ -40,9 +40,9 @@ jobs:
               echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
               echo "environment=test" >> $GITHUB_ENV
               echo "version=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-              echo "::set-output name=repo::https://test.pypi.org/legacy/"
-              echo "::set-output name=environment::test"
-              echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
+              echo "::set-output name=repo=https://test.pypi.org/legacy/"
+              echo "::set-output name=environment=test"
+              echo "::set-output name=version=${{ github.event.inputs.tag_name }}"
             else
               echo "Workflow dispatch without a valid beta tag. Failing job."
               exit 1
@@ -51,16 +51,16 @@ jobs:
             echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
             echo "environment=release" >> $GITHUB_ENV
             echo "version=${GITHUB_REF##*/}" >> $GITHUB_ENV
-            echo "::set-output name=repo::https://upload.pypi.org/legacy/"
-            echo "::set-output name=environment::release"
-            echo "::set-output name=version::${GITHUB_REF##*/}"
+            echo "::set-output name=repo=https://upload.pypi.org/legacy/"
+            echo "::set-output name=environment=release"
+            echo "::set-output name=version=${GITHUB_REF##*/}"
           elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$'; then
             echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
             echo "environment=test" >> $GITHUB_ENV
             echo "version=${GITHUB_REF##*/}" >> $GITHUB_ENV
-            echo "::set-output name=repo::https://test.pypi.org/legacy/"
-            echo "::set-output name=environment::test"
-            echo "::set-output name=version::${GITHUB_REF##*/}"
+            echo "::set-output name=repo=https://test.pypi.org/legacy/"
+            echo "::set-output name=environment=test"
+            echo "::set-output name=version=${GITHUB_REF##*/}"
           else
             echo "Invalid ref for this workflow. Failing job."
             exit 1

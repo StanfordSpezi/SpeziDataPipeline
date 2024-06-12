@@ -106,9 +106,6 @@ jobs:
         env:
           INPUT_TAG_NAME: ${{ github.event.inputs.tag_name }}
         run: python scripts/update_version.py
-      
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
 
       - name: Update authors
         run: python scripts/update_authors.py
@@ -121,7 +118,7 @@ jobs:
 
       - name: Print environment
         run: echo ${{ needs.determine_environment.outputs.environment }}
-        
+
       - name: Publish package distributions to PyPI/Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

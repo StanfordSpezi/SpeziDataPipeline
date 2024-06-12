@@ -8,7 +8,7 @@ rules:
   document-start:
     level: warning 
   line-length:
-    max: 140
+    max: 180
     level: warning
   document-start:
     present: false

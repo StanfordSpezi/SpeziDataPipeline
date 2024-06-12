@@ -92,6 +92,17 @@ jobs:
       - name: Build package
         run: hatch build
 
+      - name: Check if version already exists on Test PyPI
+        run: |
+          VERSION_EXISTS=$(curl -s https://test.pypi.org/pypi/spezi_data_pipeline/json | jq -r ".releases | has(\"${{ needs.determine_environment.outputs.version }}\")")
+          if [ "$VERSION_EXISTS" = "true" ]; then
+            echo "Version already exists. Exiting."
+            exit 1
+          fi
+        env:
+          PYPI_REPOSITORY_URL: ${{ needs.determine_environment.outputs.repo }}
+          PACKAGE_VERSION: ${{ needs.determine_environment.outputs.version }}
+
       - name: Publish package distributions to PyPI/Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

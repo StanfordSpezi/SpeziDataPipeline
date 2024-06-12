@@ -57,7 +57,6 @@ def get_latest_git_tag():
 
 def update_hatch_version(tag):
     """Function to update the version in the hatch configuration file"""
-
     with open("pyproject.toml", "r", encoding="utf-8") as file:
         config = toml.load(file)
 

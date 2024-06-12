@@ -61,10 +61,6 @@ jobs:
     needs: determine_environment
     uses: ./.github/workflows/build-and-test.yml
 
-    steps:
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
-
   build_and_publish:
     needs: [determine_environment, build_and_test]
     runs-on: ubuntu-latest

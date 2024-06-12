@@ -70,10 +70,6 @@ jobs:
     needs: determine_environment
     uses: ./.github/workflows/build-and-test.yml
 
-    steps:
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
-
   build_and_publish:
     needs: [determine_environment, build_and_test]
     runs-on: ubuntu-latest
@@ -86,22 +82,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
-
       - name: Set up Python
         uses: actions/setup-python@v5
-
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install hatch toml
-
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
 
       - name: Update release version
         env:
@@ -111,14 +98,8 @@ jobs:
       - name: Update authors
         run: python scripts/update_authors.py
 
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
-
       - name: Build package
         run: hatch build
-
-      - name: Print environment
-        run: echo ${{ needs.determine_environment.outputs.environment }}
 
       - name: Publish package distributions to PyPI/Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

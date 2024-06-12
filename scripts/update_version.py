@@ -70,13 +70,17 @@ if __name__ == "__main__":
     # Check if a tag is provided from the workflow_dispatch input
     provided_tag = os.getenv("INPUT_TAG_NAME")
 
-    if provided_tag and re.match(r"^\d+\.\d+\.\d+$", provided_tag):
+    # Updated regex to match versions with a pattern [0-9].[0-9].[0-9] followed by any characters
+    version_regex = r"^\d+\.\d+\.\d+.*$"
+
+    if provided_tag and re.match(version_regex, provided_tag):
         update_hatch_version(provided_tag)
         print(f"Updated pyproject.toml with version {provided_tag}")
     else:
         latest_tag = get_latest_git_tag()
-        if latest_tag and re.match(r"^\d+\.\d+\.\d+$", latest_tag):
+        if latest_tag and re.match(version_regex, latest_tag):
             update_hatch_version(latest_tag)
             print(f"Updated pyproject.toml with version {latest_tag}")
         else:
             print("No valid tag found. Unable to update version.")
+            

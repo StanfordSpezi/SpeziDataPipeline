@@ -53,8 +53,8 @@ import pandas as pd
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
-NO_ANSWER_STRING = "No Answer"
-
+UNKNOWN_ANSWER_STRING = "Unknown Answer"
+UNKNOWN_QUESTION_STRING = "Unknown Question"
 
 class KeyNames(Enum):
     """
@@ -105,7 +105,6 @@ class KeyNames(Enum):
     ITEM = "item"
     LINK_ID = "linkId"
     TEXT = "text"
-    UNKNOWN_QUESTION = "Unknown Question"
     ANSWER_OPTION = "answerOption"
 
 
@@ -161,8 +160,8 @@ class ColumnNames(Enum):
     AUTHORED_DATE = "AuthoredDate"
     SURVEY_TITLE = "SurveyTitle"
     SURVEY_DATE = "Date"
-    SURVEY_ID = "SurveyID"
-    QUESTION_ID = "QuestionID"
+    SURVEY_ID = "SurveyId"
+    QUESTION_ID = "QuestionId"
     QUESTION_TEXT = "QuestionText"
     ANSWER_TEXT = "AnswerText"
 
@@ -683,7 +682,7 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         Initializes the ECGObservationFlattener specifically for ECG Observation resources.
         """
         super().__init__(FHIRResourceType.QUESTIONNAIRE_RESPONSE)
-
+    
     def flatten(
         self, resources: list[QuestionnaireResponse], survey_path: list[str] = None
     ) -> FHIRDataFrame:
@@ -716,8 +715,9 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
             for item in response.item:
                 question_id = item.linkId
                 question_text = all_question_mappings.get(
-                    question_id, KeyNames.UNKNOWN_QUESTION.value
+                    question_id, UNKNOWN_QUESTION_STRING
                 )
+                
                 answer_value = get_answer_value(item, all_answer_mappings)
 
                 flattened_entry = {
@@ -742,7 +742,7 @@ def extract_mappings(survey_path: list[str]) -> tuple[dict[str, str], dict[str, 
     Extracts question and answer mappings from Phoenix-generated JSON surveys.
 
     Parameters:
-        survey_path (List[str]): The path(s) to Phoenix-generated JSON surveys.
+        survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys.
 
     Returns:
         tuple[dict[str, str], dict[str, str]]: A tuple containing question and answer mappings.
@@ -750,27 +750,34 @@ def extract_mappings(survey_path: list[str]) -> tuple[dict[str, str], dict[str, 
     question_mapping = {}
     answer_mapping = {}
 
-    for file_path in survey_path:
+    for file_index, file_path in enumerate(survey_path):
+        # print(f"Processing file {file_index + 1}/{len(survey_path)}: {file_path}")
         with open(file_path, "r", encoding="utf-8") as file:
-            json_content = json.load(file)
+            try:
+                json_content = json.load(file)
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON from file {file_path}: {e}")
+                continue
+
             for section in json_content.get(KeyNames.ITEM.value, []):
                 question_id = section.get(KeyNames.LINK_ID.value)
-                question_mapping[question_id] = section.get(
-                    KeyNames.TEXT.value, KeyNames.UNKNOWN_QUESTION.value
-                )
+                question_text = section.get(KeyNames.TEXT.value, None)  
 
-                for answer_option in section.get(KeyNames.ANSWER_OPTION.value, []):
-                    value = answer_option.get(KeyNames.VALUE_CODING.value, {})
-                    code = value.get(KeyNames.CODE.value)
-                    display = value.get(KeyNames.DISPLAY.value)
+                if question_id:
+                    question_mapping[question_id] = question_text
+                    if question_text is not None:
+                        for answer_option in section.get(KeyNames.ANSWER_OPTION.value, []):  
+                            value = answer_option.get(KeyNames.VALUE_CODING.value, {})
+                            code = value.get(KeyNames.CODE.value, None)
+                            display = value.get(KeyNames.DISPLAY.value, None)  
+                            system = value.get(KeyNames.SYSTEM.value, None)  
 
-                    system = value.get(KeyNames.SYSTEM.value)
-
-                    if code and display and system:
-                        combined_id = f"{system}|{code}"
-                        answer_mapping[combined_id] = display
+                            if code and display and system:
+                                combined_id = f"{system}|{code}"
+                                answer_mapping[combined_id] = display
 
     return question_mapping, answer_mapping
+
 
 
 def get_survey_title(survey_path: list[str]) -> str:
@@ -804,7 +811,7 @@ def get_answer_value(
     Returns:
         str: The answer value.
     """
-    answer_value = NO_ANSWER_STRING
+    answer_value = UNKNOWN_ANSWER_STRING
 
     if item.answer and len(item.answer) > 0:
         answer = item.answer[0].dict()
@@ -814,7 +821,7 @@ def get_answer_value(
             code = answer[KeyNames.VALUE_CODING.value].get(KeyNames.CODE.value)
             if system_id and code:
                 combined_id = f"{system_id}|{code}"
-                answer_value = all_answer_mappings.get(combined_id, NO_ANSWER_STRING)
+                answer_value = all_answer_mappings.get(combined_id, UNKNOWN_ANSWER_STRING)
 
         elif KeyNames.VALUE_STRING.value in answer:
             answer_value = answer[KeyNames.VALUE_STRING.value]
@@ -867,7 +874,5 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
         flattener = flattener_class()
     else:
         raise ValueError(f"No flattener found for resource type: {resource_type}")
-
-    print(flattener_class)
     
     return flattener.flatten(resources, survey_path)

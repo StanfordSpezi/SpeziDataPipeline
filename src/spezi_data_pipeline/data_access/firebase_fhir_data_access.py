@@ -49,6 +49,7 @@ from google.cloud.firestore import (
 from google.cloud.firestore_v1.base_query import FieldFilter
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.reference import Reference
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
 # Local application/library specific imports
@@ -425,6 +426,7 @@ class QuestionnaireResponseCreator(ResourceCreator):
             resource_str = json.dumps(doc_dict)
             resource_obj = QuestionnaireResponse.parse_raw(resource_str)
             resource_obj.subject = Reference(id=user.id)
+            resource_obj.identifier = Identifier(id=doc.id)
             resources.append(resource_obj)
         return resources
 

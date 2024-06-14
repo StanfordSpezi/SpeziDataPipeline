@@ -157,7 +157,8 @@ class ColumnNames(Enum):
     HEART_RATE_UNIT = "HeartRateUnit"
     ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
     ECG_RECORDING = "ECGRecording"
-
+    
+    AUTHORED_DATE = "AuthoredDate"
     SURVEY_TITLE = "SurveyTitle"
     SURVEY_DATE = "Date"
     SURVEY_ID = "SurveyID"
@@ -365,6 +366,8 @@ class ResourceFlattener:
             ],
             FHIRResourceType.QUESTIONNAIRE_RESPONSE: [
                 ColumnNames.USER_ID,
+                ColumnNames.RESOURCE_ID,
+                ColumnNames.AUTHORED_DATE,
                 ColumnNames.SURVEY_TITLE,
                 ColumnNames.SURVEY_DATE,
                 ColumnNames.SURVEY_ID,
@@ -708,6 +711,7 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         for response in resources:
             title = get_survey_title(survey_path)
             user_id = getattr(response.subject, KeyNames.ID.value, None)
+            resource_id = getattr(response.identifier, KeyNames.ID.value, None)
 
             for item in response.item:
                 question_id = item.linkId
@@ -718,6 +722,8 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
 
                 flattened_entry = {
                     ColumnNames.USER_ID.value: user_id,
+                    ColumnNames.RESOURCE_ID.value: resource_id,
+                    ColumnNames.AUTHORED_DATE.value: response.authored,
                     ColumnNames.SURVEY_TITLE.value: title,
                     ColumnNames.SURVEY_ID.value: response.id,
                     ColumnNames.QUESTION_ID.value: question_id,
@@ -854,11 +860,14 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
     resource_type = FHIRResourceType(
         resources[0].resource_type
     )  # Assuming each resource has a resource_type attribute
-
+    
     if resource_type in flattener_classes:
         flattener_class = flattener_classes[resource_type]
+        
         flattener = flattener_class()
     else:
         raise ValueError(f"No flattener found for resource type: {resource_type}")
 
+    print(flattener_class)
+    
     return flattener.flatten(resources, survey_path)

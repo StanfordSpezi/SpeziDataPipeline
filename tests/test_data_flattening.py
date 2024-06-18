@@ -9,21 +9,21 @@
 """
 This module contains unit tests for classes that manage and flatten FHIR (Fast Healthcare
 Interoperability Resources) data structures using pandas DataFrames, particularly focusing
-on the FHIRDataFrame and ObservationFlattener classes from the data_flattening library.
+on the `FHIRDataFrame` and `ObservationFlattener` classes from the data_flattening library.
 
 The tests ensure the proper initialization, validation, and functionality of these classes.
-For the FHIRDataFrame, tests validate the correct setup and validation of data within a DataFrame
+For the `FHIRDataFrame`, tests validate the correct setup and validation of data within a `DataFrame`
 tailored for FHIR resources, ensuring that data conforms to expected formats and structures. For
 the ObservationFlattener, tests confirm the accurate transformation of complex FHIR Observation
-resources into a simplified DataFrame format, suitable for further analysis or processing.
+resources into a simplified `DataFrame` format, suitable for further analysis or processing.
 
 These classes are crucial for handling healthcare data efficiently in a standardized format, and
 the tests help ensure robustness and correctness in their implementation.
 
 Classes:
-    TestFHIRDataFrame: Tests initialization and validation of FHIRDataFrame instances.
-    TestObservationFlattener: Tests the functionality of the ObservationFlattener class in
-        converting FHIR observations into a simplified DataFrame format.
+    `TestFHIRDataFrame`: Tests initialization and validation of `FHIRDataFrame` instances.
+    `TestObservationFlattener`: Tests the functionality of the `ObservationFlattener` class in
+        converting FHIR observations into a simplified `DataFrame` format.
 """
 
 # Standard library imports
@@ -101,14 +101,14 @@ class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
 
 class TestObservationFlattener(unittest.TestCase):  # pylint: disable=unused-variable
     """
-    Tests for the ObservationFlattener class, which processes a collection of Observation objects
-    and converts them into a structured pandas DataFrame.
+    Tests for the `ObservationFlattener` class, which processes a collection of Observation objects
+    and converts them into a structured pandas `DataFrame`.
     """
 
     def test_flatten_observations(self):
         """
-        Ensures that the ObservationFlattener can correctly flatten a list of Observation objects
-        into a pandas DataFrame, verifying both the structure and content of the DataFrame.
+        Ensures that the `ObservationFlattener` can correctly flatten a list of Observation objects
+        into a pandas `DataFrame`, verifying both the structure and content of the `DataFrame`.
         """
         # Generate mock observations using the updated function
         resources = create_mock_observations()
@@ -130,14 +130,14 @@ class TestObservationFlattener(unittest.TestCase):  # pylint: disable=unused-var
 
 class TestECGObservationFlattener(unittest.TestCase):  # pylint: disable=unused-variable
     """
-    Tests for the ECGObservationFlattener class, specifically designed to handle ECG observations,
-    converting them into a structured DataFrame with appropriate ECG-specific fields.
+    Tests for the `ECGObservationFlattener` class, specifically designed to handle ECG observations,
+    converting them into a structured `DataFrame` with appropriate ECG-specific fields.
     """
 
     def test_flatten_ecg_observations(self):
         """
-        Validates that ECGObservationFlattener correctly processes ECG observations, ensuring that
-        the resulting DataFrame contains the correct number of rows and the specific column
+        Validates that `ECGObservationFlattener` correctly processes ECG observations, ensuring that
+        the resulting `DataFrame` contains the correct number of rows and the specific column
         "ECGRecording".
         """
         resources = create_mock_ecg_observations()
@@ -162,17 +162,17 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 
     def test_flatten_questionnaire_responses(self):
         """
-        Tests the functionality of the QuestionnaireResponseFlattener.flatten() method
-        to ensure it accurately processes a list of QuestionnaireResponse objects into
-        a structured DataFrame.
+        Tests the functionality of the QuestionnaireResponseFlattenerflatten() method
+        to ensure it accurately processes a list of `QuestionnaireResponse` objects into
+        a structured `DataFrame`.
 
         This test checks:
         - That the flatten operation does not return None, confirming successful processing.
-        - The number of rows in the resulting DataFrame matches the total number of items
+        - The number of rows in the resulting `DataFrame` matches the total number of items
           across all provided QuestionnaireResponse resources, ensuring that each item is
-          correctly represented as a separate row in the DataFrame.
+          correctly represented as a separate row in the `DataFrame`.
 
-        The resources are created using a mock function, create_mock_questionnaire_responses(),
+        The resources are created using a mock function, `create_mock_questionnaire_responses()`,
         which should return a list of QuestionnaireResponse objects or an error message if
         the resources cannot be generated.
         """
@@ -182,7 +182,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 
         flattener = QuestionnaireResponseFlattener()
         result = flattener.flatten(
-            resources, survey_path=["SocialSupportQuestionnaire.json"]
+            resources, survey_path=["questionnaire_resources/SocialSupportQuestionnaire.json"]
         )
 
         self.assertIsNotNone(result, "The resulting DataFrame should not be None")
@@ -201,11 +201,11 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 
 def create_mock_observations() -> list[Observation] | str:
     """
-    Simulates the creation of Observation objects from JSON files. This function reads multiple
-    JSON files, each representing a mock observation, and converts them into Observation instances.
+    Simulates the creation of `Observation` objects from JSON files. This function reads multiple
+    JSON files, each representing a mock observation, and converts them into `Observation` instances.
 
     Returns:
-        List[Observation]: A list of Observation objects if successful.
+        List[Observation]: A list of `Observation` objects if successful.
         str: Error message if the files cannot be read or parsed.
     """
     file_paths = [

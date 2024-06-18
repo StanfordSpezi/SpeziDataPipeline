@@ -7,17 +7,15 @@
 #
 
 """
-This module provides a collection of functions designed for the processing and analysis of
-healthcare data represented in the FHIR (Fast Healthcare Interoperability Resources) format.
-It includes capabilities for aggregating data by day, calculating averages, and applying
-moving averages to smooth out time-series data. These functions facilitate the examination
-of trends and patterns in health metrics over time, making it easier for healthcare professionals,
-researchers, and data analysts to derive insights from complex datasets.
+This module provides a collection of functions designed for the processing of observations 
+represented in the FHIR (Fast Healthcare Interoperability Resources) format. It includes
+capabilities for aggregating data by day, calculating averages, and applying moving averages
+to smooth out time-series data. These functions facilitate the examination of trends and patterns 
+in health metrics over time, making it easier for healthcare professionals, researchers, and
+data analysts to derive insights from complex datasets.
 
 The functions are tailored to work with `FHIRDataFrame`, a custom data structure that encapsulates
-FHIR data in a pandas DataFrame, allowing for efficient manipulation and analysis of structured
-healthcare data. This module emphasizes the flexibility in data analysis tasks, ranging from simple
-aggregations to more sophisticated time-series analysis techniques such as moving averages.
+FHIR data in a pandas DataFrame.
 
 Key Features:
 - `finalize_group`: Merges aggregated data with non-numeric attributes and applies prefixes to
@@ -28,27 +26,6 @@ Key Features:
   the typical values and fluctuations within each day.
 - `calculate_moving_average`: Applies a moving average to the data, smoothing out short-term
   fluctuations and highlighting long-term trends in health metrics over specified periods.
-
-Use Cases:
-- Healthcare data analysts exploring daily patterns, trends, and anomalies in patient health
-  metrics.
-- Research teams conducting epidemiological studies requiring the aggregation and smoothing of
-  time-series data to identify trends and correlations.
-- Developers and data scientists building health analytics platforms that require preprocessing,
-  normalization, and analysis of healthcare data from FHIR resources.
-
-Example Usage:
-The module's functions can be seamlessly integrated into data processing pipelines to enrich
-FHIR datasets with aggregated metrics, smoothed time-series, and other derived data forms,
-facilitating a wide range of analytical tasks.
-from healthcare_data_analysis import calculate_daily_data, calculate_average_data,
-    calculate_moving_average
-
-# Assume `fhir_dataframe` is a FHIRDataFrame instance containing patient observation data
-daily_totals = calculate_daily_data(fhir_dataframe)
-daily_averages = calculate_average_data(fhir_dataframe)
-seven_day_moving_average = calculate_moving_average(fhir_dataframe, n=7)
-
 """
 
 # Related third-party imports

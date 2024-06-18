@@ -7,11 +7,11 @@
 #
 
 """
-This module contains unit tests for the FirebaseFHIRAccess class, which is responsible for managing
-connections to the Firebase Firestore database in a healthcare data context, specifically for
+This module contains unit tests for the `FirebaseFHIRAccess` class, which is responsible for
+managing connections to the Firebase Firestore database in a healthcare data context for
 FHIR (Fast Healthcare Interoperability Resources) data.
 
-The tests in this module ensure that the FirebaseFHIRAccess class can handle the setup and
+The tests in this module ensure that the `FirebaseFHIRAccess` class can handle the setup and
 initialization of connections to Firestore using Firebase project credentials. It checks both
 the scenarios where the service account key file is valid and invalid, verifying the correct
 handling of authentication and connection establishment.
@@ -21,8 +21,8 @@ to isolate the tests from actual Firebase infrastructure. This approach ensures 
 can be run in any environment without needing access to real Firebase project credentials.
 
 Classes:
-    TestFirebaseFHIRAccess: Contains all unit tests for testing the connectivity and initialization
-                            capabilities of the FirebaseFHIRAccess class.
+    `TestFirebaseFHIRAccess`: Contains all unit tests for testing the connectivity and
+                              initialization capabilities of the `FirebaseFHIRAccess` class.
 """
 
 

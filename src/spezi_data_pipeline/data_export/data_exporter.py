@@ -7,49 +7,29 @@
 #
 
 """
-This module encompasses the DataExporter class, an extension of the DataExporter class,
-tailored for the exportation and exploration of FHIR (Fast Healthcare Interoperability Resources)
-data. The DataExporter class enhances the capability to work with flattened FHIR data by
-facilitating the exportation of such data into CSV format and the generation of visual plots from
-this data catering to varied analysis and reporting needs.
+This module extends functionality from the Spezi Data Pipeline for exporting and visualizing FHIR
+data, specifically focusing on DataExplorer and ECGExplorer functionalities and exporting data
+to CSV files and image files.
 
-The class is designed to support a wide range of functionalities for manipulating, filtering,
-and visualizing FHIR data. Users can specify parameters such as date ranges and user IDs to narrow
-down the data of interest. Additionally, the class offers customization options for the visual
-representation of data, including deciding whether to combine data from multiple users.
+Users can specify parameters such as date ranges and user IDs to narrow down the data of interest.
+Additionally, the class offers customization options for the visual representation of data,
+including deciding whether to combine data from multiple users.
 
-Key Features:
-- Exporting Filtered FHIR Data: Allows for the exportation of FHIR data filtered by custom
-  parameters (e.g., date range, user IDs) to CSV files, facilitating further data analysis or
-  archiving.
-- Enhanced exploration Capabilities: Supports the generation of plots from FHIR data, with
-  options to customize plot aesthetics such as Y-axis bounds. The class can handle both general
-  observation data and ECG-specific data, offering specialized plotting functions for ECG
-  waveforms.
-- Parameter Customization: Users can set various parameters (e.g., start and end dates, user IDs,
-  Y-axis bounds) to tailor the data exportation and exploration processes to specific
-  requirements, enhancing the utility and flexibility of data analysis workflows.
-- Support for ECG Data: Includes specialized functionalities for visualizing ECG (electrocardiogram)
-  data, making it a valuable tool for healthcare data analysts and researchers focusing on
-  cardiac health.
+Classes:
+- `DataExporter`: Extends `DataExplorer` and `ECGExplorer` to facilitate exporting filtered FHIR
+                  data to CSV files and generating and saving plots as image files. It allows
+                  customization of date ranges, user IDs, and plot parameters for data analysis
+                  and reporting.
 
-The DataExporter class builds on the foundational capabilities of the DataExporter class,
-providing a seamless interface for users to both visualize and export FHIR data with ease. It is
-a crucial component of the data analysis pipeline, offering streamlined processes for handling
-FHIR data.
-
-Example Usage:
-    # Assuming fhir_dataframe is an instance of FHIRDataFrame containing the data to be
-    visualized/exported
-    data_exporter = DataExporter(fhir_dataframe)
-    data_exporter.set_date_range("2021-01-01", "2021-01-31")
-    data_exporter.set_user_ids(["user1", "user2"])
-    data_exporter.export_to_csv("filtered_data.csv")
-    data_exporter.create_and_save_plot("data_exploration.png")
+Functions:
+- No standalone functions in this module.
 """
 
 # Local application/library specific imports
-from spezi_data_pipeline.data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
+    FHIRDataFrame,
+    FHIRResourceType,
+)
 from spezi_data_pipeline.data_exploration.data_explorer import (
     DataExplorer,
     ECGExplorer,

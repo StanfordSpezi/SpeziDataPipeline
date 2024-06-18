@@ -7,12 +7,12 @@
 #
 
 """
-This module contains unit tests for the DataExporter class, which is part of the data_export
-module. The DataExporter class is responsible for exporting healthcare data structured as FHIR 
+This module contains unit tests for the `DataExporter` class, which is part of the data_export
+module. The `DataExporter` class is responsible for exporting healthcare data structured as FHIR 
 (Fast Healthcare Interoperability Resources) data into CSV files and generating visual plots based
 on this data.
 
-The tests in this module verify the functionality of the DataExporter by ensuring it can handle
+The tests in this module verify the functionality of the `DataExporter` by ensuring it can handle
 various scenarios related to data export and visualization. This includes tests for exporting data
 for single and multiple users,  and tests for behavior when no user ID is specified. Additional
 tests cover the functionality of saving plots with specific settings, such as file format and
@@ -24,8 +24,8 @@ DataExporter class without dependency on external files or the data visualizatio
 implementation.
 
 Classes:
-    TestDataExporter: Contains all unit tests for testing the functionalities of the DataExporter
-        class.
+    `TestDataExporter`: Contains all unit tests for testing the functionalities of the
+                        `DataExporter` class.
 """
 
 

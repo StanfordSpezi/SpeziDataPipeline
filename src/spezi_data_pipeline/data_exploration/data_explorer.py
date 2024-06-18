@@ -7,28 +7,24 @@
 #
 
 """
-The ECG Visualization Module
+This module provides tools for visualizing healthcare data, focusing on FHIR data visualization and
+specifically extending to electrocardiogram (ECG) data exploration.
 
-This Python module provides specialized tools for the visualization of ECG (Electrocardiogram)
-data, leveraging the Fast Healthcare Interoperability Resources (FHIR) format. It is designed to
-facilitate the analysis and interpretation of ECG data by healthcare professionals, researchers,
-and data analysts. By extending foundational visualization capabilities, this module introduces
-specific functionalities tailored to the nuances of ECG data, including individual lead
-visualization, date and user filtering, and customizable plotting aesthetics.
+Classes:
+- `DataExplorer`: Provides functionalities to visualize FHIR data, supporting various filtering
+                options and the ability to generate static plots either combined or separate for
+                multiple users.
+- `ECGExplorer`: Extends `DataExplorer` to specialize in visualizing ECG data, offering methods to
+               plot individual ECG leads and configure specific visualization parameters.
 
-Main Features:
-- ECG Data Processing: Supports the import and preprocessing of ECG data in FHIR format, preparing
-  it for visualization.
-- User and Date Filtering: Allows users to filter ECG observations by specific patient IDs and date
-  ranges, enabling focused analysis on relevant data subsets.
-- Custom Plotting: Offers specialized plotting functions for ECG data, including the visualization
-  of individual ECG leads in separate subplots and the adjustment of plot aesthetics such as axis
-  properties.
-- Combined and Individual Plots: Facilitates the creation of both combined plots (for comparative
-  analysis across multiple patients) and individual plots (for detailed examination of a single
-  patient's ECG data).
-- Visualization Customization: Provides options to set Y-axis bounds, combine or separate plots for
-  multiple users, and customize line widths and tick intervals for ECG waveforms.
+Functions:
+- `plot_data_based_on_condition`: Dynamically plots data using scatter or bar plots based on the
+  condition of duplicate `EffectiveDateTime` entries for a user.
+- `visualizer_factory`: Factory function to create either a `DataExplorer` or `ECGExplorer` instance
+  based on the resource_type attribute of a given `FHIRDataFrame`.
+- `explore_total_records_number`: Creates a bar plot showing the count of rows with the same
+                                LoincCode column value within a specified date range and for
+                                specified user IDs.
 """
 
 # Standard library imports
@@ -143,7 +139,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         individual plots for specified users and LOINC codes.
 
         Parameters:
-            fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing the data
+            fhir_dataframe (FHIRDataFrame): The `FHIRDataFrame` containing the data
                 to be visualized.
 
         Returns:
@@ -236,7 +232,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         specific LOINC code.
 
         Parameters:
-            df_loinc (DataFrame): A DataFrame filtered for a specific LOINC code.
+            df_loinc (DataFrame): A `DataFrame` filtered for a specific LOINC code.
             user_id (str): The user ID for which to generate the plot.
             loinc_code (str): The LOINC code that the plot is focusing on.
 
@@ -284,17 +280,17 @@ class DataExplorer:  # pylint: disable=unused-variable
 def plot_data_based_on_condition(user_df, user_id):
     """
     Dynamically plots data using either plt.scatter or plt.bar based on the condition
-    of duplicate EffectiveDateTime entries for a user. Utilizes scatter plots for datasets
+    of duplicate `EffectiveDateTime` entries for a user. Utilizes scatter plots for datasets
     with duplicate timestamps and bar plots for datasets with unique timestamps, allowing
     for appropriate visualization of the data distribution.
 
     Parameters:
-        user_df (pd.DataFrame): The DataFrame containing data for a specific user.
+        user_df (pd.DataFrame): The `DataFrame` containing data for a specific user.
         user_id (str): The ID of the user for which the data is being plotted.
 
     Returns:
         dict: Information about the plot, including the chosen plot type ('scatter' or 'bar')
-              and the DataFrame used for plotting.
+              and the `DataFrame` used for plotting.
     """
     if user_df.duplicated(subset=[ColumnNames.EFFECTIVE_DATE_TIME.value]).any():
         plot_type = "scatter"
@@ -459,7 +455,7 @@ class ECGExplorer:  # pylint: disable=unused-variable
         visualizations for one or multiple users.
 
         Parameters:
-            fhir_dataframe (FHIRDataFrame): The FHIRDataFrame containing ECG observation
+            fhir_dataframe (FHIRDataFrame): The `FHIRDataFrame` containing ECG observation
                 data to be visualized. The unit ECG observations must be in mV.
 
         Returns:
@@ -542,10 +538,10 @@ def visualizer_factory(  # pylint: disable=unused-variable
 ) -> DataExplorer | ECGExplorer:
     """
     Factory function to create a visualizer based on the resource_type attribute of
-    FHIRDataFrame.
+    `FHIRDataFrame`.
 
     Parameters:
-        fhir_dataframe (FHIRDataFrame): An instance of FHIRDataFrame containing the
+        fhir_dataframe (FHIRDataFrame): An instance of `FHIRDataFrame` containing the
             data and resource_type attribute.
 
     Returns:
@@ -572,11 +568,11 @@ def explore_total_records_number(  # pylint: disable=unused-variable
     based on user IDs is applied.
 
     Args:
-    - df (pd.DataFrame): Input DataFrame.
+    - df (pd.DataFrame): Input `DataFrame`.
     - start_date (str, optional): Start date (format: 'YYYY-MM-DD') for filtering
-        EffectiveDateTime. Default is None.
+        `EffectiveDateTime`. Default is None.
     - end_date (str, optional): End date (format: 'YYYY-MM-DD') for filtering
-        EffectiveDateTime. Default is None.
+        `EffectiveDateTime`. Default is None.
     - user_ids (str or list of str, optional): User ID or list of user IDs to filter by.
         Default is None.
 

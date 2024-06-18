@@ -86,9 +86,6 @@ jobs:
           INPUT_TAG_NAME: ${{ github.event.inputs.tag_name }}
         run: python scripts/update_version.py
 
-      - name: Verify version update
-        run: cat pyproject.toml
-
       - name: Update authors
         run: python scripts/update_authors.py
 

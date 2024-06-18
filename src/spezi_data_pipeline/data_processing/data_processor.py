@@ -7,16 +7,11 @@
 #
 
 """
-This module provides a framework for processing and analyzing Fast Healthcare
-Interoperability Resources (FHIR) data within a Python environment. It aims to simplify and
-streamline the manipulation of FHIR data by providing a set of classes and functions tailored for
-this purpose.
-
 This module encompasses the functionality necessary for handling various aspects of FHIR data
 processing, including but not limited to normalization, outlier detection and filtering, and the
-aggregation of healthcare data metrics. It is designed to work seamlessly with instances of
-`FHIRDataFrame`, a custom data structure that represents flattened FHIR data in a tabular format
-suitable for analysis.
+aggregation of healthcare data metrics. It is designed to work with instances of `FHIRDataFrame`,
+a custom data structure that represents flattened FHIR data in a tabular format suitable for
+analysis.
 
 Key Features:
 - `FHIRDataProcessor`: A central class that provides methods for processing FHIR data, leveraging

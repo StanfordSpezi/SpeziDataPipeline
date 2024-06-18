@@ -7,9 +7,9 @@
 #
 
 """
-This module provides test cases for the DataExplorer class from the data_exploration module.
+This module provides test cases for the `DataExplorer` class from the data_exploration module.
 
-The tests focus on the initialization and configuration of the DataExplorer instance, including
+The tests focus on the initialization and configuration of the `DataExplorer` instance, including
 the capabilities to set specific date ranges, user IDs, and y-axis boundaries for data
 exploration plots. It includes methods to test both the setting of parameters and the generation
 of static plots, ensuring the correct application of combined and individual plotting based on the
@@ -20,7 +20,7 @@ isolate and test functionality effectively without dependence on external data o
 plotting libraries.
 
 Classes:
-    TestDataExplorer: Contains all the unit tests for testing the DataExplorer functionalities.
+    `TestDataExplorer`: Contains all the unit tests for testing the `DataExplorer` functionalities.
 """
 
 # Standard library imports

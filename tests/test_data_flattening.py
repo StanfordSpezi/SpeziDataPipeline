@@ -12,10 +12,11 @@ Interoperability Resources) data structures using pandas DataFrames, particularl
 on the `FHIRDataFrame` and `ObservationFlattener` classes from the data_flattening library.
 
 The tests ensure the proper initialization, validation, and functionality of these classes.
-For the `FHIRDataFrame`, tests validate the correct setup and validation of data within a `DataFrame`
-tailored for FHIR resources, ensuring that data conforms to expected formats and structures. For
-the ObservationFlattener, tests confirm the accurate transformation of complex FHIR Observation
-resources into a simplified `DataFrame` format, suitable for further analysis or processing.
+For the `FHIRDataFrame`, tests validate the correct setup and validation of data within a
+`DataFrame` tailored for FHIR resources, ensuring that data conforms to expected formats and
+structures. For the ObservationFlattener, tests confirm the accurate transformation of complex
+FHIR Observation resources into a simplified `DataFrame` format, suitable for further analysis
+or processing.
 
 These classes are crucial for handling healthcare data efficiently in a standardized format, and
 the tests help ensure robustness and correctness in their implementation.
@@ -202,7 +203,8 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 def create_mock_observations() -> list[Observation] | str:
     """
     Simulates the creation of `Observation` objects from JSON files. This function reads multiple
-    JSON files, each representing a mock observation, and converts them into `Observation` instances.
+    JSON files, each representing a mock observation, and converts them into `Observation`
+    instances.
 
     Returns:
         List[Observation]: A list of `Observation` objects if successful.

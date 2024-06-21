@@ -46,14 +46,14 @@ QUANTITY_UNIT_STEPS = "steps"
 
 
 def finalize_group(
-    original_df: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str
+    fhir_dataframe: pd.DataFrame, aggregated_df: pd.DataFrame, prefix: str
 ) -> pd.DataFrame:
     """
     Merges aggregated numeric data with non-numeric data, applying a descriptive prefix
     to the quantity name.
 
     Parameters:
-        original_df (pd.DataFrame): The original DataFrame before aggregation.
+        fhir_dataframe (FHIRDataFrame): The original DataFrame before aggregation.
         aggregated_df (pd.DataFrame): The DataFrame containing aggregated numeric data.
         prefix (str): A descriptive prefix to add to the QUANTITY_NAME column.
 
@@ -61,7 +61,7 @@ def finalize_group(
         pd.DataFrame: The final aggregated DataFrame with updated QUANTITY_NAME.
     """
     # Aggregate non-numeric fields by taking the first value in each group
-    non_numeric_aggregation = original_df.groupby(
+    non_numeric_aggregation = fhir_dataframe.groupby(
         [
             ColumnNames.USER_ID.value,
             ColumnNames.EFFECTIVE_DATE_TIME.value,

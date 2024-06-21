@@ -127,55 +127,55 @@
       "type" : "group",
       "item" : [
         {
-          "linkId" : "H1/T1/Q1",
+          "linkId" : "PHQ9.1",
           "text" : "Little interest or pleasure in doing things?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q2",
+          "linkId" : "PHQ9.2",
           "text" : "Feeling down, depressed, or hopeless?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q3",
+          "linkId" : "PHQ9.3",
           "text" : "Trouble falling or staying asleep, or sleeping too much?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q4",
+          "linkId" : "PHQ9.4",
           "text" : "Feeling tired or having little energy?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q5",
+          "linkId" : "PHQ9.5",
           "text" : "Poor appetite or overeating?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q6",
+          "linkId" : "PHQ9.6",
           "text" : "Feeling bad about yourself - or that you are a failure or have let yourself or your family down?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q7",
+          "linkId" : "PHQ9.7",
           "text" : "Trouble concentrating on things, such as reading the newspaper or watching television?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q8",
+          "linkId" : "PHQ9.8",
           "text" : "Moving or speaking so slowly that other people could gave noticed? Or so fidgety or restless that you have been moving a lot more than usual?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"
         },
         {
-          "linkId" : "H1/T1/Q9",
+          "linkId" : "PHQ9.9",
           "text" : "Thoughts that you would be better off dead, or thoughts of hurting yourself in some way?",
           "type" : "choice",
           "answerValueSet" : "#VSPHQ9"

@@ -46,6 +46,13 @@ import pandas as pd
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 
+
+SOCIAL_SUPPORT_QUESTIONNAIRE_PATH = "Resources/SocialSupportQuestionnaire.json"
+PHQ9_PATH = "Resources/PHQ-9.json"
+WALKING_IMPAIRMENT_QUESTIONNAIRE_PATH = "Resources/PAD Walking Impairment.json"
+PHQ9_CODE_SYSTEM = "http://hl7.org/fhir/uv/sdc/CodeSystem/CSPHQ9"
+
+ENCODING = "utf-8"
 UNKNOWN_ANSWER_STRING = "Unknown Answer"
 UNKNOWN_QUESTION_STRING = "Unknown Question"
 
@@ -107,6 +114,16 @@ class KeyNames(Enum):
     TEXT = "text"
     ANSWER_OPTION = "answerOption"
 
+    CONTAINED = "contained"
+    VALUE_SET = "ValueSet"
+    COMPOSE = "compose"
+    INCLUDE = "include"
+    CONCEPT = "concept"
+    EXTENSION = "extension"
+    VALUE_DECIMAL = "valueDecimal"
+    TITLE = "title"
+    URL = "url"
+
 
 class ColumnNames(Enum):
     """
@@ -164,6 +181,7 @@ class ColumnNames(Enum):
     SURVEY_DATE = "Date"
     QUESTION_ID = "QuestionId"
     QUESTION_TEXT = "QuestionText"
+    ANSWER_CODE = "AnswerCode"
     ANSWER_TEXT = "AnswerText"
 
 
@@ -372,6 +390,7 @@ class ResourceFlattener:
                 ColumnNames.SURVEY_DATE,
                 ColumnNames.QUESTION_ID,
                 ColumnNames.QUESTION_TEXT,
+                ColumnNames.ANSWER_CODE,
                 ColumnNames.ANSWER_TEXT,
             ],
         }
@@ -380,7 +399,7 @@ class ResourceFlattener:
             raise ValueError(f"Unsupported resource type: {resource_type.name}")
 
     def flatten(
-        self, resources: list[Any], survey_path: list[str] | None = None
+        self, resources: list[Any], survey_path: str | None = None
     ) -> FHIRDataFrame:
         """
         Abstract method intended to transform a list of FHIR resources into a flattened
@@ -395,7 +414,7 @@ class ResourceFlattener:
             resources (list[Any]): A list of FHIR resource objects to be flattened. The exact type
                                     of objects in the list should correspond to the FHIR resource
                                     type the subclass is designed to handle.
-            survey_path (list[str]): Survey paths used in the QuestionnaireResponseFlattener to
+            survey_path (str): Survey path used in the QuestionnaireResponseFlattener to
                 create survey mappings.
 
         Returns:
@@ -428,7 +447,7 @@ class ObservationFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.OBSERVATION)
 
     def flatten(
-        self, resources: list[Observation], survey_path: list[str] | None = None
+        self, resources: list[Observation], survey_path: str | None = None
     ) -> FHIRDataFrame:
         """
         Converts a list of FHIR Observation resources into a structured DataFrame.
@@ -437,7 +456,7 @@ class ObservationFlattener(ResourceFlattener):
         Parameters:
             resources (list[Observation]): A collection of FHIR Observation resources to be
                 flattened.
-            survey_path (list[str]): Survey paths not relevant to Observation flattener.
+            survey_path (str): Survey path not relevant to Observation flattener.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured data extracted from the input
@@ -510,7 +529,7 @@ class ECGObservationFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.ECG_OBSERVATION)
 
     def flatten(
-        self, resources: list[ECGObservation], survey_path: list[str] = None
+        self, resources: list[ECGObservation], survey_path: str = None
     ) -> FHIRDataFrame:
         """
         Flattens a list of ECG Observation resources, extracting ECG data and related metrics
@@ -518,7 +537,7 @@ class ECGObservationFlattener(ResourceFlattener):
 
         Parameters:
             resources (list[ECGObservation]): A collection of FHIR ECG Observation resources.
-            survey_path (list[str]): Survey paths not relevant to ECG flattener.
+            survey_path (str): Survey path not relevant to ECG flattener.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured ECG data from the input resources.
@@ -685,7 +704,7 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
     def flatten(
-        self, resources: list[QuestionnaireResponse], survey_path: list[str] = None
+        self, resources: list[QuestionnaireResponse], survey_path: str = None
     ) -> FHIRDataFrame:
         """
         Flattens a list of QuestionnaireResponse resources, extracting all question and answers
@@ -694,7 +713,7 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         Parameters:
             resources (list[QuestionnaireResponse]): A collection of QuestionnaireResponse
                 resources.
-            survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys used to extract
+            survey_path (str): The path to Phoenix-generated JSON survey used to extract
                 relevant mappings.
 
         Returns:
@@ -709,24 +728,28 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         flattened_data = []
 
         for response in resources:
-            user_id = getattr(response.subject, KeyNames.ID.value, None)
-            resource_id = getattr(response.identifier, KeyNames.ID.value, None)
-
             for item in response.item:
                 question_id = item.linkId
                 question_text = all_question_mappings.get(
                     question_id, UNKNOWN_QUESTION_STRING
                 )
 
-                answer_value = get_answer_value(item, all_answer_mappings)
+                answer_code, answer_value = get_answer_code_and_value(
+                    item, all_answer_mappings, survey_path
+                )
 
                 flattened_entry = {
-                    ColumnNames.USER_ID.value: user_id,
-                    ColumnNames.RESOURCE_ID.value: resource_id,
+                    ColumnNames.USER_ID.value: getattr(
+                        response.subject, KeyNames.ID.value, None
+                    ),
+                    ColumnNames.RESOURCE_ID.value: getattr(
+                        response, KeyNames.ID.value, None
+                    ),
                     ColumnNames.AUTHORED_DATE.value: response.authored,
                     ColumnNames.SURVEY_TITLE.value: get_survey_title(survey_path),
                     ColumnNames.QUESTION_ID.value: question_id,
                     ColumnNames.QUESTION_TEXT.value: question_text,
+                    ColumnNames.ANSWER_CODE.value: answer_code,
                     ColumnNames.ANSWER_TEXT.value: answer_value,
                 }
 
@@ -736,12 +759,12 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         return FHIRDataFrame(flattened_df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
 
-def extract_mappings(survey_path: list[str]) -> tuple[dict[str, str], dict[str, str]]:
+def extract_mappings(survey_path: str) -> tuple[dict[str, str], dict[str, str]]:
     """
     Extracts question and answer mappings from Phoenix-generated JSON surveys.
 
     Parameters:
-        survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys.
+        survey_path (str): The path to Phoenix-generated JSON survey.
 
     Returns:
         tuple[dict[str, str], dict[str, str]]: A tuple containing question and answer mappings.
@@ -749,91 +772,187 @@ def extract_mappings(survey_path: list[str]) -> tuple[dict[str, str], dict[str, 
     question_mapping = {}
     answer_mapping = {}
 
-    for file_path in survey_path:
-        with open(file_path, "r", encoding="utf-8") as file:
-            try:
-                json_content = json.load(file)
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON from file {file_path}: {e}")
-                continue
+    with open(survey_path, "r", encoding=ENCODING) as file:
+        try:
+            json_content = json.load(file)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON from file {survey_path}: {e}")
 
-            for section in json_content.get(KeyNames.ITEM.value, []):
-                question_id = section.get(KeyNames.LINK_ID.value)
-                question_text = section.get(KeyNames.TEXT.value, None)
+        if survey_path == SOCIAL_SUPPORT_QUESTIONNAIRE_PATH:
+            question_mapping, answer_mapping = process_social_support_questionnaire(
+                json_content
+            )
+        if survey_path == PHQ9_PATH:
+            question_mapping, answer_mapping = process_phq9_questionnaire(json_content)
+        elif survey_path == WALKING_IMPAIRMENT_QUESTIONNAIRE_PATH:
+            question_mapping, answer_mapping = process_wiq_questionnaire(json_content)
+        else:
+            print("Unknown Questionnaire Type")
 
-                if question_id:
-                    question_mapping[question_id] = question_text
-                    if question_text is not None:
-                        for answer_option in section.get(
-                            KeyNames.ANSWER_OPTION.value, []
-                        ):
-                            value = answer_option.get(KeyNames.VALUE_CODING.value, {})
-                            code = value.get(KeyNames.CODE.value, None)
-                            display = value.get(KeyNames.DISPLAY.value, None)
-                            system = value.get(KeyNames.SYSTEM.value, None)
+        return question_mapping, answer_mapping
 
-                            if code and display and system:
-                                answer_mapping[f"{system}|{code}"] = display
+
+def process_wiq_questionnaire(json_content):
+    """
+    Performs special handling to extract the mappings for Walking Impairment
+    Questionnaire (WIQ).
+    """
+
+    question_mapping = {}
+    answer_mapping = {}
+
+    for contained in json_content[KeyNames.CONTAINED.value]:
+        if contained.get(KeyNames.RESOURCE_TYPE.value) == KeyNames.VALUE_SET.value:
+            system = (
+                contained.get(KeyNames.COMPOSE.value, {})
+                .get(KeyNames.INCLUDE.value, [{}])[0]
+                .get(KeyNames.SYSTEM.value)
+            )
+            for concept in (
+                contained.get(KeyNames.COMPOSE.value, {})
+                .get(KeyNames.INCLUDE.value, [{}])[0]
+                .get(KeyNames.CONCEPT.value, [])
+            ):
+                code = concept.get(KeyNames.CODE.value)
+                display = concept.get(KeyNames.DISPLAY.value)
+                if code and display and system:
+                    answer_mapping[f"{system}|{code}"] = display
+
+    for section in json_content.get(KeyNames.ITEM.value, []):
+        question_id = section.get(KeyNames.LINK_ID.value)
+        question_text = section.get(KeyNames.TEXT.value)
+
+        if question_id and question_text:
+            question_mapping[question_id] = question_text
 
     return question_mapping, answer_mapping
 
 
-def get_survey_title(survey_path: list[str]) -> str:
-    """
-    Gets the survey title from a Phoenix-generated JSON survey file.
+def process_social_support_questionnaire(json_content):
+    """Performs special handling to extract the mappings for Social Support Questionnaire."""
+    question_mapping = {}
+    answer_mapping = {}
 
-    Parameters:
-        survey_path (List[str]): The path(s) to Phoenix-generated JSON surveys.
+    for section in json_content.get(KeyNames.ITEM.value, []):
+        question_id = section.get(KeyNames.LINK_ID.value)
+        question_text = section.get(KeyNames.TEXT.value, None)
 
-    Returns:
-        str: The survey title.
-    """
-    for file_path in survey_path:
-        with open(file_path, "r", encoding="utf-8") as file:
-            title_json = json.load(file)
-            if title := title_json.get("title"):
-                return title
-    return ""
+        if question_id:
+            question_mapping[question_id] = question_text
+            if question_text is not None:
+                for answer_option in section.get(KeyNames.ANSWER_OPTION.value, []):
+                    value = answer_option.get(KeyNames.VALUE_CODING.value, {})
+                    code = value.get(KeyNames.CODE.value, None)
+                    display = value.get(KeyNames.DISPLAY.value, None)
+                    system = value.get(KeyNames.SYSTEM.value, None)
+
+                    if code and display and system:
+                        answer_mapping[f"{system}|{code}"] = display
+    return question_mapping, answer_mapping
 
 
-def get_answer_value(
-    item: QuestionnaireResponse, all_answer_mappings: dict[str, str]
-) -> str:
+def process_phq9_questionnaire(json_content):
+    """Extracts question and answer mappings from a PHQ-9 questionnaire JSON."""
+
+    question_mapping = {}
+    answer_mapping = {}
+
+    for section in json_content.get(KeyNames.ITEM.value, []):
+        question_id = section.get(KeyNames.LINK_ID.value)
+        question_text = section.get(KeyNames.TEXT.value, None)
+        if question_id:
+            question_mapping[question_id] = question_text
+            for sub_item in section.get(KeyNames.ITEM.value, []):
+                if sub_question_id := sub_item.get(KeyNames.LINK_ID.value):
+                    question_mapping[sub_question_id] = sub_item.get("text", None)
+
+    for contained in json_content.get(KeyNames.CONTAINED.value, []):
+        if contained.get(KeyNames.RESOURCE_TYPE.value) == KeyNames.VALUE_SET.value:
+            for include in contained.get(KeyNames.COMPOSE.value, {}).get(
+                KeyNames.INCLUDE.value, []
+            ):
+                for concept in include.get(KeyNames.CONCEPT.value, []):
+                    display = concept.get(KeyNames.DISPLAY.value)
+                    system = include.get(KeyNames.SYSTEM.value)
+                    value_decimal = next(
+                        (
+                            ext.get(KeyNames.VALUE_DECIMAL.value)
+                            for ext in concept.get(KeyNames.EXTENSION.value, [])
+                        ),
+                        None,
+                    )
+                    if value_decimal is not None and display and system:
+                        answer_mapping[f"{system}|{value_decimal}"] = display
+
+    return question_mapping, answer_mapping
+
+
+def get_answer_code_and_value(
+    item: QuestionnaireResponse, all_answer_mappings: dict[str, str], survey_path: str
+) -> tuple[str, str]:
     """
     Gets the answer value for a QuestionnaireResponse item.
 
     Parameters:
         item: The QuestionnaireResponse item.
         all_answer_mappings: A dictionary containing all answer mappings.
+        survey_path (str): The path to Phoenix-generated JSON surveys.
 
     Returns:
+        str: The answer code.
         str: The answer value.
     """
+    answer_code = UNKNOWN_ANSWER_STRING
     answer_value = UNKNOWN_ANSWER_STRING
 
     if item.answer and len(item.answer) > 0:
         answer = item.answer[0].dict()
 
-        if KeyNames.VALUE_CODING.value in answer:
+        if answer.get(KeyNames.VALUE_CODING.value) is not None:
             system_id = answer[KeyNames.VALUE_CODING.value].get(KeyNames.SYSTEM.value)
             code = answer[KeyNames.VALUE_CODING.value].get(KeyNames.CODE.value)
             if system_id and code:
                 combined_id = f"{system_id}|{code}"
+                answer_code = code
                 answer_value = all_answer_mappings.get(
                     combined_id, UNKNOWN_ANSWER_STRING
                 )
+        elif answer.get(KeyNames.VALUE_STRING.value) is not None:
+            answer_code = answer_value = answer[KeyNames.VALUE_STRING.value]
+        elif answer.get(KeyNames.VALUE_INTEGER.value) is not None:
+            answer_code = str(answer.get(KeyNames.VALUE_INTEGER.value))
 
-        elif KeyNames.VALUE_STRING.value in answer:
-            answer_value = answer[KeyNames.VALUE_STRING.value]
-        elif KeyNames.VALUE_INTEGER.value in answer:
-            answer_value = answer[KeyNames.VALUE_INTEGER.value]
+            if survey_path == PHQ9_PATH:
+                answer_value = all_answer_mappings.get(
+                    f"{PHQ9_CODE_SYSTEM}|{answer_code}",
+                    UNKNOWN_ANSWER_STRING,
+                )
+            else:
+                answer_value = answer.get(KeyNames.VALUE_INTEGER.value)
 
-    return answer_value
+    return answer_code, answer_value
+
+
+def get_survey_title(survey_path: str) -> str:
+    """
+    Gets the survey title from a Phoenix-generated JSON survey file.
+
+    Parameters:
+        survey_path (str): The path to Phoenix-generated JSON survey.
+
+    Returns:
+        str: The survey title.
+    """
+    with open(survey_path, "r", encoding=ENCODING) as file:
+        title_json = json.load(file)
+        if title := title_json.get(KeyNames.TITLE.value):
+            return title
+    return ""
 
 
 def flatten_fhir_resources(  # pylint: disable=unused-variable
     resources: list[Any],
-    survey_path: list[str] = None,
+    survey_path: str = None,
 ) -> FHIRDataFrame | None:
     """
     Flattens a list of FHIR resources into a structured DataFrame.
@@ -844,7 +963,7 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
 
     Parameters:
         resources (list[Any]): A list of FHIR resource objects to be flattened.
-        survey_path (list[str]): The path(s) to Phoenix-generated JSON surveys used to
+        survey_path (str): The path to Phoenix-generated JSON survey used to
             extract relevant mappings.
 
     Returns:

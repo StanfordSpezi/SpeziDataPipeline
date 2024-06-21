@@ -1,0 +1,123 @@
+{
+    "resourceType": "Bundle",
+    "id": "bundle-questionnaire-response",
+    "type": "collection",
+    "entry": [
+      {
+        "resource": {
+          "resourceType": "QuestionnaireResponse",
+          "id": "phq9-1",
+          "status": "completed",
+          "authored": "2023-01-01",
+          "subject": {
+            "reference": "Patient/example"
+          },
+          "questionnaire": "Questionnaire/phq9",
+          "item": [
+            { "linkId": "PHQ9.1", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.2", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.3", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.4", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.5", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.6", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.7", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.8", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.9", "answer": [ { "valueInteger": 2 } ] }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "QuestionnaireResponse",
+          "id": "phq9-2",
+          "status": "completed",
+          "authored": "2023-01-15",
+          "subject": {
+            "reference": "Patient/example"
+          },
+          "questionnaire": "Questionnaire/phq9",
+          "item": [
+            { "linkId": "PHQ9.1", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.2", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.3", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.4", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.5", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.6", "answer": [ { "valueInteger": 3 } ] },
+            { "linkId": "PHQ9.7", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.8", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.9", "answer": [ { "valueInteger": 1 } ] }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "QuestionnaireResponse",
+          "id": "phq9-3",
+          "status": "completed",
+          "authored": "2023-01-29",
+          "subject": {
+            "reference": "Patient/example"
+          },
+          "questionnaire": "Questionnaire/phq9",
+          "item": [
+            { "linkId": "PHQ9.1", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.2", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.3", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.4", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.5", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.6", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.7", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.8", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.9", "answer": [ { "valueInteger": 1 } ] }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "QuestionnaireResponse",
+          "id": "phq9-4",
+          "status": "completed",
+          "authored": "2023-02-12",
+          "subject": {
+            "reference": "Patient/example"
+          },
+          "questionnaire": "Questionnaire/phq9",
+          "item": [
+            { "linkId": "PHQ9.1", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.2", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.3", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.4", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.5", "answer": [ { "valueInteger": 2 } ] },
+            { "linkId": "PHQ9.6", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.7", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.8", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.9", "answer": [ { "valueInteger": 1 } ] }
+          ]
+        }
+      },
+      {
+        "resource": {
+          "resourceType": "QuestionnaireResponse",
+          "id": "phq9-5",
+         "status": "completed",
+          "authored": "2023-02-26",
+          "subject": {
+            "reference": "Patient/example"
+          },
+          "questionnaire": "Questionnaire/phq9",
+          "item": [
+            { "linkId": "PHQ9.1", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.2", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.3", "answer": [ { "valueInteger": 0 } ] },
+            { "linkId": "PHQ9.4", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.5", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.6", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.7", "answer": [ { "valueInteger": 0 } ] },
+            { "linkId": "PHQ9.8", "answer": [ { "valueInteger": 1 } ] },
+            { "linkId": "PHQ9.9", "answer": [ { "valueInteger": 1 } ] }
+          ]
+        }
+      }
+    ]
+  }
+  

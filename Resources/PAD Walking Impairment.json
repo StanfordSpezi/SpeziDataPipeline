@@ -1,0 +1,264 @@
+{
+    "title":"PAD Walking Impairment Questionnaire",
+    "resourceType":"Questionnaire",
+    "language":"en-US",
+    "status":"draft",
+    "publisher":"Stanford Biodesign Digital Health",
+    "meta":{
+        "profile":[
+            "http://spezi.health/fhir/StructureDefinition/sdf-Questionnaire"
+        ],
+        "tag":[
+            {
+                "system":"urn:ietf:bcp:47",
+                "code":"en-US",
+                "display":"English"
+            }
+        ]
+    },
+    "useContext":[
+        {
+            "code":{
+                "system":"http://hl7.org/fhir/ValueSet/usage-context-type",
+                "code":"focus",
+                "display":"Clinical Focus"
+            },
+            "valueCodeableConcept":{
+                "coding":[
+                    {
+                        "system":"urn:oid:2.16.578.1.12.4.1.1.8655",
+                        "display":"PAD Walking Impairment Questionnaire"
+                    }
+                ]
+            }
+        }
+    ],
+    "contact":[
+        {
+            "name":"http://spezi.health"
+        }
+    ],
+    "subjectType":[
+        "Patient"
+    ],
+    "url":"http://spezi.health/fhir/questionnaire/be3a73bf-cb40-4964-886a-f27a3eecd5d9",
+    "contained":[
+        {
+            "resourceType":"ValueSet",
+            "id":"6fbd0b28-8c14-42a6-a604-3c631045e929",
+            "version":"1.0",
+            "name":"Likert",
+            "title":"No to Did not do",
+            "date":"2023-11-11T00:41:22.201Z",
+            "status":"draft",
+            "compose":{
+                "include":[
+                    {
+                        "system":"urn:uuid:b6fe0e3b-de03-468e-8566-37f9fed05bd2",
+                        "concept":[
+                            {
+                                "id":"c2e41950-9221-48c6-9f3a-c64ceacc0646",
+                                "code":"3",
+                                "display":"No difficulty"
+                            },
+                            {
+                                "id":"67c02f99-80be-4634-aabe-b37a09610381",
+                                "code":"2",
+                                "display":"Some difficulty "
+                            },
+                            {
+                                "id":"d9a4d500-c656-4f59-8121-fcb7bd706efe",
+                                "code":"1",
+                                "display":"Much difficulty "
+                            },
+                            {
+                                "id":"71ffb401-a5d7-4d05-8391-e1a5053792f2",
+                                "code":"0",
+                                "display":"Did not do "
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "resourceType":"ValueSet",
+            "id":"8025a035-652b-471b-83ff-592fcb8d80cb",
+            "version":"1.0",
+            "name":"Likert ",
+            "title":"Symptoms",
+            "date":"2023-11-11T02:43:23.481Z",
+            "status":"draft",
+            "compose":{
+                "include":[
+                    {
+                        "system":"urn:uuid:c82eed39-a2ed-4372-8314-59c50097ea49",
+                        "concept":[
+                            {
+                                "id":"4bac9083-4a20-403f-8285-519cecf6cac6",
+                                "code":"3",
+                                "display":"No "
+                            },
+                            {
+                                "id":"c4d875aa-1cbf-4f40-a424-e0bc3b80f70b",
+                                "code":"2",
+                                "display":"Slight"
+                            },
+                            {
+                                "id":"545731c7-d383-4027-f1f3-1f3b46e91e7a",
+                                "code":"1",
+                                "display":"Some"
+                            },
+                            {
+                                "id":"56e1b7ba-ae89-4d0c-890e-bd722b1ec636",
+                                "code":"0",
+                                "display":"Much"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "item":[
+        {
+            "linkId":"3753e7bd-7832-43ed-faf3-7a4de0e5bc04",
+            "type":"display",
+            "text":"The following questions are about difficulty walking with peripheral arterial disease. ",
+            "required":false
+        },
+        {
+            "linkId":"6dd2afca-f10d-488a-b30a-e01dd827eba8",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking indoors (around the house)? ",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"d949c9fc-adad-4e76-c174-c019492c7063",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 50 feet? ",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"f8639d62-f089-4cdc-8765-3845a18ee506",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 150 feet (0.5 blocks)? ",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"db751508-ccc6-4f78-85ee-cb5b443284d4",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 300 feet (1.0 blocks)? ",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"b92f6c01-ad8a-4a41-c91d-34fb7a853c52",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 600 feet (2.0 blocks)? ",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"a4c009db-8a1c-4fa0-88ec-6c1583df8b08",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 900 feet (3.0 blocks)",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"8d1e6a7e-3aa4-4002-84bc-d8ea73544b1a",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 1500 feet (5.0 blocks) or more",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"68fded00-722b-4963-e376-8eeb13862467",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 1 block slowly? (about 1.5 mph)",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"d4f55b67-3c05-42ad-830c-c47da7b1502a",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 1 block at an average speed? (about\n2.0 mph)",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"10bb71d9-f212-4b52-d83c-07390093c955",
+            "type":"choice",
+            "text":"How much difficulty do you have in walking 1 block quickly? (about 3.0 mph)",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"521ac8bd-31ad-4718-822a-a848c74db9bb",
+            "type":"choice",
+            "text":"How much difficulty do you have in running or jogging 1 block? (about 5.0 mph) ",
+            "required":false,
+            "answerValueSet":"#6fbd0b28-8c14-42a6-a604-3c631045e929"
+        },
+        {
+            "linkId":"169148d6-3566-43db-829a-854d69ca93a1",
+            "type":"choice",
+            "text":"Do you have pain or aching in your calves?",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"425bada1-e4b8-448c-cc29-de9fc315210b",
+            "type":"choice",
+            "text":"Do you have pain or aching in your thighs?",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"f17574b3-27d2-4e63-8faf-e11100dff957",
+            "type":"choice",
+            "text":"Do you have pain, stiffness or aching in your joints (knees or hips)?",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"f5261625-0783-4a6f-8f91-bd0dd3e66972",
+            "type":"choice",
+            "text":"Do you have pain or discomfort in your chest?",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"3bfab1ed-01c9-4f37-82e2-be88931ece22",
+            "type":"choice",
+            "text":"Do you have weakness in one or both of your legs?",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"32eea154-6c9f-4a73-8736-32701a430106",
+            "type":"choice",
+            "text":"Do you have shortness of breath?",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"0030a06c-4578-4cff-8e06-582dd36e36b4",
+            "type":"choice",
+            "text":"Do you have heart palpitations? ",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        },
+        {
+            "linkId":"8b7efb55-d614-4a89-a7b7-b56c7a11fa64",
+            "type":"open-choice",
+            "text":"Do you have other problems? (please list)",
+            "required":false,
+            "answerValueSet":"#8025a035-652b-471b-83ff-592fcb8d80cb"
+        }
+    ]
+}

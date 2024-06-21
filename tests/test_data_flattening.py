@@ -183,7 +183,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 
         flattener = QuestionnaireResponseFlattener()
         result = flattener.flatten(
-            resources, survey_path=["questionnaire_resources/SocialSupportQuestionnaire.json"]
+            resources, survey_path="Resources/SocialSupportQuestionnaire.json"
         )
 
         self.assertIsNotNone(result, "The resulting DataFrame should not be None")

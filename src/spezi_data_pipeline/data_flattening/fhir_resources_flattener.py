@@ -681,8 +681,7 @@ def extract_component_info(observation: ECGObservation) -> dict:
     for component in components:
         value_sampled_data = component.get(KeyNames.VALUE_SAMPLED_DATA.value, {})
 
-        data = value_sampled_data.get(KeyNames.DATA.value, None)
-        if data is not None:
+        if data := value_sampled_data.get(KeyNames.DATA.value, None) is not None:
             merged_ecg_data += data + " "
 
         if unit is None:
@@ -818,23 +817,19 @@ def get_answer_code_and_value(
     return {KeyNames.CODE.value: answer_value, KeyNames.TEXT.value: display_value}
 
 
-def extract_questionnaire_mappings(  # pylint: disable=too-many-locals, too-many-branches
+def extract_questionnaire_mappings(
     json_filepath: str,
 ) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     """
     Extracts question and answer mappings from a FHIR Questionnaire JSON file.
 
-    This function reads a FHIR Questionnaire JSON file, extracts questions and their
-    corresponding answer options, and creates mappings for easy lookup.
-
     Parameters:
-        json_filepath (str): The path to the JSON file containing the FHIR Questionnaire.
+        json_filepath (str): Path to the FHIR Questionnaire JSON file.
 
     Returns:
-        tuple: A tuple containing two dictionaries:
-            - question_map (dict): Maps question linkIds to their text.
-            - answer_map (dict): Maps question linkIds to their answer options.
-                If ordinal values are present, they are used as keys in string format.
+        tuple: Two dictionaries:
+            - question_map: Maps question linkIds to text.
+            - answer_map: Maps question linkIds to answer options.
     """
     with open(json_filepath, "r", encoding=ENCODING) as file:
         data = json.load(file)
@@ -842,78 +837,93 @@ def extract_questionnaire_mappings(  # pylint: disable=too-many-locals, too-many
     question_map = {}
     answer_map = {}
 
+    items = extract_items(data)
+    for item in items:
+        link_id = item.get(KeyNames.LINK_ID.value)
+        question_map[link_id] = item.get(KeyNames.TEXT.value)
+
+        answer_map[link_id] = extract_answer_options(data, item)
+
+    return question_map, answer_map
+
+
+def extract_items(data: dict) -> list:
+    """Extract items from FHIR Questionnaire data."""
     items = data.get(KeyNames.ITEM.value, [])
     if items and KeyNames.ITEM.value in items[0]:
         items = items[0][KeyNames.ITEM.value]
+    return items
 
-    for item in items:  # pylint: disable=too-many-nested-blocks
-        link_id = item.get(KeyNames.LINK_ID.value)
-        question_text = item.get(KeyNames.TEXT.value)
-        question_map[link_id] = question_text
 
-        answer_value_set = item.get(KeyNames.ANSWER_VALUE_SET.value)
-        answer_options = item.get(KeyNames.ANSWER_OPTION.value)
+def extract_answer_options(data: dict, item: dict) -> dict:
+    """Extract answer options for a given item."""
+    answer_map = {}
+    answer_value_set = item.get(KeyNames.ANSWER_VALUE_SET.value)
+    answer_options = item.get(KeyNames.ANSWER_OPTION.value)
 
-        if answer_value_set:
-            code = answer_value_set.lstrip("#")
-            contained_items = data.get(KeyNames.CONTAINED.value, [])
+    if answer_value_set:
+        answer_map = extract_value_set(data, answer_value_set)
+    elif answer_options:
+        answer_map = extract_options(answer_options)
 
-            for contained in contained_items:
-                if contained.get(KeyNames.ID.value) == code:
-                    concepts = (
-                        contained.get(KeyNames.COMPOSE.value, {})
-                        .get(KeyNames.INCLUDE.value, [])[0]
-                        .get(KeyNames.CONCEPT.value, [])
-                    )
+    return answer_map
 
-                    answer_map[link_id] = {}
-                    for concept in concepts:
-                        answer_text = concept.get(KeyNames.DISPLAY.value)
-                        ordinal_value = None
 
-                        if KeyNames.EXTENSION.value in concept:
-                            for ext in concept[KeyNames.EXTENSION.value]:
-                                if (
-                                    ext[KeyNames.URL.value]
-                                    == EXT_URL_ORDINAL_VALUE_STRING
-                                ):
-                                    ordinal_value = str(
-                                        ext[KeyNames.VALUE_DECIMAL.value]
-                                    )
+def extract_value_set(data: dict, answer_value_set: str) -> dict:
+    """Extracts answer options from a value set."""
+    answer_map = {}
+    code = answer_value_set.lstrip("#")
+    contained_items = data.get(KeyNames.CONTAINED.value, [])
 
-                        if ordinal_value is not None:
-                            answer_map[link_id][ordinal_value] = answer_text
-                        else:
-                            answer_code = concept.get(KeyNames.CODE.value)
-                            answer_map[link_id][answer_code] = answer_text
+    for contained in contained_items:
+        if contained.get(KeyNames.ID.value) == code:
+            concepts = (
+                contained.get(KeyNames.COMPOSE.value, {})
+                .get(KeyNames.INCLUDE.value, [])[0]
+                .get(KeyNames.CONCEPT.value, [])
+            )
+            for concept in concepts:
+                add_concept_to_map(answer_map, concept)
 
-        elif answer_options:
-            answer_map[link_id] = {}
-            for option in answer_options:
-                if KeyNames.VALUE_INTEGER.value in option:
-                    answer_map[link_id][option[KeyNames.VALUE_INTEGER.value]] = str(
-                        option[KeyNames.VALUE_INTEGER.value]
-                    )
-                elif KeyNames.VALUE_DATE.value in option:
-                    answer_map[link_id][option[KeyNames.VALUE_DATE.value]] = option[
-                        KeyNames.VALUE_DATE.value
-                    ]
-                elif KeyNames.VALUE_TIME.value in option:
-                    answer_map[link_id][option[KeyNames.VALUE_TIME.value]] = option[
-                        KeyNames.VALUE_TIME.value
-                    ]
-                elif KeyNames.VALUE_STRING.value in option:
-                    answer_map[link_id][option[KeyNames.VALUE_STRING.value]] = option[
-                        KeyNames.VALUE_STRING.value
-                    ]
-                elif KeyNames.VALUE_CODING.value in option:
-                    code = option[KeyNames.VALUE_CODING.value][KeyNames.CODE.value]
-                    display = option[KeyNames.VALUE_CODING.value][
-                        KeyNames.DISPLAY.value
-                    ]
-                    answer_map[link_id][code] = display
+    return answer_map
 
-    return question_map, answer_map
+
+def add_concept_to_map(answer_map: dict, concept: dict):
+    """Adds a concept to the answer map."""
+    answer_text = concept.get(KeyNames.DISPLAY.value)
+    ordinal_value = None
+
+    for ext in concept.get(KeyNames.EXTENSION.value, []):
+        if ext[KeyNames.URL.value] == EXT_URL_ORDINAL_VALUE_STRING:
+            ordinal_value = str(ext[KeyNames.VALUE_DECIMAL.value])
+
+    key = ordinal_value if ordinal_value else concept.get(KeyNames.CODE.value)
+    answer_map[key] = answer_text
+
+
+def extract_options(answer_options: list) -> dict:
+    """Extracts answer options from a list of options."""
+    answer_map = {}
+    for option in answer_options:
+        if KeyNames.VALUE_INTEGER.value in option:
+            value = option[KeyNames.VALUE_INTEGER.value]
+            answer_map[value] = str(value)
+        elif KeyNames.VALUE_DATE.value in option:
+            value = option[KeyNames.VALUE_DATE.value]
+            answer_map[value] = value
+        elif KeyNames.VALUE_TIME.value in option:
+            value = option[KeyNames.VALUE_TIME.value]
+            answer_map[value] = value
+        elif KeyNames.VALUE_STRING.value in option:
+            value = option[KeyNames.VALUE_STRING.value]
+            answer_map[value] = value
+        elif KeyNames.VALUE_CODING.value in option:
+            coding = option[KeyNames.VALUE_CODING.value]
+            code = coding[KeyNames.CODE.value]
+            display = coding[KeyNames.DISPLAY.value]
+            answer_map[code] = display
+
+    return answer_map
 
 
 def get_survey_title(survey_path: str) -> str:

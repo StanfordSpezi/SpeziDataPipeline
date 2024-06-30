@@ -29,6 +29,15 @@ Main Components:
 - `extract_coding_info` and `extract_component_info`: Helper functions for extracting detailed
                                                       information from Observation components and
                                                       codings.
+- `QuestionnaireResponseFlattener`: Flattens `QuestionnaireResponse` resources into a DataFrame,
+                                    mapping questions and answers to their respective text using
+                                    Phoenix-generated survey JSON files.
+
+- `get_answer_code_and_value`: Retrieves the answer code and text for a given item from the 
+                               `QuestionnaireResponse`.
+- `extract_questionnaire_mappings`: Extracts question and answer mappings from a FHIR Questionnaire
+                                    JSON file for easy lookup.
+-  `get_survey_title`: Retrieves the survey title from a Phoenix-generated JSON survey file.
 - `flatten_fhir_resources`: A utility function that orchestrates the flattening process, dynamically
                             selecting the appropriate flattener based on the resource type.
 """
@@ -45,15 +54,11 @@ from typing import Any
 import pandas as pd
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
+from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponseItem
 
-
-SOCIAL_SUPPORT_QUESTIONNAIRE_PATH = "Resources/SocialSupportQuestionnaire.json"
-PHQ9_PATH = "Resources/PHQ-9.json"
-WALKING_IMPAIRMENT_QUESTIONNAIRE_PATH = "Resources/PAD Walking Impairment.json"
-PHQ9_CODE_SYSTEM = "http://hl7.org/fhir/uv/sdc/CodeSystem/CSPHQ9"
 
 ENCODING = "utf-8"
-UNKNOWN_ANSWER_STRING = "Unknown Answer"
+EXT_URL_ORDINAL_VALUE_STRING = "http://hl7.org/fhir/StructureDefinition/ordinalValue"
 UNKNOWN_QUESTION_STRING = "Unknown Question"
 
 
@@ -109,6 +114,8 @@ class KeyNames(Enum):
     RESOURCE_TYPE = "resourceType"
     VALUE_CODING = "valueCoding"
     VALUE_INTEGER = "valueInteger"
+    VALUE_DATE = "valueDate"
+    VALUE_TIME = "valueTime"
     ITEM = "item"
     LINK_ID = "linkId"
     TEXT = "text"
@@ -116,6 +123,7 @@ class KeyNames(Enum):
 
     CONTAINED = "contained"
     VALUE_SET = "ValueSet"
+    ANSWER_VALUE_SET = "answerValueSet"
     COMPOSE = "compose"
     INCLUDE = "include"
     CONCEPT = "concept"
@@ -674,8 +682,8 @@ def extract_component_info(observation: ECGObservation) -> dict:
         value_sampled_data = component.get(KeyNames.VALUE_SAMPLED_DATA.value, {})
 
         data = value_sampled_data.get(KeyNames.DATA.value, None)
-        if data is not None:  # pylint: disable=consider-using-assignment-expr
-            merged_ecg_data += data + " "  # Adding a space for separation
+        if data is not None:
+            merged_ecg_data += data + " "
 
         if unit is None:
             origin = value_sampled_data.get(KeyNames.ORIGIN.value, {})
@@ -724,7 +732,9 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         if not survey_path:
             print("The path(s) to Phoenix-generated JSON surveys is missing.")
             return None
-        all_question_mappings, all_answer_mappings = extract_mappings(survey_path)
+        all_question_mappings, all_answer_mappings = extract_questionnaire_mappings(
+            survey_path
+        )
         flattened_data = []
 
         for response in resources:
@@ -733,10 +743,7 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
                 question_text = all_question_mappings.get(
                     question_id, UNKNOWN_QUESTION_STRING
                 )
-
-                answer_code, answer_value = get_answer_code_and_value(
-                    item, all_answer_mappings, survey_path
-                )
+                answer_details = get_answer_code_and_value(item, all_answer_mappings)
 
                 flattened_entry = {
                     ColumnNames.USER_ID.value: getattr(
@@ -749,8 +756,8 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
                     ColumnNames.SURVEY_TITLE.value: get_survey_title(survey_path),
                     ColumnNames.QUESTION_ID.value: question_id,
                     ColumnNames.QUESTION_TEXT.value: question_text,
-                    ColumnNames.ANSWER_CODE.value: answer_code,
-                    ColumnNames.ANSWER_TEXT.value: answer_value,
+                    ColumnNames.ANSWER_CODE.value: answer_details["code"],
+                    ColumnNames.ANSWER_TEXT.value: answer_details["text"],
                 }
 
                 flattened_data.append(flattened_entry)
@@ -759,178 +766,154 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         return FHIRDataFrame(flattened_df, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
 
-def extract_mappings(survey_path: str) -> tuple[dict[str, str], dict[str, str]]:
-    """
-    Extracts question and answer mappings from Phoenix-generated JSON surveys.
-
-    Parameters:
-        survey_path (str): The path to Phoenix-generated JSON survey.
-
-    Returns:
-        tuple[dict[str, str], dict[str, str]]: A tuple containing question and answer mappings.
-    """
-    question_mapping = {}
-    answer_mapping = {}
-
-    with open(survey_path, "r", encoding=ENCODING) as file:
-        try:
-            json_content = json.load(file)
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON from file {survey_path}: {e}")
-
-        if survey_path == SOCIAL_SUPPORT_QUESTIONNAIRE_PATH:
-            question_mapping, answer_mapping = process_social_support_questionnaire(
-                json_content
-            )
-        if survey_path == PHQ9_PATH:
-            question_mapping, answer_mapping = process_phq9_questionnaire(json_content)
-        elif survey_path == WALKING_IMPAIRMENT_QUESTIONNAIRE_PATH:
-            question_mapping, answer_mapping = process_wiq_questionnaire(json_content)
-        else:
-            print("Unknown Questionnaire Type")
-
-        return question_mapping, answer_mapping
-
-
-def process_wiq_questionnaire(json_content):
-    """
-    Performs special handling to extract the mappings for Walking Impairment
-    Questionnaire (WIQ).
-    """
-
-    question_mapping = {}
-    answer_mapping = {}
-
-    for contained in json_content[KeyNames.CONTAINED.value]:
-        if contained.get(KeyNames.RESOURCE_TYPE.value) == KeyNames.VALUE_SET.value:
-            system = (
-                contained.get(KeyNames.COMPOSE.value, {})
-                .get(KeyNames.INCLUDE.value, [{}])[0]
-                .get(KeyNames.SYSTEM.value)
-            )
-            for concept in (
-                contained.get(KeyNames.COMPOSE.value, {})
-                .get(KeyNames.INCLUDE.value, [{}])[0]
-                .get(KeyNames.CONCEPT.value, [])
-            ):
-                code = concept.get(KeyNames.CODE.value)
-                display = concept.get(KeyNames.DISPLAY.value)
-                if code and display and system:
-                    answer_mapping[f"{system}|{code}"] = display
-
-    for section in json_content.get(KeyNames.ITEM.value, []):
-        question_id = section.get(KeyNames.LINK_ID.value)
-        question_text = section.get(KeyNames.TEXT.value)
-
-        if question_id and question_text:
-            question_mapping[question_id] = question_text
-
-    return question_mapping, answer_mapping
-
-
-def process_social_support_questionnaire(json_content):
-    """Performs special handling to extract the mappings for Social Support Questionnaire."""
-    question_mapping = {}
-    answer_mapping = {}
-
-    for section in json_content.get(KeyNames.ITEM.value, []):
-        question_id = section.get(KeyNames.LINK_ID.value)
-        question_text = section.get(KeyNames.TEXT.value, None)
-
-        if question_id:
-            question_mapping[question_id] = question_text
-            if question_text is not None:
-                for answer_option in section.get(KeyNames.ANSWER_OPTION.value, []):
-                    value = answer_option.get(KeyNames.VALUE_CODING.value, {})
-                    code = value.get(KeyNames.CODE.value, None)
-                    display = value.get(KeyNames.DISPLAY.value, None)
-                    system = value.get(KeyNames.SYSTEM.value, None)
-
-                    if code and display and system:
-                        answer_mapping[f"{system}|{code}"] = display
-    return question_mapping, answer_mapping
-
-
-def process_phq9_questionnaire(json_content):
-    """Extracts question and answer mappings from a PHQ-9 questionnaire JSON."""
-
-    question_mapping = {}
-    answer_mapping = {}
-
-    for section in json_content.get(KeyNames.ITEM.value, []):
-        question_id = section.get(KeyNames.LINK_ID.value)
-        question_text = section.get(KeyNames.TEXT.value, None)
-        if question_id:
-            question_mapping[question_id] = question_text
-            for sub_item in section.get(KeyNames.ITEM.value, []):
-                if sub_question_id := sub_item.get(KeyNames.LINK_ID.value):
-                    question_mapping[sub_question_id] = sub_item.get("text", None)
-
-    for contained in json_content.get(KeyNames.CONTAINED.value, []):
-        if contained.get(KeyNames.RESOURCE_TYPE.value) == KeyNames.VALUE_SET.value:
-            for include in contained.get(KeyNames.COMPOSE.value, {}).get(
-                KeyNames.INCLUDE.value, []
-            ):
-                for concept in include.get(KeyNames.CONCEPT.value, []):
-                    display = concept.get(KeyNames.DISPLAY.value)
-                    system = include.get(KeyNames.SYSTEM.value)
-                    value_decimal = next(
-                        (
-                            ext.get(KeyNames.VALUE_DECIMAL.value)
-                            for ext in concept.get(KeyNames.EXTENSION.value, [])
-                        ),
-                        None,
-                    )
-                    if value_decimal is not None and display and system:
-                        answer_mapping[f"{system}|{value_decimal}"] = display
-
-    return question_mapping, answer_mapping
-
-
 def get_answer_code_and_value(
-    item: QuestionnaireResponse, all_answer_mappings: dict[str, str], survey_path: str
-) -> tuple[str, str]:
+    item: QuestionnaireResponseItem, answer_map: dict[str, dict[str, str]]
+) -> dict:
     """
-    Gets the answer value for a QuestionnaireResponse item.
+    Retrieves the answer code and corresponding text for a given item.
 
     Parameters:
-        item: The QuestionnaireResponse item.
-        all_answer_mappings: A dictionary containing all answer mappings.
-        survey_path (str): The path to Phoenix-generated JSON surveys.
+        item: The item from the QuestionnaireResponse containing the answer.
+        answer_map: A mapping of linkId to possible answers.
 
     Returns:
-        str: The answer code.
-        str: The answer value.
+        dict: A dictionary with 'code' and 'text' keys representing the answer code and text.
     """
-    answer_code = UNKNOWN_ANSWER_STRING
-    answer_value = UNKNOWN_ANSWER_STRING
+    if not item.answer:
+        return {
+            KeyNames.CODE.value: "No answer provided",
+            KeyNames.TEXT.value: "No answer provided",
+        }
 
-    if item.answer and len(item.answer) > 0:
-        answer = item.answer[0].dict()
+    answer = item.answer[0]
+    link_id = item.linkId
 
-        if answer.get(KeyNames.VALUE_CODING.value) is not None:
-            system_id = answer[KeyNames.VALUE_CODING.value].get(KeyNames.SYSTEM.value)
-            code = answer[KeyNames.VALUE_CODING.value].get(KeyNames.CODE.value)
-            if system_id and code:
-                combined_id = f"{system_id}|{code}"
-                answer_code = code
-                answer_value = all_answer_mappings.get(
-                    combined_id, UNKNOWN_ANSWER_STRING
-                )
-        elif answer.get(KeyNames.VALUE_STRING.value) is not None:
-            answer_code = answer_value = answer[KeyNames.VALUE_STRING.value]
-        elif answer.get(KeyNames.VALUE_INTEGER.value) is not None:
-            answer_code = str(answer.get(KeyNames.VALUE_INTEGER.value))
+    if (
+        hasattr(answer, KeyNames.VALUE_INTEGER.value)
+        and answer.valueInteger is not None
+    ):
+        answer_value = str(answer.valueInteger)
+        display_value = answer_map.get(link_id, {}).get(answer_value, answer_value)
+    elif hasattr(answer, KeyNames.VALUE_DATE.value) and answer.valueDate is not None:
+        answer_value = answer.valueDate
+        display_value = answer_value
+    elif hasattr(answer, KeyNames.VALUE_TIME.value) and answer.valueTime is not None:
+        answer_value = answer.valueTime
+        display_value = answer_value
+    elif (
+        hasattr(answer, KeyNames.VALUE_STRING.value) and answer.valueString is not None
+    ):
+        answer_value = answer.valueString
+        display_value = answer_value
+    elif (
+        hasattr(answer, KeyNames.VALUE_CODING.value) and answer.valueCoding is not None
+    ):
+        code = answer.valueCoding.code
+        display_value = answer_map.get(link_id, {}).get(code, code)
+        answer_value = code
+    else:
+        display_value = "N/A"
+        answer_value = "N/A"
 
-            if survey_path == PHQ9_PATH:
-                answer_value = all_answer_mappings.get(
-                    f"{PHQ9_CODE_SYSTEM}|{answer_code}",
-                    UNKNOWN_ANSWER_STRING,
-                )
-            else:
-                answer_value = answer.get(KeyNames.VALUE_INTEGER.value)
+    return {KeyNames.CODE.value: answer_value, KeyNames.TEXT.value: display_value}
 
-    return answer_code, answer_value
+
+def extract_questionnaire_mappings(  # pylint: disable=too-many-locals, too-many-branches
+    json_filepath: str,
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
+    """
+    Extracts question and answer mappings from a FHIR Questionnaire JSON file.
+
+    This function reads a FHIR Questionnaire JSON file, extracts questions and their
+    corresponding answer options, and creates mappings for easy lookup.
+
+    Parameters:
+        json_filepath (str): The path to the JSON file containing the FHIR Questionnaire.
+
+    Returns:
+        tuple: A tuple containing two dictionaries:
+            - question_map (dict): Maps question linkIds to their text.
+            - answer_map (dict): Maps question linkIds to their answer options.
+                If ordinal values are present, they are used as keys in string format.
+    """
+    with open(json_filepath, "r", encoding=ENCODING) as file:
+        data = json.load(file)
+
+    question_map = {}
+    answer_map = {}
+
+    items = data.get(KeyNames.ITEM.value, [])
+    if items and KeyNames.ITEM.value in items[0]:
+        items = items[0][KeyNames.ITEM.value]
+
+    for item in items:  # pylint: disable=too-many-nested-blocks
+        link_id = item.get(KeyNames.LINK_ID.value)
+        question_text = item.get(KeyNames.TEXT.value)
+        question_map[link_id] = question_text
+
+        answer_value_set = item.get(KeyNames.ANSWER_VALUE_SET.value)
+        answer_options = item.get(KeyNames.ANSWER_OPTION.value)
+
+        if answer_value_set:
+            code = answer_value_set.lstrip("#")
+            contained_items = data.get(KeyNames.CONTAINED.value, [])
+
+            for contained in contained_items:
+                if contained.get(KeyNames.ID.value) == code:
+                    concepts = (
+                        contained.get(KeyNames.COMPOSE.value, {})
+                        .get(KeyNames.INCLUDE.value, [])[0]
+                        .get(KeyNames.CONCEPT.value, [])
+                    )
+
+                    answer_map[link_id] = {}
+                    for concept in concepts:
+                        answer_text = concept.get(KeyNames.DISPLAY.value)
+                        ordinal_value = None
+
+                        if KeyNames.EXTENSION.value in concept:
+                            for ext in concept[KeyNames.EXTENSION.value]:
+                                if (
+                                    ext[KeyNames.URL.value]
+                                    == EXT_URL_ORDINAL_VALUE_STRING
+                                ):
+                                    ordinal_value = str(
+                                        ext[KeyNames.VALUE_DECIMAL.value]
+                                    )
+
+                        if ordinal_value is not None:
+                            answer_map[link_id][ordinal_value] = answer_text
+                        else:
+                            answer_code = concept.get(KeyNames.CODE.value)
+                            answer_map[link_id][answer_code] = answer_text
+
+        elif answer_options:
+            answer_map[link_id] = {}
+            for option in answer_options:
+                if KeyNames.VALUE_INTEGER.value in option:
+                    answer_map[link_id][option[KeyNames.VALUE_INTEGER.value]] = str(
+                        option[KeyNames.VALUE_INTEGER.value]
+                    )
+                elif KeyNames.VALUE_DATE.value in option:
+                    answer_map[link_id][option[KeyNames.VALUE_DATE.value]] = option[
+                        KeyNames.VALUE_DATE.value
+                    ]
+                elif KeyNames.VALUE_TIME.value in option:
+                    answer_map[link_id][option[KeyNames.VALUE_TIME.value]] = option[
+                        KeyNames.VALUE_TIME.value
+                    ]
+                elif KeyNames.VALUE_STRING.value in option:
+                    answer_map[link_id][option[KeyNames.VALUE_STRING.value]] = option[
+                        KeyNames.VALUE_STRING.value
+                    ]
+                elif KeyNames.VALUE_CODING.value in option:
+                    code = option[KeyNames.VALUE_CODING.value][KeyNames.CODE.value]
+                    display = option[KeyNames.VALUE_CODING.value][
+                        KeyNames.DISPLAY.value
+                    ]
+                    answer_map[link_id][code] = display
+
+    return question_map, answer_map
 
 
 def get_survey_title(survey_path: str) -> str:

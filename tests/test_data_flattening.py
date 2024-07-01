@@ -33,13 +33,18 @@ from pathlib import Path
 
 # Related third-party imports
 import unittest
+from unittest.mock import MagicMock, patch
 
 # pylint: disable=duplicate-code
 import pandas as pd
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.reference import Reference
-from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
-
+from fhir.resources.R4B.questionnaireresponse import (
+    QuestionnaireResponse,
+    QuestionnaireResponseItem,
+    QuestionnaireResponseItemAnswer,
+)
+from fhir.resources.R4B.coding import Coding
 
 # Local application/library specific imports
 from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
@@ -50,6 +55,10 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     ObservationFlattener,
     ECGObservationFlattener,
     QuestionnaireResponseFlattener,
+    extract_questionnaire_mappings,
+    flatten_fhir_resources,
+    get_answer_code_and_value,
+    get_survey_title,
 )
 
 # pylint: enable=duplicate-code
@@ -111,21 +120,15 @@ class TestObservationFlattener(unittest.TestCase):  # pylint: disable=unused-var
         Ensures that the `ObservationFlattener` can correctly flatten a list of Observation objects
         into a pandas `DataFrame`, verifying both the structure and content of the `DataFrame`.
         """
-        # Generate mock observations using the updated function
         resources = create_mock_observations()
 
-        # Check if resources is a list and not an error message
         if isinstance(resources, str):
             self.fail(f"Failed to create mock observations: {resources}")
 
         flattener = ObservationFlattener()
         result = flattener.flatten(resources)
 
-        # Test the number of rows in the dataframe
-        # Assuming there are two observations and the flatten method retains this count
         self.assertEqual(len(result.df), 2)
-
-        # Check if 'UserId' is one of the columns in the resulting dataframe
         self.assertTrue(ColumnNames.USER_ID.value in result.df.columns)
 
 
@@ -161,9 +164,58 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
     each response item as a separate row.
     """
 
+    def setUp(self):
+        self.flattener = QuestionnaireResponseFlattener()
+
+    @patch(
+        "spezi_data_pipeline.data_flattening.fhir_resources_flattener"
+        ".extract_questionnaire_mappings"
+    )
+    @patch(
+        "builtins.open",
+        new_callable=unittest.mock.mock_open,
+        read_data='{"title": "Test Survey"}',
+    )
+    def test_flatten(
+        self, mock_open, mock_extract_mappings  # pylint: disable=unused-argument
+    ):
+        """
+        Tests the flattening of a single QuestionnaireResponse resource.
+        """
+        mock_extract_mappings.return_value = (
+            {"q1": "Question 1"},
+            {"q1": {"1": "Answer 1"}},
+        )
+
+        mock_response = MagicMock(spec=QuestionnaireResponse)
+        mock_response.subject = MagicMock()
+        mock_response.subject.id = "user1"
+        mock_response.id = "response1"
+        mock_response.authored = "2024-06-01"
+        mock_response.item = [
+            MagicMock(
+                spec=QuestionnaireResponseItem,
+                linkId="q1",
+                answer=[MagicMock(valueString="1")],
+            )
+        ]
+
+        with patch(
+            "spezi_data_pipeline.data_flattening.fhir_resources_flattener"
+            ".get_answer_code_and_value",
+            return_value={"code": "1", "text": "Answer 1"},
+        ):
+            result = self.flattener.flatten([mock_response], "survey_path.json")
+
+        self.assertIsInstance(result, FHIRDataFrame)
+        self.assertEqual(result.df.shape[0], 1)
+        self.assertIn("QuestionText", result.df.columns)
+        self.assertEqual(result.df.iloc[0]["QuestionText"], "Question 1")
+        self.assertEqual(result.df.iloc[0]["AnswerText"], "Answer 1")
+
     def test_flatten_questionnaire_responses(self):
         """
-        Tests the functionality of the QuestionnaireResponseFlattenerflatten() method
+        Tests the functionality of the QuestionnaireResponseFlattener flatten() method
         to ensure it accurately processes a list of `QuestionnaireResponse` objects into
         a structured `DataFrame`.
 
@@ -188,7 +240,6 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 
         self.assertIsNotNone(result, "The resulting DataFrame should not be None")
 
-        # Calculate the expected number of rows
         expected_rows = sum(
             len(response.item) for response in resources if hasattr(response, "item")
         )
@@ -198,6 +249,123 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
             "The number of rows in the DataFrame should match the total number"
             "of items across all resources",
         )
+
+    def test_get_answer_code_and_value(self):
+        """
+        Tests the get_answer_code_and_value function to ensure it retrieves the correct
+        answer code and text for a given QuestionnaireResponseItem.
+        """
+        mock_coding = MagicMock(spec=Coding)
+        mock_coding.code = "test"
+        mock_coding.display = "Test Answer"
+
+        mock_answer = MagicMock(spec=QuestionnaireResponseItemAnswer)
+        mock_answer.valueCoding = mock_coding
+
+        item = MagicMock(spec=QuestionnaireResponseItem)
+        item.linkId = "q1"
+        item.answer = [mock_answer]
+
+        answer_map = {"q1": {"test": "Test Answer"}}
+
+        result = get_answer_code_and_value(item, answer_map)
+
+        self.assertEqual(result["code"], "test")
+        self.assertEqual(result["text"], "Test Answer")
+
+    @patch(
+        "spezi_data_pipeline.data_flattening.fhir_resources_flattener.get_survey_title"
+    )
+    @patch(
+        "builtins.open",
+        new_callable=unittest.mock.mock_open,
+        read_data='{"title": "Test Survey"}',
+    )
+    @patch("json.load")
+    def test_get_survey_title(
+        self,
+        mock_json_load,
+        mock_open,  # pylint: disable=unused-argument
+        mock_get_survey_title,  # pylint: disable=unused-argument
+    ):
+        """
+        Tests the get_survey_title function to ensure it correctly retrieves the survey title
+        from a Phoenix-generated JSON survey file.
+        """
+        mock_json_load.return_value = {"title": "Test Survey"}
+        result = get_survey_title("survey_path.json")
+        self.assertEqual(result, "Test Survey")
+
+    @patch(
+        "spezi_data_pipeline.data_flattening.fhir_resources_flattener.open",
+        new_callable=unittest.mock.mock_open,
+        read_data="{}",
+    )
+    @patch("json.load")
+    def test_extract_questionnaire_mappings(
+        self, mock_json_load, mock_open  # pylint: disable=unused-argument
+    ):
+        """
+        Tests the extract_questionnaire_mappings function to ensure it correctly extracts
+        question and answer mappings from a FHIR Questionnaire JSON file.
+        """
+        mock_json_load.return_value = {
+            "item": [
+                {
+                    "linkId": "q1",
+                    "text": "Question 1",
+                    "answerOption": [{"valueString": "Answer 1"}],
+                }
+            ]
+        }
+        question_map, answer_map = extract_questionnaire_mappings("survey_path.json")
+        self.assertEqual(question_map["q1"], "Question 1")
+        self.assertEqual(answer_map["q1"]["Answer 1"], "Answer 1")
+
+    @patch(
+        "spezi_data_pipeline.data_flattening.fhir_resources_flattener"
+        ".extract_questionnaire_mappings"
+    )
+    @patch("builtins.open", new_callable=unittest.mock.mock_open, read_data="{}")
+    def test_flatten_fhir_resources(
+        self, mock_open, mock_extract_mappings  # pylint: disable=unused-argument
+    ):
+        """
+        Tests the flatten_fhir_resources function to ensure it correctly flattens a list
+        of FHIR resources into a structured DataFrame, handling empty and valid inputs.
+        """
+        mock_extract_mappings.return_value = (
+            {"q1": "Question 1"},
+            {"q1": {"1": "Answer 1"}},
+        )
+
+        result = flatten_fhir_resources([], "survey_path.json")
+        self.assertIsNone(result)
+
+        mock_resource = MagicMock(spec=QuestionnaireResponse)
+        mock_resource.resource_type = "QuestionnaireResponse"
+        mock_resource.subject = MagicMock()
+        mock_resource.subject.id = "user1"
+        mock_resource.authored = "2024-06-01"
+        mock_resource.item = [
+            MagicMock(
+                spec=QuestionnaireResponseItem,
+                linkId="q1",
+                answer=[MagicMock(valueString="1")],
+            )
+        ]
+
+        with patch(
+            "spezi_data_pipeline.data_flattening.fhir_resources_flattener"
+            ".get_answer_code_and_value",
+            return_value={"code": "1", "text": "Answer 1"},
+        ):
+            result = flatten_fhir_resources([mock_resource], "survey_path.json")
+
+        self.assertIsInstance(result, FHIRDataFrame)
+        self.assertEqual(result.df.shape[0], 1)
+        self.assertEqual(result.df.iloc[0]["QuestionText"], "Question 1")
+        self.assertEqual(result.df.iloc[0]["AnswerText"], "Answer 1")
 
 
 def create_mock_observations() -> list[Observation] | str:

@@ -681,7 +681,7 @@ def extract_component_info(observation: ECGObservation) -> dict:
     for component in components:
         value_sampled_data = component.get(KeyNames.VALUE_SAMPLED_DATA.value, {})
 
-        if data := value_sampled_data.get(KeyNames.DATA.value, None) is not None:
+        if (data := value_sampled_data.get(KeyNames.DATA.value, None)) is not None:
             merged_ecg_data += data + " "
 
         if unit is None:

@@ -74,7 +74,6 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
         data_file = Path(__file__).parent.parent / "sample_data" / "sample_df.csv"
         self.sample_data = pd.read_csv(data_file)
 
-        # Ensure the EffectiveDateTime is converted correctly
         self.sample_data[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
             self.sample_data[ColumnNames.EFFECTIVE_DATE_TIME.value]
         ).dt.date
@@ -82,7 +81,6 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
             pd.DataFrame(self.sample_data), resource_type=FHIRResourceType.OBSERVATION
         )
 
-        # Set a random row's QUANTITY_VALUE to OUTLIER_VALUE as an outlier
         random_index = random.choice(self.fhir_df.df.index)
         self.fhir_df.df.at[random_index, ColumnNames.QUANTITY_VALUE.value] = (
             OUTLIER_VALUE
@@ -108,7 +106,6 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
             self.fhir_df, (LOWER_THRESHOLD, UPPER_THRESOLD)
         )
 
-        # Check that the row with the outlier value has been removed
         self.assertTrue(
             all(
                 value <= UPPER_THRESOLD
@@ -119,7 +116,6 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
             OUTLIER_VALUE not in filtered_df.df[ColumnNames.QUANTITY_VALUE.value]
         )
 
-        # Check that the number of rows is less than the original if there was indeed an outlier
         if OUTLIER_VALUE in self.fhir_df.df[ColumnNames.QUANTITY_VALUE.value].values:
             self.assertLess(len(filtered_df.df), len(self.fhir_df.df))
 
@@ -144,7 +140,6 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
         selected_data = select_data_by_dates(self.fhir_df, "2023-01-01", "2024-01-02")
         print("DataFrame after filtering by dates:", selected_data.df)
 
-        # Check that the dates in the filtered data are within the expected range
         expected_start_date = pd.to_datetime("2023-01-01").date()
         expected_end_date = pd.to_datetime("2024-01-02").date()
         selected_dates = pd.to_datetime(selected_data.df["EffectiveDateTime"]).dt.date
@@ -154,10 +149,7 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
             "Data filtering by dates did not work as expected",
         )
 
-        # Check if the filtered data contains the expected number of rows
-        expected_number_of_rows = (
-            3  # Change this to the number of expected rows in the sample_data DataFrame
-        )
+        expected_number_of_rows = 3
         self.assertEqual(
             len(selected_data.df),
             expected_number_of_rows,

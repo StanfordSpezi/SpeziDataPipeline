@@ -87,12 +87,10 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
         mock_to_csv.assert_called_once_with(filename, index=False)
 
     def test_create_filename(self):
-        # Check filename creation with index
         filename = self.exporter.create_filename("base", "user1", 1)
         expected_filename = "base_user_user1_all_dates_fig1.png"
         self.assertEqual(filename, expected_filename)
 
-        # Check without index
         filename = self.exporter.create_filename("base", "user1")
         expected_filename = "base_user_user1_all_dates.png"
         self.assertEqual(filename, expected_filename)
@@ -100,8 +98,6 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
     @patch("matplotlib.figure.Figure.savefig")
     def test_create_and_save_plot(self, mock_savefig):
         self.exporter.create_and_save_plot("plot_base")
-        # As plots creation depends on data, check calls based on expected conditions
-        # This assumes at least one plot should be created given the loaded data and user_ids
         if self.exporter.user_ids:
             mock_savefig.assert_called()
         else:

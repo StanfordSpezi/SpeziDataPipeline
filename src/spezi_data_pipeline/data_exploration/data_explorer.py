@@ -594,7 +594,9 @@ class QuestionnaireExplorer:  # pylint: disable=unused-variable
             filtered_df = fhir_dataframe.df[
                 fhir_dataframe.df[ColumnNames.USER_ID.value].isin(self.user_ids)
             ]
-            fhir_dataframe = FHIRDataFrame(filtered_df, resource_type=fhir_dataframe.resource_type)
+            fhir_dataframe = FHIRDataFrame(
+                filtered_df, resource_type=fhir_dataframe.resource_type
+            )
 
         if fhir_dataframe.df.empty:
             print("No data for the selected date range and user IDs.")
@@ -602,7 +604,9 @@ class QuestionnaireExplorer:  # pylint: disable=unused-variable
 
         plt.figure(figsize=(10, 6))
         for user_id in fhir_dataframe.df[ColumnNames.USER_ID.value].unique():
-            user_df = fhir_dataframe.df[fhir_dataframe.df[ColumnNames.USER_ID.value] == user_id]
+            user_df = fhir_dataframe.df[
+                fhir_dataframe.df[ColumnNames.USER_ID.value] == user_id
+            ]
             plt.plot(
                 user_df[ColumnNames.AUTHORED_DATE.value],
                 user_df["RiskScore"],
@@ -643,7 +647,9 @@ def visualizer_factory(  # pylint: disable=unused-variable
         return DataExplorer()
     if fhir_dataframe.resource_type == FHIRResourceType.ECG_OBSERVATION:
         return ECGExplorer()
-    if fhir_dataframe.resource_type == FHIRResourceType(FHIRResourceType.QUESTIONNAIRE_RESPONSE):
+    if fhir_dataframe.resource_type == FHIRResourceType(
+        FHIRResourceType.QUESTIONNAIRE_RESPONSE
+    ):
         if questionnaire_title is None:
             raise ValueError(
                 "Questionnaire title must be provided for QuestionnaireResponse type"

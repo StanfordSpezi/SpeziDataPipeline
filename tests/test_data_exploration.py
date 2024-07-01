@@ -25,14 +25,25 @@ Classes:
 
 # Standard library imports
 from pathlib import Path
+from datetime import datetime
 
 # Related third-party imports
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
+import matplotlib.pyplot as plt
+
 
 # Local application/library specific imports
-from spezi_data_pipeline.data_exploration.data_explorer import DataExplorer
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
+    FHIRResourceType,
+    FHIRDataFrame,
+    ColumnNames,
+)
+from spezi_data_pipeline.data_exploration.data_explorer import (
+    DataExplorer,
+    QuestionnaireExplorer,
+)
 
 
 class TestDataExplorer(unittest.TestCase):  # pylint: disable=unused-variable
@@ -80,8 +91,12 @@ class TestDataExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         self.assertEqual(visualizer.y_lower, 0)
         self.assertEqual(visualizer.y_upper, 500)
 
-    @patch("spezi_data_pipeline.data_exploration.data_explorer.DataExplorer.plot_combined")
-    @patch("spezi_data_pipeline.data_exploration.data_explorer.DataExplorer.plot_individual")
+    @patch(
+        "spezi_data_pipeline.data_exploration.data_explorer.DataExplorer.plot_combined"
+    )
+    @patch(
+        "spezi_data_pipeline.data_exploration.data_explorer.DataExplorer.plot_individual"
+    )
     def test_create_static_plot_combined(  # pylint: disable=no-self-use
         self, mock_plot_individual, mock_plot_combined
     ):
@@ -102,6 +117,84 @@ class TestDataExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         visualizer.create_static_plot(mock_fhir_df)
         mock_plot_combined.assert_called_once()
         mock_plot_individual.assert_not_called()
+
+
+class TestQuestionnaireExplorer(unittest.TestCase): # pylint: disable=unused-variable
+    """
+    Test suite for the QuestionnaireExplorer class.
+
+    This class tests the functionality of setting up a QuestionnaireExplorer instance, including setting
+    date ranges, user IDs, and generating score plots based on filtered data.
+    """
+
+    def setUp(self):
+        self.explorer = QuestionnaireExplorer("Test Questionnaire")
+        data = {
+            ColumnNames.USER_ID.value: ["user1", "user2", "user1", "user2"],
+            ColumnNames.AUTHORED_DATE.value: [
+                "2023-01-01",
+                "2023-01-02",
+                "2023-02-01",
+                "2023-02-02",
+            ],
+            ColumnNames.RISK_SCORE.value: [5, 6, 7, 8],
+            ColumnNames.RESOURCE_ID.value: ["r1", "r2", "r3", "r4"],
+            ColumnNames.SURVEY_TITLE.value: [
+                "Survey1",
+                "Survey1",
+                "Survey1",
+                "Survey1",
+            ],
+            ColumnNames.QUESTION_ID.value: ["q1", "q2", "q1", "q2"],
+            ColumnNames.QUESTION_TEXT.value: [
+                "Question 1",
+                "Question 2",
+                "Question 1",
+                "Question 2",
+            ],
+            ColumnNames.ANSWER_CODE.value: [1, 2, 3, 4],
+            ColumnNames.ANSWER_TEXT.value: [
+                "Answer 1",
+                "Answer 2",
+                "Answer 3",
+                "Answer 4",
+            ],
+        }
+        df = pd.DataFrame(data)
+        self.fhir_dataframe = FHIRDataFrame(
+            df, resource_type=FHIRResourceType.QUESTIONNAIRE_RESPONSE
+        )
+
+    def test_set_date_range(self):
+        self.explorer.set_date_range("2023-01-01", "2023-01-31")
+        self.assertEqual(
+            self.explorer.start_date, datetime.strptime("2023-01-01", "%Y-%m-%d").date()
+        )
+        self.assertEqual(
+            self.explorer.end_date, datetime.strptime("2023-01-31", "%Y-%m-%d").date()
+        )
+
+    def test_set_user_ids(self):
+        self.explorer.set_user_ids(["user1", "user2"])
+        self.assertEqual(self.explorer.user_ids, ["user1", "user2"])
+
+    def test_create_score_plot(self):
+        self.explorer.set_date_range("2023-01-01", "2023-01-31")
+        self.explorer.set_user_ids(["user1"])
+
+        fig = self.explorer.create_score_plot(self.fhir_dataframe)
+        self.assertIsNotNone(fig)
+        self.assertIsInstance(fig, plt.Figure)
+        self.assertEqual(
+            len(fig.axes[0].lines), 1
+        )  # Only one user's data should be plotted
+
+    def test_no_data(self):
+        self.explorer.set_date_range("2024-01-01", "2024-01-31")
+        self.explorer.set_user_ids(["user3"])
+
+        fig = self.explorer.create_score_plot(self.fhir_dataframe)
+        self.assertIsNone(fig)
 
 
 if __name__ == "__main__":

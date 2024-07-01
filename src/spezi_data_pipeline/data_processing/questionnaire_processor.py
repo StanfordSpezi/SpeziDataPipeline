@@ -7,14 +7,26 @@
 #
 
 """
-This module provides a collection of functions designed for the processing of questionnaire
-responses represented in the FHIR (Fast Healthcare Interoperability Resources) format. It includes
-capabilities for calculating risk scores associated with the following questionnaires:
-- Walking Impairment Questionnaire (WIQ),
-- PHQ-9
+Module for calculating risk scores based on various health questionnaires using FHIR resources.
 
-The functions are tailored to work with `FHIRDataFrame`, a custom data structure that encapsulates
-FHIR data in a pandas DataFrame.
+This module defines enumerations for different levels of severity for depression, anxiety, 
+and impairment. It includes functions to calculate risk scores for specific questionnaires 
+like PHQ-9, GAD-7, and WIQ, using the FHIRDataFrame structure from the Spezi data pipeline.
+
+Classes:
+    DepressionSeverity(Enum): Enumeration representing different levels of depression severity
+                              for PHQ-9.
+    AnxietySeverity(Enum): Enumeration representing different levels of anxiety severity for GAD-7.
+    ImpairmentSeverity(Enum): Enumeration representing different levels of impairment for WIQ.
+    SupportedQuestionnaires(Enum): Enumeration representing supported questionnaires.
+
+Functions:
+    calculate_aggregated_score(fhir_dataframe, severity_enum): Calculate the risk score for
+        questionnaires with similar logic to PHQ-9 and GAD-7.
+    calculate_wiq_score(fhir_dataframe): Calculate the risk score for the WIQ questionnaire.
+    calculate_risk_score(fhir_dataframe, questionnaire_title): Calculate the risk score based
+        on the questionnaire title.
+
 """
 
 # Standard library imports
@@ -34,7 +46,7 @@ OBJECT = "object"
 
 class DepressionSeverity(Enum):
     """
-    Enumeration representing different levels of depression severity.
+    Enumeration representing different levels of depression severity for PHQ-9.
 
     Attributes:
     NONE_MINIMAL (tuple): A tuple representing none to minimal depression with a score range of
@@ -76,16 +88,114 @@ class DepressionSeverity(Enum):
         return DepressionSeverity.INVALID.description
 
 
-def calculate_risk_score(fhir_dataframe):  # pylint: disable=unused-variable
+class AnxietySeverity(Enum):
     """
-    Calculate the risk score for grouped rows and add score interpretation.
+    Enumeration representing different levels of anxiety severity for GAD-7.
+
+    Attributes:
+    MINIMAL (tuple): A tuple representing minimal anxiety with a score range of 0 to 4.
+    MILD (tuple): A tuple representing mild anxiety with a score range of 5 to 9.
+    MODERATE (tuple): A tuple representing moderate anxiety with a score range of 10 to 14.
+    SEVERE (tuple): A tuple representing severe anxiety with a score range of 15 to 21.
+    INVALID (tuple): A tuple representing an invalid score.
+    """
+
+    MINIMAL = (0, 4, "Minimal anxiety")
+    MILD = (5, 9, "Mild anxiety")
+    MODERATE = (10, 14, "Moderate anxiety")
+    SEVERE = (15, 21, "Severe anxiety")
+    INVALID = (-1, -1, "Invalid score")
+
+    def __init__(self, min_score, max_score, description):
+        self.min_score = min_score
+        self.max_score = max_score
+        self.description = description
+
+    @staticmethod
+    def interpret_score(score):
+        """
+        Interpret the given score and return the corresponding anxiety severity description.
+
+        Parameters:
+        score (int): The score to interpret.
+
+        Returns:
+        str: The description of the corresponding anxiety severity.
+        """
+        for severity in AnxietySeverity:
+            if severity.min_score <= score <= severity.max_score:
+                return severity.description
+        return AnxietySeverity.INVALID.description
+
+
+class ImpairmentSeverity(Enum):
+    """
+    Enumeration representing different levels of impairment for WIQ.
+
+    Attributes:
+    HIGH_IMPAIRMENT (tuple): A tuple representing high impairment with a score range of 0 to 10.
+    MODERATE_IMPAIRMENT (tuple): A tuple representing moderate impairment with a score range of
+                                 20 to 50.
+    LOW_IMPAIRMENT (tuple): A tuple representing low impairment with a score range of 60 to 80.
+    NO_IMPAIRMENT (tuple): A tuple representing no impairment with a score range of 90 to 100.
+    INVALID (tuple): A tuple representing an invalid score.
+    """
+
+    HIGH_IMPAIRMENT = (0, 10, "High impairment")
+    MODERATE_IMPAIRMENT = (20, 50, "Moderate impairment")
+    LOW_IMPAIRMENT = (60, 80, "Low impairment")
+    NO_IMPAIRMENT = (90, 100, "No impairment")
+    INVALID = (-1, -1, "Invalid score")
+
+    def __init__(self, min_score, max_score, description):
+        self.min_score = min_score
+        self.max_score = max_score
+        self.description = description
+
+    @staticmethod
+    def interpret_score(score):
+        """
+        Interpret the given score and return the corresponding impairment description.
+
+        Parameters:
+        score (int): The score to interpret.
+
+        Returns:
+        str: The description of the corresponding impairment severity.
+        """
+        for severity in ImpairmentSeverity:
+            if severity.min_score <= score <= severity.max_score:
+                return severity.description
+        return ImpairmentSeverity.INVALID.description
+
+
+class SupportedQuestionnaires(Enum):
+    """
+    Enumeration representing supported questionnaires.
+
+    Attributes:
+    PHQ_9: The PHQ-9 questionnaire.
+    GAD_7: The GAD-7 questionnaire.
+    WIQ: The WIQ questionnaire.
+    """
+
+    PHQ_9 = "PHQ-9"
+    GAD_7 = "GAD-7"
+    WIQ = "WIQ"
+
+
+def calculate_aggregated_score(fhir_dataframe, severity_enum):
+    """
+    Calculate the risk score for questionnaires with similar logic to PHQ-9 and GAD-7.
 
     Parameters:
     fhir_dataframe (FHIRDataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
                                    'SurveyTitle', and 'AnswerCode'.
+    severity_enum (Enum): The enumeration class to interpret the score.
 
     Returns:
-    pd.DataFrame: The resulting dataframe with added 'RiskScore' and 'ScoreInterpretation' columns.
+    FHIRDataFrame: The resulting dataframe with added 'RiskScore' and 'ScoreInterpretation'
+                   columns.
     """
 
     if fhir_dataframe.df[ColumnNames.ANSWER_CODE.value].dtype == OBJECT:
@@ -100,7 +210,6 @@ def calculate_risk_score(fhir_dataframe):  # pylint: disable=unused-variable
 
     grouped_df = fhir_dataframe.df.groupby(
         [
-            # ColumnNames.USER_ID.value,
             ColumnNames.AUTHORED_DATE.value,
             ColumnNames.SURVEY_TITLE.value,
         ],
@@ -111,7 +220,101 @@ def calculate_risk_score(fhir_dataframe):  # pylint: disable=unused-variable
     )
 
     grouped_df["ScoreInterpretation"] = grouped_df["RiskScore"].apply(
-        DepressionSeverity.interpret_score
+        severity_enum.interpret_score
     )
 
     return FHIRDataFrame(grouped_df, fhir_dataframe.resource_type)
+
+
+def calculate_wiq_score(fhir_dataframe, severity_enum):
+    """
+    Calculate the risk score for the WIQ questionnaire.
+
+    Parameters:
+    fhir_dataframe (FHIRDataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
+                                   'SurveyTitle', and 'AnswerCode'.
+    severity_enum (Enum): The enumeration class to interpret the score.
+
+    Returns:
+    FHIRDataFrame: The resulting dataframe with added 'RiskScore' and 'ScoreInterpretation' columns.
+    """
+
+    # Mapping from distance to impairment percentage
+    wiq_mapping = {
+        50: 0,
+        150: 10,
+        300: 20,
+        600: 50,
+        900: 80,
+        1500: 100,
+    }
+
+    if fhir_dataframe.df[ColumnNames.ANSWER_CODE.value].dtype == OBJECT:
+        fhir_dataframe.df[ColumnNames.ANSWER_CODE.value] = fhir_dataframe.df[
+            ColumnNames.ANSWER_CODE.value
+        ].astype(int)
+
+    if fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value].dtype == OBJECT:
+        fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value] = pd.to_datetime(
+            fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value]
+        )
+
+    fhir_dataframe.df["ImpairmentScore"] = fhir_dataframe.df[
+        ColumnNames.ANSWER_CODE.value
+    ].map(wiq_mapping)
+
+    grouped_df = fhir_dataframe.df.groupby(
+        [
+            ColumnNames.AUTHORED_DATE.value,
+            ColumnNames.SURVEY_TITLE.value,
+        ],
+        as_index=False,
+    )["ImpairmentScore"].mean()
+    grouped_df.rename(columns={"ImpairmentScore": "RiskScore"}, inplace=True)
+
+    grouped_df["ScoreInterpretation"] = grouped_df["RiskScore"].apply(
+        severity_enum.interpret_score
+    )
+
+    return FHIRDataFrame(grouped_df, fhir_dataframe.resource_type)
+
+
+def calculate_risk_score(
+    fhir_dataframe, questionnaire_title
+):  # pylint: disable=unused-variable
+    """
+    Calculate the risk score based on the questionnaire title.
+
+    Parameters:
+    fhir_dataframe (FHIRDataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
+                                   'SurveyTitle', and 'AnswerCode'.
+    questionnaire_title (str): The title of the questionnaire to determine the calculation logic.
+
+    Returns:
+    FHIRDataFrame: The resulting dataframe with added 'RiskScore' and 'ScoreInterpretation' columns
+                  or other appropriate structure based on the questionnaire.
+    """
+
+    calculation_functions = {
+        SupportedQuestionnaires.PHQ_9.value: (
+            calculate_aggregated_score,
+            DepressionSeverity,
+        ),
+        SupportedQuestionnaires.GAD_7.value: (
+            calculate_aggregated_score,
+            AnxietySeverity,
+        ),
+        SupportedQuestionnaires.WIQ.value: (calculate_wiq_score, ImpairmentSeverity),
+        # Add other questionnaires here
+    }
+
+    if questionnaire_title in calculation_functions:
+        func, severity_enum = calculation_functions[questionnaire_title]
+        if severity_enum:
+            return func(fhir_dataframe, severity_enum)
+
+    available_options = ", ".join(calculation_functions.keys())
+    raise ValueError(
+        f"Unsupported questionnaire title: {questionnaire_title}. \
+                        Available options: {available_options}"
+    )

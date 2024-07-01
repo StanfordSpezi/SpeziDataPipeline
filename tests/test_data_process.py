@@ -7,27 +7,27 @@
 #
 
 """
-Unit tests for the `FHIRDataProcessor` class in the Spezi Data Pipeline.
+This module contains unit tests for various components of the Spezi Data Pipeline, 
+focusing on the processing and analysis of FHIR (Fast Healthcare Interoperability Resources) data. 
+The tests ensure the correct functionality of key data processing methods, including outlier
+filtering, user-specific data selection, date-specific data selection, and the calculation of
+risk scores from  questionnaire responses.
 
-This module contains unit tests for the `FHIRDataProcessor` class, ensuring that data processing,
-including outlier filtering and processing based on specific LOINC code mappings, behaves as 
-expected.
+The module defines the following unit test classes:
+1. `TestFHIRDataProcessor`: Tests for `FHIRDataProcessor` class, including:
+   - Processing FHIR data with valid inputs.
+   - Filtering outliers based on value ranges.
+   - Selecting data by user ID.
+   - Selecting data by date range.
 
-Classes:
-    `TestFHIRDataProcessor`: Contains unit tests for the `FHIRDataProcessor` class.
+2. `TestCalculateRiskScore`: Tests for `calculate_risk_score` function, including:
+   - Calculating risk scores for PHQ-9, GAD-7, and WIQ questionnaires.
+   - Handling unsupported questionnaires.
 
-Functions:
-    `setUp(self)`: Initializes any pre-requisites for the tests.
-    `test_process_fhir_data_valid_input(self)`: Tests processing of valid FHIR data.
-    `test_filter_outliers(self)`: Tests outlier filtering based on specific value ranges.
-    `test_select_data_by_user(self)`: Verifies the user ID filtering functionality.
-    `test_select_data_by_dates(self)`: Verifies the date filtering functionality.
-
-Constants:
-    `USER_ID1` (str): Example user ID used in tests.
-    `OUTLIER_VALUE` (float): Example outlier value used in tests.
-    `LOWER_THRESHOLD` (int): Lower threshold for outlier detection.
-    `UPPER_THRESOLD` (int): Upper threshold for outlier detection.
+Constants used in the tests:
+- USER_ID1: A sample user ID for testing.
+- OUTLIER_VALUE: A value used to simulate outliers in the data.
+- LOWER_THRESHOLD, UPPER_THRESHOLD: Threshold values for filtering outliers.
 """
 
 # Standard library imports
@@ -53,6 +53,14 @@ from spezi_data_pipeline.data_processing.data_processor import (
 
 from spezi_data_pipeline.data_processing.observation_processor import (
     calculate_daily_data,
+)
+
+from spezi_data_pipeline.data_processing.questionnaire_processor import (
+    calculate_risk_score,
+    SupportedQuestionnaires,
+    DepressionSeverity,
+    AnxietySeverity,
+    ImpairmentSeverity,
 )
 
 USER_ID1 = "XrftRMc358NndzcRWEQ7P2MxvabZ"
@@ -155,6 +163,116 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
             expected_number_of_rows,
             f"The number of rows after filtering should be exactly {expected_number_of_rows}.",
         )
+
+
+class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-variable
+    """
+    This class contains unit tests for the calculate_risk_score function, 
+    which computes risk scores based on different questionnaire responses.
+
+    The setUp method initializes sample data for testing purposes, including
+    data for PHQ-9, GAD-7, and WIQ questionnaires. The data is formatted into 
+    pandas DataFrames and further wrapped into FHIRDataFrames.
+
+    Methods:
+    --------
+    setUp():
+        Initializes sample data for PHQ-9, GAD-7, and WIQ questionnaires.
+    
+    test_calculate_phq9_score():
+        Tests the calculate_risk_score function for PHQ-9 questionnaire responses.
+    
+    test_calculate_gad7_score():
+        Tests the calculate_risk_score function for GAD-7 questionnaire responses.
+    
+    test_calculate_wiq_score():
+        Tests the calculate_risk_score function for WIQ questionnaire responses.
+    
+    test_unsupported_questionnaire():
+        Tests the calculate_risk_score function for handling unsupported questionnaire titles.
+    """
+    def setUp(self):
+        # Sample data for PHQ-9 and GAD-7
+        self.data_phq_gad = {
+            ColumnNames.USER_ID.value: [1, 1, 1, 1],
+            ColumnNames.AUTHORED_DATE.value: [
+                "2023-01-01",
+                "2023-01-01",
+                "2023-01-01",
+                "2023-01-01",
+            ],
+            ColumnNames.SURVEY_TITLE.value: ["PHQ-9", "PHQ-9", "PHQ-9", "PHQ-9"],
+            ColumnNames.ANSWER_CODE.value: [2, 3, 1, 4],
+        }
+        self.df_phq_gad = pd.DataFrame(self.data_phq_gad)
+        self.fhir_df_phq_gad = FHIRDataFrame(
+            self.df_phq_gad, resource_type=FHIRResourceType("QuestionnaireResponse")
+        )
+
+        # Sample data for WIQ
+        self.data_wiq = {
+            ColumnNames.USER_ID.value: [1, 1, 1, 1],
+            ColumnNames.AUTHORED_DATE.value: [
+                "2023-01-01",
+                "2023-01-01",
+                "2023-01-01",
+                "2023-01-01",
+            ],
+            ColumnNames.SURVEY_TITLE.value: ["WIQ", "WIQ", "WIQ", "WIQ"],
+            ColumnNames.ANSWER_CODE.value: [50, 150, 300, 600],
+        }
+        self.df_wiq = pd.DataFrame(self.data_wiq)
+        self.fhir_df_wiq = FHIRDataFrame(
+            self.df_wiq, resource_type=FHIRResourceType("QuestionnaireResponse")
+        )
+
+    def test_calculate_phq9_score(self):
+        result_df = calculate_risk_score(
+            self.fhir_df_phq_gad, SupportedQuestionnaires.PHQ_9.value
+        )
+        expected_score = 10
+        expected_interpretation = DepressionSeverity.MODERATE.description
+
+        self.assertEqual(result_df.df["RiskScore"].iloc[0], expected_score)
+        self.assertEqual(
+            result_df.df["ScoreInterpretation"].iloc[0], expected_interpretation
+        )
+
+    def test_calculate_gad7_score(self):
+        self.fhir_df_phq_gad.df[ColumnNames.SURVEY_TITLE.value] = "GAD-7"
+        result_df = calculate_risk_score(
+            self.fhir_df_phq_gad, SupportedQuestionnaires.GAD_7.value
+        )
+        expected_score = 10
+        expected_interpretation = AnxietySeverity.MODERATE.description
+
+        self.assertEqual(result_df.df["RiskScore"].iloc[0], expected_score)
+        self.assertEqual(
+            result_df.df["ScoreInterpretation"].iloc[0], expected_interpretation
+        )
+
+    def test_calculate_wiq_score(self):
+        result_df = calculate_risk_score(
+            self.fhir_df_wiq, SupportedQuestionnaires.WIQ.value
+        )
+        expected_score = (0 + 10 + 20 + 50) / 4
+        expected_interpretation = ImpairmentSeverity.MODERATE_IMPAIRMENT.description
+
+        self.assertEqual(result_df.df["RiskScore"].iloc[0], expected_score)
+        self.assertEqual(
+            result_df.df["ScoreInterpretation"].iloc[0], expected_interpretation
+        )
+
+    def test_unsupported_questionnaire(self):
+        with self.assertRaises(ValueError) as context:
+            calculate_risk_score(self.fhir_df_phq_gad, "Unsupported")
+
+        actual_message = " ".join(str(context.exception).split())
+        expected_message = (
+            "Unsupported questionnaire title: Unsupported. Available options: "
+            "PHQ-9, GAD-7, WIQ"
+        )
+        self.assertEqual(expected_message, actual_message)
 
 
 if __name__ == "__main__":

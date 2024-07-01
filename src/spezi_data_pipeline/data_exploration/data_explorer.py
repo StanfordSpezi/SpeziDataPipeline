@@ -43,11 +43,13 @@ from matplotlib.ticker import AutoMinorLocator
 from spezi_data_pipeline.data_processing.data_processor import (
     select_data_by_dates,
 )
+
 from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRResourceType,
     FHIRDataFrame,
     ColumnNames,
 )
+
 
 TIME_UNIT = "sec"
 ECG_MICROVOLT_UNIT = "uV"
@@ -180,7 +182,9 @@ class DataExplorer:  # pylint: disable=unused-variable
 
         return figures
 
-    def plot_combined(self, df_loinc, users_to_plot, loinc_code) -> plt.Figure:
+    def plot_combined(
+        self, df_loinc: pd.DataFrame, users_to_plot: list[str], loinc_code: str
+    ) -> plt.Figure:
         """
         Generates a combined static plot for multiple users. Each user's data
         is aggregated and plotted within the same figure. This method is useful when
@@ -224,7 +228,9 @@ class DataExplorer:  # pylint: disable=unused-variable
         plt.show()
         return fig
 
-    def plot_individual(self, df_loinc, user_id, loinc_code) -> plt.Figure:
+    def plot_individual(
+        self, df_loinc: pd.DataFrame, user_id: str, loinc_code: str
+    ) -> plt.Figure:
         """
         Generates individual static plots for each specified user. For each user, their
         data is aggregated and plotted in a separate figure. This method is called to
@@ -277,7 +283,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         return fig
 
 
-def plot_data_based_on_condition(user_df, user_id):
+def plot_data_based_on_condition(user_df: pd.DataFrame, user_id: str) -> dict:
     """
     Dynamically plots data using either plt.scatter or plt.bar based on the condition
     of duplicate `EffectiveDateTime` entries for a user. Utilizes scatter plots for datasets
@@ -533,25 +539,116 @@ class ECGExplorer:  # pylint: disable=unused-variable
         self._ax_plot(ax, np.arange(0, len(ecg) * step, step), ecg, seconds)
 
 
+class QuestionnaireExplorer:  # pylint: disable=unused-variable
+    """
+    Provides functionalities to visualize questionnaire responses by calculating risk scores and
+    generating plots.
+
+    Attributes:
+        start_date (str, optional): Start date for filtering the data for visualization.
+                                    Defaults to None.
+        end_date (str, optional): End date for filtering the data for visualization.
+                                  Defaults to None.
+        user_ids (list[str], optional): List of user IDs to filter the data for visualization.
+                                        Defaults to None.
+        questionnaire_title (str): The title of the questionnaire for score calculation. Required.
+    """
+
+    def __init__(self, questionnaire_title):
+        """Initializes the QuestionnaireExplorer with default parameters for data visualization."""
+        self.start_date = None
+        self.end_date = None
+        self.user_ids = None
+        self.questionnaire_title = questionnaire_title
+
+    def set_date_range(self, start_date: str, end_date: str):
+        """Sets the start and end dates for filtering the data before visualization."""
+        self.start_date = (
+            datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+        )
+        self.end_date = (
+            datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+        )
+
+    def set_user_ids(self, user_ids: list[str]):
+        """Sets the list of user IDs to filter the data for visualization."""
+        self.user_ids = user_ids
+
+    def create_score_plot(self, fhir_dataframe: FHIRDataFrame):
+        """
+        Calculates risk scores and generates plots based on the filtered data.
+
+        Parameters:
+            fhir_dataframe (FHIRDataFrame): The `FHIRDataFrame` containing the data
+                to be visualized.
+
+        Returns:
+            plt.Figure: The generated plot.
+        """
+        if self.start_date and self.end_date:
+            fhir_dataframe = select_data_by_dates(
+                fhir_dataframe, self.start_date, self.end_date
+            )
+
+        if self.user_ids:
+            filtered_df = fhir_dataframe.df[
+                fhir_dataframe.df[ColumnNames.USER_ID.value].isin(self.user_ids)
+            ]
+            fhir_dataframe = FHIRDataFrame(filtered_df, resource_type=fhir_dataframe.resource_type)
+
+        if fhir_dataframe.df.empty:
+            print("No data for the selected date range and user IDs.")
+            return None
+
+        plt.figure(figsize=(10, 6))
+        for user_id in fhir_dataframe.df[ColumnNames.USER_ID.value].unique():
+            user_df = fhir_dataframe.df[fhir_dataframe.df[ColumnNames.USER_ID.value] == user_id]
+            plt.plot(
+                user_df[ColumnNames.AUTHORED_DATE.value],
+                user_df["RiskScore"],
+                label=f"User {user_id}",
+                marker="o",
+            )
+
+        plt.title(f"{self.questionnaire_title} Scores Over Time")
+        plt.xlabel("Date")
+        plt.ylabel("Risk Score")
+        plt.legend()
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+
+        fig = plt.gcf()
+        plt.show()
+        return fig
+
+
 def visualizer_factory(  # pylint: disable=unused-variable
-    fhir_dataframe: FHIRDataFrame,
-) -> DataExplorer | ECGExplorer:
+    fhir_dataframe: FHIRDataFrame | pd.DataFrame, questionnaire_title: str = None
+):
     """
     Factory function to create a visualizer based on the resource_type attribute of
-    `FHIRDataFrame`.
+    `FHIRDataFrame` or `pd.DataFrame`.
 
     Parameters:
-        fhir_dataframe (FHIRDataFrame): An instance of `FHIRDataFrame` containing the
-            data and resource_type attribute.
+        fhir_dataframe (FHIRDataFrame | pd.DataFrame): An instance of `FHIRDataFrame` or
+            `pd.DataFrame` containingthe data and resource_type attribute.
+        questionnaire_title (str, optional): The title of the questionnaire for score calculation.
+            Required if resource_type is QuestionnaireResponse.
 
     Returns:
-        An instance of either DataExplorer or ECGExplorer based on the
-            resource_type.
+        An instance of DataExplorer, ECGExplorer, or QuestionnaireExplorer based on the
+        resource_type.
     """
     if fhir_dataframe.resource_type == FHIRResourceType.OBSERVATION:
         return DataExplorer()
     if fhir_dataframe.resource_type == FHIRResourceType.ECG_OBSERVATION:
         return ECGExplorer()
+    if fhir_dataframe.resource_type == FHIRResourceType(FHIRResourceType.QUESTIONNAIRE_RESPONSE):
+        if questionnaire_title is None:
+            raise ValueError(
+                "Questionnaire title must be provided for QuestionnaireResponse type"
+            )
+        return QuestionnaireExplorer(questionnaire_title)
     raise ValueError(f"Unsupported resource type: {fhir_dataframe.resource_type}")
 
 

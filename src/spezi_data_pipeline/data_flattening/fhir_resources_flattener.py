@@ -191,6 +191,8 @@ class ColumnNames(Enum):
     QUESTION_TEXT = "QuestionText"
     ANSWER_CODE = "AnswerCode"
     ANSWER_TEXT = "AnswerText"
+    RISK_SCORE = "RiskScore"
+    SCORE_INTERPRETATION = "ScoreInterpretation"
 
 
 # pylint: disable=too-few-public-methods
@@ -395,7 +397,6 @@ class ResourceFlattener:
                 ColumnNames.RESOURCE_ID,
                 ColumnNames.AUTHORED_DATE,
                 ColumnNames.SURVEY_TITLE,
-                ColumnNames.SURVEY_DATE,
                 ColumnNames.QUESTION_ID,
                 ColumnNames.QUESTION_TEXT,
                 ColumnNames.ANSWER_CODE,

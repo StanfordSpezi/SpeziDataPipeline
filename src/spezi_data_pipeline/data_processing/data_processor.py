@@ -231,16 +231,30 @@ def select_data_by_user(  # pylint: disable=unused-variable
         print(f"Validation failed: {str(e)}")
         return None
 
-    flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-        flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    if flattened_fhir_dataframe.resource_type in [
+        FHIRResourceType.OBSERVATION,
+        FHIRResourceType.ECG_OBSERVATION,
+    ]:
+        date_column = ColumnNames.EFFECTIVE_DATE_TIME.value
+    elif (
+        flattened_fhir_dataframe.resource_type
+        == FHIRResourceType.QUESTIONNAIRE_RESPONSE
+    ):
+        date_column = ColumnNames.AUTHORED_DATE.value
+    else:
+        raise ValueError("Unsupported FHIR resource type for user selection")
+
+    flattened_fhir_dataframe.df[date_column] = pd.to_datetime(
+        flattened_fhir_dataframe.df[date_column]
     ).dt.date
 
     user_df = flattened_fhir_dataframe.df[
         flattened_fhir_dataframe.df[ColumnNames.USER_ID.value] == user_id
     ]
+
     return FHIRDataFrame(
         user_df.reset_index(drop=True),
-        FHIRResourceType(flattened_fhir_dataframe.resource_type),
+        resource_type=flattened_fhir_dataframe.resource_type,
     )
 
 
@@ -270,29 +284,32 @@ def select_data_by_dates(  # pylint: disable=unused-variable
         print(f"Validation failed: {str(e)}")
         return None
 
-    flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-        flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    if flattened_fhir_dataframe.resource_type in [
+        FHIRResourceType.OBSERVATION,
+        FHIRResourceType.ECG_OBSERVATION,
+    ]:
+        date_column = ColumnNames.EFFECTIVE_DATE_TIME.value
+    elif (
+        flattened_fhir_dataframe.resource_type
+        == FHIRResourceType.QUESTIONNAIRE_RESPONSE
+    ):
+        date_column = ColumnNames.AUTHORED_DATE.value
+    else:
+        raise ValueError("Unsupported FHIR resource type for date selection")
+
+    flattened_fhir_dataframe.df[date_column] = pd.to_datetime(
+        flattened_fhir_dataframe.df[date_column]
     ).dt.date
 
-    start_datetime = pd.to_datetime(start_date).tz_localize(None)
-    end_datetime = pd.to_datetime(end_date).tz_localize(None)
-
-    flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
-        flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
-    ).dt.tz_localize(None)
+    start_datetime = pd.to_datetime(start_date).date()
+    end_datetime = pd.to_datetime(end_date).date()
 
     filtered_df = flattened_fhir_dataframe.df[
-        (
-            flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
-            >= start_datetime
-        )
-        & (
-            flattened_fhir_dataframe.df[ColumnNames.EFFECTIVE_DATE_TIME.value]
-            <= end_datetime
-        )
+        (flattened_fhir_dataframe.df[date_column] >= start_datetime)
+        & (flattened_fhir_dataframe.df[date_column] <= end_datetime)
     ]
 
     return FHIRDataFrame(
         filtered_df.reset_index(drop=True),
-        FHIRResourceType(flattened_fhir_dataframe.resource_type),
+        resource_type=flattened_fhir_dataframe.resource_type,
     )

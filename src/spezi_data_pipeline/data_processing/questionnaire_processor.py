@@ -184,7 +184,9 @@ class SupportedQuestionnaires(Enum):
     WIQ = "WIQ"
 
 
-def calculate_aggregated_score(fhir_dataframe, severity_enum):
+def calculate_aggregated_score(
+    fhir_dataframe: FHIRDataFrame, severity_enum: Enum
+) -> FHIRDataFrame:
     """
     Calculate the risk score for questionnaires with similar logic to PHQ-9 and GAD-7.
 
@@ -195,9 +197,9 @@ def calculate_aggregated_score(fhir_dataframe, severity_enum):
 
     Returns:
     FHIRDataFrame: The resulting dataframe with added 'RiskScore' and 'ScoreInterpretation'
-                   columns.
+                   columns, with rows corresponding to grouped_df and other columns populated
+                   with N/A.
     """
-
     if fhir_dataframe.df[ColumnNames.ANSWER_CODE.value].dtype == OBJECT:
         fhir_dataframe.df[ColumnNames.ANSWER_CODE.value] = fhir_dataframe.df[
             ColumnNames.ANSWER_CODE.value
@@ -215,18 +217,44 @@ def calculate_aggregated_score(fhir_dataframe, severity_enum):
         ],
         as_index=False,
     )[ColumnNames.ANSWER_CODE.value].sum()
+
     grouped_df.rename(
-        columns={ColumnNames.ANSWER_CODE.value: "RiskScore"}, inplace=True
+        columns={ColumnNames.ANSWER_CODE.value: ColumnNames.RISK_SCORE.value},
+        inplace=True,
     )
 
-    grouped_df["ScoreInterpretation"] = grouped_df["RiskScore"].apply(
-        severity_enum.interpret_score
-    )
+    grouped_df[ColumnNames.SCORE_INTERPRETATION.value] = grouped_df[
+        ColumnNames.RISK_SCORE.value
+    ].apply(severity_enum.interpret_score)
 
-    return FHIRDataFrame(grouped_df, fhir_dataframe.resource_type)
+    result_df = pd.DataFrame(columns=fhir_dataframe.df.columns)
+    result_df[ColumnNames.RISK_SCORE.value] = pd.NA
+    result_df[ColumnNames.SCORE_INTERPRETATION.value] = pd.NA
+
+    # Populate the result DataFrame with rows from grouped_df
+    new_rows = []
+    for _, row in grouped_df.iterrows():
+        new_row = {col: pd.NA for col in result_df.columns}
+        new_row.update(
+            {
+                ColumnNames.AUTHORED_DATE.value: row[ColumnNames.AUTHORED_DATE.value],
+                ColumnNames.SURVEY_TITLE.value: row[ColumnNames.SURVEY_TITLE.value],
+                ColumnNames.RISK_SCORE.value: row[ColumnNames.RISK_SCORE.value],
+                ColumnNames.SCORE_INTERPRETATION.value: row[
+                    ColumnNames.SCORE_INTERPRETATION.value
+                ],
+            }
+        )
+        new_rows.append(new_row)
+
+    result_df = pd.concat([result_df, pd.DataFrame(new_rows)], ignore_index=True)
+
+    return FHIRDataFrame(result_df, resource_type=fhir_dataframe.resource_type)
 
 
-def calculate_wiq_score(fhir_dataframe, severity_enum):
+def calculate_wiq_score(
+    fhir_dataframe: FHIRDataFrame, severity_enum: Enum
+) -> FHIRDataFrame:
     """
     Calculate the risk score for the WIQ questionnaire.
 
@@ -270,23 +298,48 @@ def calculate_wiq_score(fhir_dataframe, severity_enum):
         ],
         as_index=False,
     )["ImpairmentScore"].mean()
-    grouped_df.rename(columns={"ImpairmentScore": "RiskScore"}, inplace=True)
 
-    grouped_df["ScoreInterpretation"] = grouped_df["RiskScore"].apply(
-        severity_enum.interpret_score
+    grouped_df.rename(
+        columns={"ImpairmentScore": ColumnNames.RISK_SCORE.value}, inplace=True
     )
 
-    return FHIRDataFrame(grouped_df, fhir_dataframe.resource_type)
+    grouped_df[ColumnNames.SCORE_INTERPRETATION.value] = grouped_df[
+        ColumnNames.RISK_SCORE.value
+    ].apply(severity_enum.interpret_score)
+
+    result_df = pd.DataFrame(columns=fhir_dataframe.df.columns)
+    result_df[ColumnNames.RISK_SCORE.value] = pd.NA
+    result_df[ColumnNames.SCORE_INTERPRETATION.value] = pd.NA
+
+    # Populate the result DataFrame with rows from grouped_df
+    new_rows = []
+    for _, row in grouped_df.iterrows():
+        new_row = {col: pd.NA for col in result_df.columns}
+        new_row.update(
+            {
+                ColumnNames.AUTHORED_DATE.value: row[ColumnNames.AUTHORED_DATE.value],
+                ColumnNames.SURVEY_TITLE.value: row[ColumnNames.SURVEY_TITLE.value],
+                ColumnNames.RISK_SCORE.value: row[ColumnNames.RISK_SCORE.value],
+                ColumnNames.SCORE_INTERPRETATION.value: row[
+                    ColumnNames.SCORE_INTERPRETATION.value
+                ],
+            }
+        )
+        new_rows.append(new_row)
+
+    result_df = pd.concat([result_df, pd.DataFrame(new_rows)], ignore_index=True)
+
+    return FHIRDataFrame(result_df, resource_type=fhir_dataframe.resource_type)
 
 
-def calculate_risk_score(
-    fhir_dataframe, questionnaire_title
-):  # pylint: disable=unused-variable
+def calculate_risk_score(  # pylint: disable=unused-variable
+    fhir_dataframe: FHIRDataFrame, questionnaire_title: str
+) -> FHIRDataFrame:
     """
     Calculate the risk score based on the questionnaire title.
 
     Parameters:
-    fhir_dataframe (FHIRDataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
+    fhir_dataframe (pd.DataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
                                    'SurveyTitle', and 'AnswerCode'.
     questionnaire_title (str): The title of the questionnaire to determine the calculation logic.
 

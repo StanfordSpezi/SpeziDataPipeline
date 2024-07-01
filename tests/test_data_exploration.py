@@ -123,8 +123,8 @@ class TestQuestionnaireExplorer(unittest.TestCase): # pylint: disable=unused-var
     """
     Test suite for the QuestionnaireExplorer class.
 
-    This class tests the functionality of setting up a QuestionnaireExplorer instance, including setting
-    date ranges, user IDs, and generating score plots based on filtered data.
+    This class tests the functionality of setting up a QuestionnaireExplorer instance, including
+    setting date ranges, user IDs, and generating score plots based on filtered data.
     """
 
     def setUp(self):

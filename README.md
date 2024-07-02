@@ -137,7 +137,7 @@ firebase_access = FirebaseFHIRAccess(project_id, service_account_key_file)
 firebase_access.connect()
 ```
 
-### Observations
+## Observations
 
 ### Data Handling
 
@@ -188,7 +188,7 @@ figs = visualizer.create_static_plot(processed_fhir_dataframe)
 ![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/daily_steps_data_plot.png)
 ![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/heart_rate_data_plot.png)
 
-### ECG Observations
+## ECG Observations
 
 In a similar way, we can download and flatten ECG recordings (LOINC code: 131329) that are stored in Firestore.
 

@@ -214,6 +214,15 @@ figs = visualizer.plot_ecg_subplots(processed_fhir_dataframe)
 
 ![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/ecg_data_plot.png)
 
+
+### Questionnaire Responses Example
+The Spezi Data Pipeline also handles questionnaire responses stored as FHIR resources, facilitating the collection and analysis of questionnaire data in a standardized format.
+
+> [!NOTE]
+> 
+> In FHIR standards, the `Questionnaire` resource represents the definition of a questionnaire, including questions and possible answers, while the `QuestionnaireResponse` resource captures the responses to a completed questionnaire, containing the answers provided by a user or patient.
+
+
 ## Contributing
 
 Contributions to this project are welcome. Please make sure to read the [contribution guidelines](https://github.com/StanfordSpezi/.github/blob/main/CONTRIBUTING.md) and the [contributor covenant code of conduct](https://github.com/StanfordSpezi/.github/blob/main/CODE_OF_CONDUCT.md) first.

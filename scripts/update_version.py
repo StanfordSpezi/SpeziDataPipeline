@@ -29,6 +29,7 @@ Usage:
     `pyproject.toml`. If the tag is not valid, it will print an error message.
 """
 
+import os
 import subprocess
 import re
 import toml
@@ -42,18 +43,20 @@ def get_latest_git_tag():
     in the repository and returns it as a string.
 
     Returns:
-        str: The latest Git tag.
+        str: The latest Git tag or None if no tag is found.
     """
-    result = subprocess.run(
-        ["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True, check=True
-    )
-    tag = result.stdout.strip()
-    return tag
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True, check=True
+        )
+        tag = result.stdout.strip()
+        return tag
+    except subprocess.CalledProcessError:
+        return None
 
 
 def update_hatch_version(tag):
     """Function to update the version in the hatch configuration file"""
-
     with open("pyproject.toml", "r", encoding="utf-8") as file:
         config = toml.load(file)
 
@@ -64,9 +67,20 @@ def update_hatch_version(tag):
 
 
 if __name__ == "__main__":
-    latest_tag = get_latest_git_tag()
-    if re.match(r"^\d+\.\d+\.\d+$", latest_tag):
-        update_hatch_version(latest_tag)
-        print(f"Updated pyproject.toml with version {latest_tag}")
+    # Check if a tag is provided from the workflow_dispatch input
+    provided_tag = os.getenv("INPUT_TAG_NAME")
+
+    # Updated regex to match versions with a pattern [0-9].[0-9].[0-9] followed by any characters
+    version_regex = r"^\d+\.\d+\.\d+.*$"
+
+    if provided_tag and re.match(version_regex, provided_tag):
+        update_hatch_version(provided_tag)
+        print(f"Updated pyproject.toml with version {provided_tag}")
     else:
-        print(f"Invalid tag format: {latest_tag}")
+        latest_tag = get_latest_git_tag()
+        if latest_tag and re.match(version_regex, latest_tag):
+            update_hatch_version(latest_tag)
+            print(f"Updated pyproject.toml with version {latest_tag}")
+        else:
+            print("No valid tag found. Unable to update version.")
+            

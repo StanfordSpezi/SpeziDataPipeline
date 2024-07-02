@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'The tag name when the workflow is manually triggered.'
+        description: "The tag name when the workflow is manually triggered."
         type: string
         required: true
 
@@ -37,30 +37,21 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             if [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-b[0-9]+$ ]]; then
-              echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
-              echo "environment=test" >> $GITHUB_ENV
-              echo "version=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
-              echo "::set-output name=repo=https://test.pypi.org/legacy/"
-              echo "::set-output name=environment=test"
-              echo "::set-output name=version=${{ github.event.inputs.tag_name }}"
+              echo "::set-output name=repo::https://test.pypi.org/legacy/"
+              echo "::set-output name=environment::test"
+              echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
             else
               echo "Workflow dispatch without a valid beta tag. Failing job."
               exit 1
             fi
           elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "repo=https://upload.pypi.org/legacy/" >> $GITHUB_ENV
-            echo "environment=release" >> $GITHUB_ENV
-            echo "version=${GITHUB_REF##*/}" >> $GITHUB_ENV
-            echo "::set-output name=repo=https://upload.pypi.org/legacy/"
-            echo "::set-output name=environment=release"
-            echo "::set-output name=version=${GITHUB_REF##*/}"
+            echo "::set-output name=repo::https://upload.pypi.org/legacy/"
+            echo "::set-output name=environment::release"
+            echo "::set-output name=version::${GITHUB_REF##*/}"
           elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$'; then
-            echo "repo=https://test.pypi.org/legacy/" >> $GITHUB_ENV
-            echo "environment=test" >> $GITHUB_ENV
-            echo "version=${GITHUB_REF##*/}" >> $GITHUB_ENV
-            echo "::set-output name=repo=https://test.pypi.org/legacy/"
-            echo "::set-output name=environment=test"
-            echo "::set-output name=version=${GITHUB_REF##*/}"
+            echo "::set-output name=repo::https://test.pypi.org/legacy/"
+            echo "::set-output name=environment::test"
+            echo "::set-output name=version::${GITHUB_REF##*/}"
           else
             echo "Invalid ref for this workflow. Failing job."
             exit 1
@@ -76,6 +67,7 @@ jobs:
     environment: ${{ needs.determine_environment.outputs.environment }}
     permissions:
       id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -90,6 +82,8 @@ jobs:
           pip install hatch toml
 
       - name: Update release version
+        env:
+          INPUT_TAG_NAME: ${{ github.event.inputs.tag_name }}
         run: python scripts/update_version.py
 
       - name: Update authors
@@ -98,8 +92,20 @@ jobs:
       - name: Build package
         run: hatch build
 
+      - name: Check if version already exists on PyPI/Test PyPI
+        run: |
+          VERSION_EXISTS=$(curl -s ${{ needs.determine_environment.outputs.repo }}pypi/spezi_data_pipeline/json
+          | jq -r ".releases
+          | has(\"${{ needs.determine_environment.outputs.version }}\")")
+          if [ "$VERSION_EXISTS" = "true" ]; then
+            echo "Version already exists. Exiting."
+            exit 1
+          fi
+        env:
+          PYPI_REPOSITORY_URL: ${{ needs.determine_environment.outputs.repo }}
+          PACKAGE_VERSION: ${{ needs.determine_environment.outputs.version }}
+
       - name: Publish package distributions to PyPI/Test PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: ${{ needs.determine_environment.outputs.repo }}
-          environment: ${{ needs.determine_environment.outputs.environment }}

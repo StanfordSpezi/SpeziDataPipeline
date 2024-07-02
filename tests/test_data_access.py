@@ -7,11 +7,11 @@
 #
 
 """
-This module contains unit tests for the FirebaseFHIRAccess class, which is responsible for managing
-connections to the Firebase Firestore database in a healthcare data context, specifically for
+This module contains unit tests for the `FirebaseFHIRAccess` class, which is responsible for
+managing connections to the Firebase Firestore database in a healthcare data context for
 FHIR (Fast Healthcare Interoperability Resources) data.
 
-The tests in this module ensure that the FirebaseFHIRAccess class can handle the setup and
+The tests in this module ensure that the `FirebaseFHIRAccess` class can handle the setup and
 initialization of connections to Firestore using Firebase project credentials. It checks both
 the scenarios where the service account key file is valid and invalid, verifying the correct
 handling of authentication and connection establishment.
@@ -21,8 +21,8 @@ to isolate the tests from actual Firebase infrastructure. This approach ensures 
 can be run in any environment without needing access to real Firebase project credentials.
 
 Classes:
-    TestFirebaseFHIRAccess: Contains all unit tests for testing the connectivity and initialization
-                            capabilities of the FirebaseFHIRAccess class.
+    `TestFirebaseFHIRAccess`: Contains all unit tests for testing the connectivity and
+                              initialization capabilities of the `FirebaseFHIRAccess` class.
 """
 
 
@@ -73,16 +73,13 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_environ,
         mock_exists,
     ):
-        # Setup environment and file check to simulate CI with no service account file
         mock_environ.get.return_value = True
         mock_exists.return_value = False
         mock_environ.__contains__.return_value = False
 
-        # Instantiate and connect
         firebase_access = FirebaseFHIRAccess(self.project_id)
         firebase_access.connect()
 
-        # Verify the initialization is pointed to the emulator and project ID is set correctly
         calls = [
             ((FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),),
             ((GCLOUD_PROJECT_STRING, self.project_id),),
@@ -127,7 +124,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         FirebaseFHIRAccess object can successfully initialize and connect to the Firebase Firestore
         database.
         """
-        # dummy_key_path = "dummy_service_account_key.json"
         access = FirebaseFHIRAccess(
             project_id=self.project_id,
             service_account_key_file=self.service_account_key_file,
@@ -140,7 +136,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
 
     @patch("firebase_admin.firestore")
     def test_fetch_data_invalid_loinc_combination(self, mock_firestore):
-        # Setup for error on invalid LOINC code combination
         mock_db = MagicMock()
         mock_firestore.client.return_value = mock_db
         firebase_access = FirebaseFHIRAccess(self.project_id)
@@ -150,7 +145,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
             "users", "HealthKit", [ECG_RECORDING_LOINC_CODE, "9999-4"]
         )
 
-        # Verify expected failure on invalid combination
         self.assertIsNone(result)
 
     @patch("firebase_admin.firestore")
@@ -160,7 +154,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         firebase_access = FirebaseFHIRAccess(self.project_id)
         firebase_access.db = mock_db
 
-        # Mock collection, document, and subcollection retrieval
         mock_collection = MagicMock()
         mock_db.collection.return_value = mock_collection
         mock_user_doc = MagicMock()
@@ -168,9 +161,7 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_collection.stream.return_value = mock_user_stream
         mock_subcollection = MagicMock()
         mock_user_doc.collection.return_value = mock_subcollection
-        mock_subcollection.stream.return_value = iter(
-            []
-        )  # Simulate no data within "HealthKit"
+        mock_subcollection.stream.return_value = iter([])
 
         result = firebase_access.fetch_data(
             "users", "HealthKit", [ECG_RECORDING_LOINC_CODE]

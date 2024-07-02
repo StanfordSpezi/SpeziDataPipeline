@@ -137,7 +137,7 @@ firebase_access = FirebaseFHIRAccess(project_id, service_account_key_file)
 firebase_access.connect()
 ```
 
-### HealthKit Quantity Identifiers Example
+## Observations
 
 ### Data Handling
 
@@ -185,10 +185,10 @@ visualizer.set_date_range(selected_start_date, selected_end_date)
 figs = visualizer.create_static_plot(processed_fhir_dataframe)
 ```
 
-![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/daily_steps_data_plot.png)
-![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/heart_rate_data_plot.png)
+![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/daily_steps_data_plot.png)
+![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/heart_rate_data_plot.png)
 
-### ECG recordings Example
+## ECG Observations
 
 In a similar way, we can download and flatten ECG recordings (LOINC code: 131329) that are stored in Firestore.
 
@@ -212,7 +212,16 @@ visualizer.set_date_range(selected_start_date, selected_end_date)
 figs = visualizer.plot_ecg_subplots(processed_fhir_dataframe)
 ```
 
-![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/ecg_data_plot.png)
+![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/ecg_data_plot.png)
+
+
+### Questionnaire Responses
+The Spezi Data Pipeline also handles questionnaire responses stored as FHIR resources, facilitating the collection and analysis of questionnaire data in a standardized format. In addition, it includes calculation formulas for risk scores for certain questionnaire types based on the provided questionnaire responses.
+
+> [!NOTE]
+> 
+> In FHIR standards, the `Questionnaire` resource represents the definition of a questionnaire, including questions and possible answers, while the `QuestionnaireResponse` resource captures the responses to a completed questionnaire, containing the answers provided by a user or patient.
+
 
 ## Contributing
 

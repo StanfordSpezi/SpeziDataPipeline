@@ -7,12 +7,12 @@
 #
 
 """
-This module contains unit tests for the DataExporter class, which is part of the data_export
-module. The DataExporter class is responsible for exporting healthcare data structured as FHIR 
+This module contains unit tests for the `DataExporter` class, which is part of the data_export
+module. The `DataExporter` class is responsible for exporting healthcare data structured as FHIR 
 (Fast Healthcare Interoperability Resources) data into CSV files and generating visual plots based
 on this data.
 
-The tests in this module verify the functionality of the DataExporter by ensuring it can handle
+The tests in this module verify the functionality of the `DataExporter` by ensuring it can handle
 various scenarios related to data export and visualization. This includes tests for exporting data
 for single and multiple users,  and tests for behavior when no user ID is specified. Additional
 tests cover the functionality of saving plots with specific settings, such as file format and
@@ -24,8 +24,8 @@ DataExporter class without dependency on external files or the data visualizatio
 implementation.
 
 Classes:
-    TestDataExporter: Contains all unit tests for testing the functionalities of the DataExporter
-        class.
+    `TestDataExporter`: Contains all unit tests for testing the functionalities of the
+                        `DataExporter` class.
 """
 
 
@@ -87,12 +87,10 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
         mock_to_csv.assert_called_once_with(filename, index=False)
 
     def test_create_filename(self):
-        # Check filename creation with index
         filename = self.exporter.create_filename("base", "user1", 1)
         expected_filename = "base_user_user1_all_dates_fig1.png"
         self.assertEqual(filename, expected_filename)
 
-        # Check without index
         filename = self.exporter.create_filename("base", "user1")
         expected_filename = "base_user_user1_all_dates.png"
         self.assertEqual(filename, expected_filename)
@@ -100,8 +98,6 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
     @patch("matplotlib.figure.Figure.savefig")
     def test_create_and_save_plot(self, mock_savefig):
         self.exporter.create_and_save_plot("plot_base")
-        # As plots creation depends on data, check calls based on expected conditions
-        # This assumes at least one plot should be created given the loaded data and user_ids
         if self.exporter.user_ids:
             mock_savefig.assert_called()
         else:

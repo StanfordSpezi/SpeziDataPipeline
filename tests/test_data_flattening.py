@@ -291,8 +291,8 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
         mock_get_questionnaire_title,  # pylint: disable=unused-argument
     ):
         """
-        Tests the `get_questionnaire_title` function to ensure it correctly retrieves the questionnaire title
-        from a Phoenix-generated JSON questionnaire file.
+        Tests the `get_questionnaire_title` function to ensure it correctly retrieves the
+        questionnaire title from a Phoenix-generated JSON questionnaire file.
         """
         mock_json_load.return_value = {"title": "Test Questionnaire"}
         result = get_questionnaire_title("questionnaire_resource_path.json")

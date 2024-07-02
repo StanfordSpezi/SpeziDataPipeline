@@ -37,7 +37,8 @@ Main Components:
                                `QuestionnaireResponse`.
 - `extract_questionnaire_mappings`: Extracts question and answer mappings from a FHIR Questionnaire
                                     JSON file for easy lookup.
--  `get_questionnaire_title`: Retrieves the questionnaire title from a Phoenix-generated JSON questionnaire file.
+-  `get_questionnaire_title`: Retrieves the questionnaire title from a Phoenix-generated JSON
+                              questionnaire file.
 - `flatten_fhir_resources`: A utility function that orchestrates the flattening process, dynamically
                             selecting the appropriate flattener based on the resource type.
 """
@@ -419,10 +420,11 @@ class ResourceFlattener:
 
         Parameters:
             resources (list[Any]): A list of FHIR resource objects to be flattened. The exact type
-                                    of objects in the list should correspond to the FHIR resource
-                                    type the subclass is designed to handle.
-            questionnaire_resource_path (str): Questionnaire path used in the QuestionnaireResponseFlattener to
-                create questionnaire mappings.
+                                   of objects in the list should correspond to the FHIR resource
+                                   type the subclass is designed to handle.
+            questionnaire_resource_path (str): Questionnaire path used in the
+                                               QuestionnaireResponseFlattener to
+                                               create questionnaire mappings.
 
         Returns:
             FHIRDataFrame: A FHIRDataFrame object containing the flattened data from the resources,
@@ -464,8 +466,9 @@ class ObservationFlattener(ResourceFlattener):
 
         Parameters:
             resources (list[Observation]): A collection of FHIR Observation resources to be
-                flattened.
-            questionnaire_resource_path (str): Questionnaire path not relevant to Observation flattener.
+                                            flattened.
+            questionnaire_resource_path (str): Questionnaire path not relevant to Observation
+                                                flattener.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured data extracted from the input
@@ -723,8 +726,8 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         Parameters:
             resources (list[QuestionnaireResponse]): A collection of QuestionnaireResponse
                 resources.
-            questionnaire_resource_path (str): The path to Phoenix-generated JSON questionnaire used to extract
-                relevant mappings.
+            questionnaire_resource_path (str): The path to Phoenix-generated JSON questionnaire
+                used to extract relevant mappings.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured QuestionnaireResponse data from the

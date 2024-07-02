@@ -209,7 +209,7 @@ class TestQuestionnaireExplorer(unittest.TestCase):  # pylint: disable=unused-va
             ],
             ColumnNames.RISK_SCORE.value: [5, 6, 7, 8],
             ColumnNames.RESOURCE_ID.value: ["r1", "r2", "r3", "r4"],
-            ColumnNames.SURVEY_TITLE.value: [
+            ColumnNames.QUESTIONNAIRE_TITLE.value: [
                 "Survey1",
                 "Survey1",
                 "Survey1",

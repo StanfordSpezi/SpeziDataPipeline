@@ -192,7 +192,7 @@ def calculate_aggregated_score(
 
     Parameters:
     fhir_dataframe (FHIRDataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
-                                   'SurveyTitle', and 'AnswerCode'.
+                                   'QuestionnaireTitle', and 'AnswerCode'.
     severity_enum (Enum): The enumeration class to interpret the score.
 
     Returns:
@@ -213,7 +213,7 @@ def calculate_aggregated_score(
     grouped_df = fhir_dataframe.df.groupby(
         [
             ColumnNames.AUTHORED_DATE.value,
-            ColumnNames.SURVEY_TITLE.value,
+            ColumnNames.QUESTIONNAIRE_TITLE.value,
         ],
         as_index=False,
     )[ColumnNames.ANSWER_CODE.value].sum()
@@ -238,7 +238,9 @@ def calculate_aggregated_score(
         new_row.update(
             {
                 ColumnNames.AUTHORED_DATE.value: row[ColumnNames.AUTHORED_DATE.value],
-                ColumnNames.SURVEY_TITLE.value: row[ColumnNames.SURVEY_TITLE.value],
+                ColumnNames.QUESTIONNAIRE_TITLE.value: row[
+                    ColumnNames.QUESTIONNAIRE_TITLE.value
+                ],
                 ColumnNames.RISK_SCORE.value: row[ColumnNames.RISK_SCORE.value],
                 ColumnNames.SCORE_INTERPRETATION.value: row[
                     ColumnNames.SCORE_INTERPRETATION.value
@@ -260,7 +262,7 @@ def calculate_wiq_score(
 
     Parameters:
     fhir_dataframe (FHIRDataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
-                                   'SurveyTitle', and 'AnswerCode'.
+                                   'QuestionnaireTitle', and 'AnswerCode'.
     severity_enum (Enum): The enumeration class to interpret the score.
 
     Returns:
@@ -294,7 +296,7 @@ def calculate_wiq_score(
     grouped_df = fhir_dataframe.df.groupby(
         [
             ColumnNames.AUTHORED_DATE.value,
-            ColumnNames.SURVEY_TITLE.value,
+            ColumnNames.QUESTIONNAIRE_TITLE.value,
         ],
         as_index=False,
     )["ImpairmentScore"].mean()
@@ -318,7 +320,9 @@ def calculate_wiq_score(
         new_row.update(
             {
                 ColumnNames.AUTHORED_DATE.value: row[ColumnNames.AUTHORED_DATE.value],
-                ColumnNames.SURVEY_TITLE.value: row[ColumnNames.SURVEY_TITLE.value],
+                ColumnNames.QUESTIONNAIRE_TITLE.value: row[
+                    ColumnNames.QUESTIONNAIRE_TITLE.value
+                ],
                 ColumnNames.RISK_SCORE.value: row[ColumnNames.RISK_SCORE.value],
                 ColumnNames.SCORE_INTERPRETATION.value: row[
                     ColumnNames.SCORE_INTERPRETATION.value
@@ -340,7 +344,7 @@ def calculate_risk_score(  # pylint: disable=unused-variable
 
     Parameters:
     fhir_dataframe (pd.DataFrame): The input dataframe with columns 'UserId', 'AuthoredDate',
-                                   'SurveyTitle', and 'AnswerCode'.
+                                   'QuestionnaireTitle', and 'AnswerCode'.
     questionnaire_title (str): The title of the questionnaire to determine the calculation logic.
 
     Returns:

@@ -167,30 +167,31 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
 
 class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-variable
     """
-    This class contains unit tests for the calculate_risk_score function, 
+    This class contains unit tests for the calculate_risk_score function,
     which computes risk scores based on different questionnaire responses.
 
     The setUp method initializes sample data for testing purposes, including
-    data for PHQ-9, GAD-7, and WIQ questionnaires. The data is formatted into 
+    data for PHQ-9, GAD-7, and WIQ questionnaires. The data is formatted into
     pandas DataFrames and further wrapped into FHIRDataFrames.
 
     Methods:
     --------
     setUp():
         Initializes sample data for PHQ-9, GAD-7, and WIQ questionnaires.
-    
+
     test_calculate_phq9_score():
         Tests the calculate_risk_score function for PHQ-9 questionnaire responses.
-    
+
     test_calculate_gad7_score():
         Tests the calculate_risk_score function for GAD-7 questionnaire responses.
-    
+
     test_calculate_wiq_score():
         Tests the calculate_risk_score function for WIQ questionnaire responses.
-    
+
     test_unsupported_questionnaire():
         Tests the calculate_risk_score function for handling unsupported questionnaire titles.
     """
+
     def setUp(self):
         # Sample data for PHQ-9 and GAD-7
         self.data_phq_gad = {
@@ -201,7 +202,7 @@ class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-varia
                 "2023-01-01",
                 "2023-01-01",
             ],
-            ColumnNames.SURVEY_TITLE.value: ["PHQ-9", "PHQ-9", "PHQ-9", "PHQ-9"],
+            ColumnNames.QUESTIONNAIRE_TITLE.value: ["PHQ-9", "PHQ-9", "PHQ-9", "PHQ-9"],
             ColumnNames.ANSWER_CODE.value: [2, 3, 1, 4],
         }
         self.df_phq_gad = pd.DataFrame(self.data_phq_gad)
@@ -218,7 +219,7 @@ class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-varia
                 "2023-01-01",
                 "2023-01-01",
             ],
-            ColumnNames.SURVEY_TITLE.value: ["WIQ", "WIQ", "WIQ", "WIQ"],
+            ColumnNames.QUESTIONNAIRE_TITLE.value: ["WIQ", "WIQ", "WIQ", "WIQ"],
             ColumnNames.ANSWER_CODE.value: [50, 150, 300, 600],
         }
         self.df_wiq = pd.DataFrame(self.data_wiq)
@@ -239,7 +240,7 @@ class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-varia
         )
 
     def test_calculate_gad7_score(self):
-        self.fhir_df_phq_gad.df[ColumnNames.SURVEY_TITLE.value] = "GAD-7"
+        self.fhir_df_phq_gad.df[ColumnNames.QUESTIONNAIRE_TITLE.value] = "GAD-7"
         result_df = calculate_risk_score(
             self.fhir_df_phq_gad, SupportedQuestionnaires.GAD_7.value
         )

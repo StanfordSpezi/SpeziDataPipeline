@@ -58,7 +58,7 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     extract_questionnaire_mappings,
     flatten_fhir_resources,
     get_answer_code_and_value,
-    get_survey_title,
+    get_questionnaire_title,
 )
 
 # pylint: enable=duplicate-code
@@ -174,7 +174,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
     @patch(
         "builtins.open",
         new_callable=unittest.mock.mock_open,
-        read_data='{"title": "Test Survey"}',
+        read_data='{"title": "Test Questionnaire"}',
     )
     def test_flatten(
         self, mock_open, mock_extract_mappings  # pylint: disable=unused-argument
@@ -205,7 +205,9 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
             ".get_answer_code_and_value",
             return_value={"code": "1", "text": "Answer 1"},
         ):
-            result = self.flattener.flatten([mock_response], "survey_path.json")
+            result = self.flattener.flatten(
+                [mock_response], "questionnaire_resource_path.json"
+            )
 
         self.assertIsInstance(result, FHIRDataFrame)
         self.assertEqual(result.df.shape[0], 1)
@@ -235,7 +237,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
 
         flattener = QuestionnaireResponseFlattener()
         result = flattener.flatten(
-            resources, survey_path="Resources/SocialSupportQuestionnaire.json"
+            resources, questionnaire_resource_path="Resources/SocialSupportQuestionnaire.json"
         )
 
         self.assertIsNotNone(result, "The resulting DataFrame should not be None")
@@ -274,27 +276,27 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
         self.assertEqual(result["text"], "Test Answer")
 
     @patch(
-        "spezi_data_pipeline.data_flattening.fhir_resources_flattener.get_survey_title"
+        "spezi_data_pipeline.data_flattening.fhir_resources_flattener.get_questionnaire_title"
     )
     @patch(
         "builtins.open",
         new_callable=unittest.mock.mock_open,
-        read_data='{"title": "Test Survey"}',
+        read_data='{"title": "Test Questionnaire"}',
     )
     @patch("json.load")
-    def test_get_survey_title(
+    def test_get_questionnaire_title(
         self,
         mock_json_load,
         mock_open,  # pylint: disable=unused-argument
-        mock_get_survey_title,  # pylint: disable=unused-argument
+        mock_get_questionnaire_title,  # pylint: disable=unused-argument
     ):
         """
-        Tests the get_survey_title function to ensure it correctly retrieves the survey title
-        from a Phoenix-generated JSON survey file.
+        Tests the `get_questionnaire_title` function to ensure it correctly retrieves the questionnaire title
+        from a Phoenix-generated JSON questionnaire file.
         """
-        mock_json_load.return_value = {"title": "Test Survey"}
-        result = get_survey_title("survey_path.json")
-        self.assertEqual(result, "Test Survey")
+        mock_json_load.return_value = {"title": "Test Questionnaire"}
+        result = get_questionnaire_title("questionnaire_resource_path.json")
+        self.assertEqual(result, "Test Questionnaire")
 
     @patch(
         "spezi_data_pipeline.data_flattening.fhir_resources_flattener.open",
@@ -318,7 +320,9 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
                 }
             ]
         }
-        question_map, answer_map = extract_questionnaire_mappings("survey_path.json")
+        question_map, answer_map = extract_questionnaire_mappings(
+            "questionnaire_resource_path.json"
+        )
         self.assertEqual(question_map["q1"], "Question 1")
         self.assertEqual(answer_map["q1"]["Answer 1"], "Answer 1")
 
@@ -339,7 +343,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
             {"q1": {"1": "Answer 1"}},
         )
 
-        result = flatten_fhir_resources([], "survey_path.json")
+        result = flatten_fhir_resources([], "questionnaire_resource_path.json")
         self.assertIsNone(result)
 
         mock_resource = MagicMock(spec=QuestionnaireResponse)
@@ -360,7 +364,9 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
             ".get_answer_code_and_value",
             return_value={"code": "1", "text": "Answer 1"},
         ):
-            result = flatten_fhir_resources([mock_resource], "survey_path.json")
+            result = flatten_fhir_resources(
+                [mock_resource], "questionnaire_resource_path.json"
+            )
 
         self.assertIsInstance(result, FHIRDataFrame)
         self.assertEqual(result.df.shape[0], 1)

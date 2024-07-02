@@ -31,13 +31,13 @@ Main Components:
                                                       codings.
 - `QuestionnaireResponseFlattener`: Flattens `QuestionnaireResponse` resources into a DataFrame,
                                     mapping questions and answers to their respective text using
-                                    Phoenix-generated survey JSON files.
+                                    Phoenix-generated questionnaire JSON files.
 
 - `get_answer_code_and_value`: Retrieves the answer code and text for a given item from the 
                                `QuestionnaireResponse`.
 - `extract_questionnaire_mappings`: Extracts question and answer mappings from a FHIR Questionnaire
                                     JSON file for easy lookup.
--  `get_survey_title`: Retrieves the survey title from a Phoenix-generated JSON survey file.
+-  `get_questionnaire_title`: Retrieves the questionnaire title from a Phoenix-generated JSON questionnaire file.
 - `flatten_fhir_resources`: A utility function that orchestrates the flattening process, dynamically
                             selecting the appropriate flattener based on the resource type.
 """
@@ -160,9 +160,8 @@ class ColumnNames(Enum):
         ECG_RECORDING_UNIT: Unit for ECG recording data.
         ECG_RECORDING: ECG recording data.
         AUTHORED_DATE: The date when the QuestionnaireResponse was authored or completed.
-        SURVEY_TITLE: The title of the survey or questionnaire.
-        SURVEY_DATE: The date when the survey was conducted or the date relevant to the survey.
-        QUESTION_ID: The unique identifier for a specific question within the survey.
+        QUESTIONNAIRE_TITLE: The title of the questionnaire.
+        QUESTION_ID: The unique identifier for a specific question within the questionnaire.
         QUESTION_TEXT: The text or content of the question being asked.
         ANSWER_TEXT: The text or content of the respondent's answer.
     """
@@ -185,8 +184,7 @@ class ColumnNames(Enum):
     ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
     ECG_RECORDING = "ECGRecording"
     AUTHORED_DATE = "AuthoredDate"
-    SURVEY_TITLE = "SurveyTitle"
-    SURVEY_DATE = "Date"
+    QUESTIONNAIRE_TITLE = "QuestionnaireTitle"
     QUESTION_ID = "QuestionId"
     QUESTION_TEXT = "QuestionText"
     ANSWER_CODE = "AnswerCode"
@@ -396,7 +394,7 @@ class ResourceFlattener:
                 ColumnNames.USER_ID,
                 ColumnNames.RESOURCE_ID,
                 ColumnNames.AUTHORED_DATE,
-                ColumnNames.SURVEY_TITLE,
+                ColumnNames.QUESTIONNAIRE_TITLE,
                 ColumnNames.QUESTION_ID,
                 ColumnNames.QUESTION_TEXT,
                 ColumnNames.ANSWER_CODE,
@@ -408,7 +406,7 @@ class ResourceFlattener:
             raise ValueError(f"Unsupported resource type: {resource_type.name}")
 
     def flatten(
-        self, resources: list[Any], survey_path: str | None = None
+        self, resources: list[Any], questionnaire_resource_path: str | None = None
     ) -> FHIRDataFrame:
         """
         Abstract method intended to transform a list of FHIR resources into a flattened
@@ -423,8 +421,8 @@ class ResourceFlattener:
             resources (list[Any]): A list of FHIR resource objects to be flattened. The exact type
                                     of objects in the list should correspond to the FHIR resource
                                     type the subclass is designed to handle.
-            survey_path (str): Survey path used in the QuestionnaireResponseFlattener to
-                create survey mappings.
+            questionnaire_resource_path (str): Questionnaire path used in the QuestionnaireResponseFlattener to
+                create questionnaire mappings.
 
         Returns:
             FHIRDataFrame: A FHIRDataFrame object containing the flattened data from the resources,
@@ -456,7 +454,9 @@ class ObservationFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.OBSERVATION)
 
     def flatten(
-        self, resources: list[Observation], survey_path: str | None = None
+        self,
+        resources: list[Observation],
+        questionnaire_resource_path: str | None = None,
     ) -> FHIRDataFrame:
         """
         Converts a list of FHIR Observation resources into a structured DataFrame.
@@ -465,7 +465,7 @@ class ObservationFlattener(ResourceFlattener):
         Parameters:
             resources (list[Observation]): A collection of FHIR Observation resources to be
                 flattened.
-            survey_path (str): Survey path not relevant to Observation flattener.
+            questionnaire_resource_path (str): Questionnaire path not relevant to Observation flattener.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured data extracted from the input
@@ -538,7 +538,7 @@ class ECGObservationFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.ECG_OBSERVATION)
 
     def flatten(
-        self, resources: list[ECGObservation], survey_path: str = None
+        self, resources: list[ECGObservation], questionnaire_resource_path: str = None
     ) -> FHIRDataFrame:
         """
         Flattens a list of ECG Observation resources, extracting ECG data and related metrics
@@ -546,7 +546,7 @@ class ECGObservationFlattener(ResourceFlattener):
 
         Parameters:
             resources (list[ECGObservation]): A collection of FHIR ECG Observation resources.
-            survey_path (str): Survey path not relevant to ECG flattener.
+            questionnaire_resource_path (str): Questionnaire path not relevant to ECG flattener.
 
         Returns:
             FHIRDataFrame: A DataFrame containing structured ECG data from the input resources.
@@ -699,7 +699,7 @@ def extract_component_info(observation: ECGObservation) -> dict:
 class QuestionnaireResponseFlattener(ResourceFlattener):
     """
     Flattens QuestionnaireResponse and creates a structured DataFrame by mapping
-    question and answer IDs to the original Phoenix-generated surveys.
+    question and answer IDs to the original Phoenix-generated questionnaires.
 
     Inherits:
         ResourceFlattener: The base class providing foundational flattening functionality.
@@ -712,7 +712,9 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         super().__init__(FHIRResourceType.QUESTIONNAIRE_RESPONSE)
 
     def flatten(
-        self, resources: list[QuestionnaireResponse], survey_path: str = None
+        self,
+        resources: list[QuestionnaireResponse],
+        questionnaire_resource_path: str = None,
     ) -> FHIRDataFrame:
         """
         Flattens a list of QuestionnaireResponse resources, extracting all question and answers
@@ -721,7 +723,7 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
         Parameters:
             resources (list[QuestionnaireResponse]): A collection of QuestionnaireResponse
                 resources.
-            survey_path (str): The path to Phoenix-generated JSON survey used to extract
+            questionnaire_resource_path (str): The path to Phoenix-generated JSON questionnaire used to extract
                 relevant mappings.
 
         Returns:
@@ -729,11 +731,11 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
                 input resources.
         """
 
-        if not survey_path:
-            print("The path(s) to Phoenix-generated JSON surveys is missing.")
+        if not questionnaire_resource_path:
+            print("The path(s) to Phoenix-generated JSON questionnaires is missing.")
             return None
         all_question_mappings, all_answer_mappings = extract_questionnaire_mappings(
-            survey_path
+            questionnaire_resource_path
         )
         flattened_data = []
 
@@ -753,7 +755,9 @@ class QuestionnaireResponseFlattener(ResourceFlattener):
                         response, KeyNames.ID.value, None
                     ),
                     ColumnNames.AUTHORED_DATE.value: response.authored,
-                    ColumnNames.SURVEY_TITLE.value: get_survey_title(survey_path),
+                    ColumnNames.QUESTIONNAIRE_TITLE.value: get_questionnaire_title(
+                        questionnaire_resource_path
+                    ),
                     ColumnNames.QUESTION_ID.value: question_id,
                     ColumnNames.QUESTION_TEXT.value: question_text,
                     ColumnNames.ANSWER_CODE.value: answer_details["code"],
@@ -927,17 +931,17 @@ def extract_options(answer_options: list) -> dict:
     return answer_map
 
 
-def get_survey_title(survey_path: str) -> str:
+def get_questionnaire_title(questionnaire_resource_path: str) -> str:
     """
-    Gets the survey title from a Phoenix-generated JSON survey file.
+    Gets the questionnaire title from a Phoenix-generated JSON questionnaire file.
 
     Parameters:
-        survey_path (str): The path to Phoenix-generated JSON survey.
+        questionnaire_resource_path (str): The path to Phoenix-generated JSON questionnaire.
 
     Returns:
-        str: The survey title.
+        str: The questionnaire title.
     """
-    with open(survey_path, "r", encoding=ENCODING) as file:
+    with open(questionnaire_resource_path, "r", encoding=ENCODING) as file:
         title_json = json.load(file)
         if title := title_json.get(KeyNames.TITLE.value):
             return title
@@ -946,7 +950,7 @@ def get_survey_title(survey_path: str) -> str:
 
 def flatten_fhir_resources(  # pylint: disable=unused-variable
     resources: list[Any],
-    survey_path: str = None,
+    questionnaire_resource_path: str = None,
 ) -> FHIRDataFrame | None:
     """
     Flattens a list of FHIR resources into a structured DataFrame.
@@ -957,7 +961,7 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
 
     Parameters:
         resources (list[Any]): A list of FHIR resource objects to be flattened.
-        survey_path (str): The path to Phoenix-generated JSON survey used to
+        questionnaire_resource_path (str): The path to Phoenix-generated JSON questionnaire used to
             extract relevant mappings.
 
     Returns:
@@ -988,4 +992,4 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
     else:
         raise ValueError(f"No flattener found for resource type: {resource_type}")
 
-    return flattener.flatten(resources, survey_path)
+    return flattener.flatten(resources, questionnaire_resource_path)

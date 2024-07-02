@@ -137,7 +137,7 @@ firebase_access = FirebaseFHIRAccess(project_id, service_account_key_file)
 firebase_access.connect()
 ```
 
-### HealthKit Quantity Identifiers Example
+### Observations
 
 ### Data Handling
 
@@ -188,7 +188,7 @@ figs = visualizer.create_static_plot(processed_fhir_dataframe)
 ![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/daily_steps_data_plot.png)
 ![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/heart_rate_data_plot.png)
 
-### ECG recordings Example
+### ECG Observations
 
 In a similar way, we can download and flatten ECG recordings (LOINC code: 131329) that are stored in Firestore.
 
@@ -215,8 +215,8 @@ figs = visualizer.plot_ecg_subplots(processed_fhir_dataframe)
 ![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/tree/main/Figures/ecg_data_plot.png)
 
 
-### Questionnaire Responses Example
-The Spezi Data Pipeline also handles questionnaire responses stored as FHIR resources, facilitating the collection and analysis of questionnaire data in a standardized format.
+### Questionnaire Responses
+The Spezi Data Pipeline also handles questionnaire responses stored as FHIR resources, facilitating the collection and analysis of questionnaire data in a standardized format. In addition, it includes calculation formulas for risk scores for certain questionnaire types based on the provided questionnaire responses.
 
 > [!NOTE]
 > 

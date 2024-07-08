@@ -7,7 +7,7 @@
 #
 
 """
-This module provides test cases for the `DataExplorer`, `ECGExplorer`, and `QuestionnaireExplorer`
+This module provides test cases for the `DataExplorer`, `ECGExplorer`, and `QuestionnaireResponseExplorer`
 classes from the data_exploration module.
 
 The tests focus on the initialization and configuration of the explorer instances, including
@@ -22,7 +22,7 @@ plotting libraries.
 
 Classes:
     `TestDataExplorer`: Contains all the unit tests for testing the `DataExplorer` functionalities.
-    `TestQuestionnaireExplorer`: Contains all the unit tests for testing the `QuestionnaireExplorer`
+    `TestQuestionnaireResponseExplorerExplorer`: Contains all the unit tests for testing the `QuestionnaireResponseExplorer`
                                  functionalities.
     `TestECGExplorer`: Contains all the unit tests for testing the `ECGExplorer` functionalities.
 """
@@ -47,7 +47,7 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
 from spezi_data_pipeline.data_exploration.data_explorer import (
     DataExplorer,
     ECGExplorer,
-    QuestionnaireExplorer,
+    QuestionnaireResponseExplorer,
 )
 
 USER_ID1 = "user1"
@@ -189,16 +189,16 @@ class TestECGExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         self.assertEqual(figs, [])
 
 
-class TestQuestionnaireExplorer(unittest.TestCase):  # pylint: disable=unused-variable
+class TestQuestionnaireResponseExplorer(unittest.TestCase):  # pylint: disable=unused-variable
     """
-    Test suite for the QuestionnaireExplorer class.
+    Test suite for the QuestionnaireResponseExplorer class.
 
-    This class tests the functionality of setting up a QuestionnaireExplorer instance, including
+    This class tests the functionality of setting up a QuestionnaireResponseExplorer instance, including
     setting date ranges, user IDs, and generating score plots based on filtered data.
     """
 
     def setUp(self):
-        self.explorer = QuestionnaireExplorer("Test Questionnaire")
+        self.explorer = QuestionnaireResponseExplorer("Test Questionnaire")
         data = {
             ColumnNames.USER_ID.value: [USER_ID1, "user2", USER_ID1, "user2"],
             ColumnNames.AUTHORED_DATE.value: [

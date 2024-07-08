@@ -94,9 +94,17 @@ jobs:
 
       - name: Check if version already exists on PyPI/Test PyPI
         run: |
-          RESPONSE=$(curl -s ${PYPI_REPOSITORY_URL}pypi/spezi_data_pipeline/json)
+          run: |
+          REPO_URL=${{ needs.determine_environment.outputs.repo }}
+          PACKAGE_VERSION=${{ needs.determine_environment.outputs.version }}
+          if [ "$REPO_URL" == "https://upload.pypi.org/legacy/" ]; then
+            PYPI_URL="https://pypi.org/pypi/spezi_data_pipeline/json"
+          else
+            PYPI_URL="https://test.pypi.org/pypi/spezi_data_pipeline/json"
+          fi
+          RESPONSE=$(curl -s $PYPI_URL)
           echo "Response from PyPI/Test PyPI: $RESPONSE"
-          VERSION_EXISTS=$(echo $RESPONSE | jq -r ".releases | has(\"${PACKAGE_VERSION}\")")
+          VERSION_EXISTS=$(echo $RESPONSE | jq -r ".releases | has(\"$PACKAGE_VERSION\")")
           if [ "$VERSION_EXISTS" = "true" ]; then
             echo "Version already exists. Exiting."
             exit 1

@@ -7,21 +7,25 @@
 #
 
 """
-This module provides tools for visualizing healthcare data, focusing on FHIR data visualization and
-specifically extending to electrocardiogram (ECG) data exploration.
+This module provides tools for visualizing healthcare data, focusing on FHIR data visualization
+and specifically extending to electrocardiogram (ECG) data exploration.
 
 Classes:
 - `DataExplorer`: Provides functionalities to visualize FHIR data, supporting various filtering
                 options and the ability to generate static plots either combined or separate for
                 multiple users.
-- `ECGExplorer`: Extends `DataExplorer` to specialize in visualizing ECG data, offering methods to
+- `ECGExplorer`: Provides functionalitites to visualize ECG data, offering methods to
                plot individual ECG leads and configure specific visualization parameters.
+- `QuestionnaireResponseExplorer`: Provides functionalitites to visualize risk scores calculated
+                                   from the questionnaire responses of specific `Questionnaire`
+                                   resources (e.g., PHQ-9)
+
 
 Functions:
 - `plot_data_based_on_condition`: Dynamically plots data using scatter or bar plots based on the
   condition of duplicate `EffectiveDateTime` entries for a user.
-- `visualizer_factory`: Factory function to create either a `DataExplorer` or `ECGExplorer` instance
-  based on the resource_type attribute of a given `FHIRDataFrame`.
+- `visualizer_factory`: Factory function to create either a `DataExplorer` or `ECGExplorer`
+                        instance based on the resource_type attribute of a given `FHIRDataFrame`.
 - `explore_total_records_number`: Creates a bar plot showing the count of rows with the same
                                 LoincCode column value within a specified date range and for
                                 specified user IDs.
@@ -539,7 +543,7 @@ class ECGExplorer:  # pylint: disable=unused-variable
         self._ax_plot(ax, np.arange(0, len(ecg) * step, step), ecg, seconds)
 
 
-class QuestionnaireExplorer:  # pylint: disable=unused-variable
+class QuestionnaireResponseExplorer:  # pylint: disable=unused-variable
     """
     Provides functionalities to visualize questionnaire responses by calculating risk scores and
     generating plots.
@@ -555,7 +559,10 @@ class QuestionnaireExplorer:  # pylint: disable=unused-variable
     """
 
     def __init__(self, questionnaire_title):
-        """Initializes the QuestionnaireExplorer with default parameters for data visualization."""
+        """
+        Initializes the QuestionnaireResponseExplorer with default parameters for data
+        visualization.
+        """
         self.start_date = None
         self.end_date = None
         self.user_ids = None
@@ -640,7 +647,7 @@ def visualizer_factory(  # pylint: disable=unused-variable
             Required if resource_type is QuestionnaireResponse.
 
     Returns:
-        An instance of DataExplorer, ECGExplorer, or QuestionnaireExplorer based on the
+        An instance of DataExplorer, ECGExplorer, or QuestionnaireResponseExplorer based on the
         resource_type.
     """
     if fhir_dataframe.resource_type == FHIRResourceType.OBSERVATION:
@@ -654,7 +661,7 @@ def visualizer_factory(  # pylint: disable=unused-variable
             raise ValueError(
                 "Questionnaire title must be provided for QuestionnaireResponse type"
             )
-        return QuestionnaireExplorer(questionnaire_title)
+        return QuestionnaireResponseExplorer(questionnaire_title)
     raise ValueError(f"Unsupported resource type: {fhir_dataframe.resource_type}")
 
 

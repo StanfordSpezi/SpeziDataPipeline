@@ -12,9 +12,6 @@ SPDX-License-Identifier: MIT
 
 [![Build and Test](https://github.com/StanfordSpezi/SpeziDataPipeline/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/StanfordSpezi/SpeziDataPipeline/actions/workflows/build-and-test.yml)
 [![codecov](https://codecov.io/gh/StanfordSpezi/SpeziDataPipeline/branch/main/graph/badge.svg)](https://codecov.io/gh/StanfordSpezi/SpeziDataPipeline)
-<a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipeline/blob/main/SpeziDataPipeline.ipynb">
-<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a>
 
 The Spezi Data Pipeline offers a comprehensive suite of tools designed to facilitate the management, analysis, and visualization of healthcare data from Firebase Firestore. By adhering to the Fast Healthcare Interoperability Resources (FHIR) standards, this platform ensures that data handling remains robust, standardized, and interoperable across different systems and software.
 

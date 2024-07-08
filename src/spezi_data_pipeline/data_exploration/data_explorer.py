@@ -559,7 +559,10 @@ class QuestionnaireResponseExplorer:  # pylint: disable=unused-variable
     """
 
     def __init__(self, questionnaire_title):
-        """Initializes the QuestionnaireResponseExplorer with default parameters for data visualization."""
+        """
+        Initializes the QuestionnaireResponseExplorer with default parameters for data
+        visualization.
+        """
         self.start_date = None
         self.end_date = None
         self.user_ids = None

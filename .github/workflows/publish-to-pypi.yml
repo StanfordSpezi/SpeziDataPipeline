@@ -94,9 +94,8 @@ jobs:
 
       - name: Check if version already exists on PyPI/Test PyPI
         run: |
-          VERSION_EXISTS=$(curl -s ${{ needs.determine_environment.outputs.repo }}pypi/spezi_data_pipeline/json
-          | jq -r ".releases
-          | has(\"${{ needs.determine_environment.outputs.version }}\")")
+          VERSION_EXISTS=$(curl -s ${{ needs.determine_environment.outputs.repo }}pypi/spezi_data_pipeline/json | \
+            jq -r ".releases | has(\"${{ needs.determine_environment.outputs.version }}\")")
           if [ "$VERSION_EXISTS" = "true" ]; then
             echo "Version already exists. Exiting."
             exit 1

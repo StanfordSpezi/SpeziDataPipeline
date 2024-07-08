@@ -8,11 +8,11 @@ SPDX-License-Identifier: MIT
 
 -->
 
-# Spezi Data Pipeline Template
+# Spezi Data Pipeline
 
-[![Build and Test](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/actions/workflows/build-and-test.yml)
-[![codecov](https://codecov.io/gh/StanfordSpezi/SpeziDataPipelineTemplate/branch/main/graph/badge.svg)](https://codecov.io/gh/StanfordSpezi/SpeziDataPipelineTemplate)
-<a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/SpeziDataPipelineTemplate.ipynb">
+[![Build and Test](https://github.com/StanfordSpezi/SpeziDataPipeline/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/StanfordSpezi/SpeziDataPipeline/actions/workflows/build-and-test.yml)
+[![codecov](https://codecov.io/gh/StanfordSpezi/SpeziDataPipeline/branch/main/graph/badge.svg)](https://codecov.io/gh/StanfordSpezi/SpeziDataPipeline)
+<a target="_blank" href="https://colab.research.google.com/github/StanfordSpezi/SpeziDataPipeline/blob/main/SpeziDataPipeline.ipynb">
 <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
@@ -24,7 +24,7 @@ The Spezi Data Pipeline is engineered to improve workflows associated with data 
 
 ## Package Structure
 
-The SpeziDataPipelineTemplate is organized into several directories, each serving a specific function as part of the overall application. This guide will walk you through the package structure, highlighting the key components and their usage based on your needs and challenges.
+The Spezi Data Pipeline is organized into several directories, each serving a specific function as part of the overall application. This guide will walk you through the package structure, highlighting the key components and their usage based on your needs and challenges.
 
 1. `data_access/`
 
@@ -70,12 +70,12 @@ _DataExporter_
 
 
 ### How to Use Based on Your Needs
-- **Downloading Data from Firestore**: Start with FirebaseFHIRAccess to connect and fetch data.
-- **Converting and Structuring FHIR Data**: Use ResourceCreator and its subclasses to convert Firestore documents to FHIR resources.
-- **Flattening Nested FHIR Data**: Utilize ResourceFlattener and its specific implementations to transform data into flat DataFrames.
+- **Downloading Data from Firestore**: Start with `FirebaseFHIRAccess` to connect and fetch data.
+- **Converting and Structuring FHIR Data**: Use `ResourceCreator` and its subclasses to convert Firestore documents to FHIR resources.
+- **Flattening Nested FHIR Data**: Utilize `ResourceFlattener` and its specific implementations to transform data into flat `DataFrames`.
 - **Processing Data**: Apply FHIRDataProcessor for filtering, selecting, and general data processing tasks.
-- **Exploring and Visualizing Data**: Leverage DataExplorer and ECGExplorer to create visualizations and explore your data.
-- **Exporting Data**: Use DataExporter to save processed data and plots.
+- **Exploring and Visualizing Data**: Leverage `DataExplorer` and `ECGExplorer`, and `QuestionnaireResponseExplorer` to create visualizations and explore your data.
+- **Exporting Data**: Use `DataExporter` to save processed data and plots.
 
 
 ## Dependencies
@@ -185,8 +185,8 @@ visualizer.set_date_range(selected_start_date, selected_end_date)
 figs = visualizer.create_static_plot(processed_fhir_dataframe)
 ```
 
-![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/daily_steps_data_plot.png)
-![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/heart_rate_data_plot.png)
+![daily_steps_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipeline/blob/main/Figures/daily_steps_data_plot.png)
+![heart_rate_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipeline/blob/main/Figures/heart_rate_data_plot.png)
 
 ## ECG Observations
 
@@ -212,7 +212,7 @@ visualizer.set_date_range(selected_start_date, selected_end_date)
 figs = visualizer.plot_ecg_subplots(processed_fhir_dataframe)
 ```
 
-![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipelineTemplate/blob/main/Figures/ecg_data_plot.png)
+![ecg_data_plot.png](https://github.com/StanfordSpezi/SpeziDataPipeline/blob/main/Figures/ecg_data_plot.png)
 
 
 ### Questionnaire Responses

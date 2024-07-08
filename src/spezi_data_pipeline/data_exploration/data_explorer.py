@@ -7,8 +7,8 @@
 #
 
 """
-This module provides tools for visualizing healthcare data, focusing on FHIR data visualization and
-specifically extending to electrocardiogram (ECG) data exploration.
+This module provides tools for visualizing healthcare data, focusing on FHIR data visualization
+and specifically extending to electrocardiogram (ECG) data exploration.
 
 Classes:
 - `DataExplorer`: Provides functionalities to visualize FHIR data, supporting various filtering
@@ -24,8 +24,8 @@ Classes:
 Functions:
 - `plot_data_based_on_condition`: Dynamically plots data using scatter or bar plots based on the
   condition of duplicate `EffectiveDateTime` entries for a user.
-- `visualizer_factory`: Factory function to create either a `DataExplorer` or `ECGExplorer` instance
-  based on the resource_type attribute of a given `FHIRDataFrame`.
+- `visualizer_factory`: Factory function to create either a `DataExplorer` or `ECGExplorer`
+                        instance based on the resource_type attribute of a given `FHIRDataFrame`.
 - `explore_total_records_number`: Creates a bar plot showing the count of rows with the same
                                 LoincCode column value within a specified date range and for
                                 specified user IDs.

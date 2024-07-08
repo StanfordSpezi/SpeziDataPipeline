@@ -7,8 +7,8 @@
 #
 
 """
-This module provides test cases for the `DataExplorer`, `ECGExplorer`, and `QuestionnaireResponseExplorer`
-classes from the data_exploration module.
+This module provides test cases for the `DataExplorer`, `ECGExplorer`, and
+`QuestionnaireResponseExplorer` classes from the data_exploration module.
 
 The tests focus on the initialization and configuration of the explorer instances, including
 the capabilities to set specific date ranges, user IDs, and y-axis boundaries for data
@@ -22,8 +22,8 @@ plotting libraries.
 
 Classes:
     `TestDataExplorer`: Contains all the unit tests for testing the `DataExplorer` functionalities.
-    `TestQuestionnaireResponseExplorerExplorer`: Contains all the unit tests for testing the `QuestionnaireResponseExplorer`
-                                 functionalities.
+    `TestQuestionnaireResponseExplorerExplorer`: Contains all the unit tests for testing the
+                                                 `QuestionnaireResponseExplorer` functionalities.
     `TestECGExplorer`: Contains all the unit tests for testing the `ECGExplorer` functionalities.
 """
 
@@ -189,12 +189,14 @@ class TestECGExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         self.assertEqual(figs, [])
 
 
-class TestQuestionnaireResponseExplorer(unittest.TestCase):  # pylint: disable=unused-variable
+class TestQuestionnaireResponseExplorer(
+    unittest.TestCase
+):  # pylint: disable=unused-variable
     """
     Test suite for the QuestionnaireResponseExplorer class.
 
-    This class tests the functionality of setting up a QuestionnaireResponseExplorer instance, including
-    setting date ranges, user IDs, and generating score plots based on filtered data.
+    This class tests the functionality of setting up a QuestionnaireResponseExplorer instance,
+    including setting date ranges, user IDs, and generating score plots based on filtered data.
     """
 
     def setUp(self):

@@ -182,7 +182,7 @@ class ColumnNames(Enum):
     APPLE_ELECTROCARDIOGRAM_CLASSIFICATION = "AppleElectrocardiogramClassification"
     HEART_RATE = "HeartRate"
     HEART_RATE_UNIT = "HeartRateUnit"
-    ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
+    ECG_RECORDING_UNIT = "ECGRecordingUnit"
     ECG_RECORDING = "ECGRecording"
     AUTHORED_DATE = "AuthoredDate"
     QUESTIONNAIRE_TITLE = "QuestionnaireTitle"

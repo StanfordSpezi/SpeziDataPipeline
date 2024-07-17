@@ -85,9 +85,15 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
 
     def __init__(
         self,
-        project_id: str,
-        service_account_key_file: Optional[str] = None, # pylint: disable=consider-alternative-union-syntax
-        db: Optional[firestore.client] = None, # pylint: disable=consider-alternative-union-syntax
+        project_id: Optional[  # pylint: disable=consider-alternative-union-syntax
+            str
+        ] = None,
+        service_account_key_file: Optional[  # pylint: disable=consider-alternative-union-syntax
+            str
+        ] = None,
+        db: Optional[  # pylint: disable=consider-alternative-union-syntax
+            firestore.client
+        ] = None,
     ) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account

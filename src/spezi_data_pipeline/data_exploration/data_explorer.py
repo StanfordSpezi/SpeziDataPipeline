@@ -438,7 +438,7 @@ class ECGExplorer:  # pylint: disable=unused-variable
                     ecg_array = ecg_array / 1000  # Convert uV to mV
                 elif row[ColumnNames.ECG_RECORDING_UNIT.value] != ECG_MICROVOLT_UNIT:
                     print(
-                        "ECG recording units must be in either uV or mV. Check units and plot again."
+                        "ECG units must be in either uV or mV. Check units and plot again."
                     )
                     return figures
 

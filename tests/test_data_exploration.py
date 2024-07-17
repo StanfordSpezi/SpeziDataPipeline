@@ -176,14 +176,12 @@ class TestECGExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         user_data = self.fhir_dataframe.df[
             self.fhir_dataframe.df[ColumnNames.USER_ID.value] == USER_ID1
         ]
-        figs = self.explorer.plot_single_user_ecg(user_data, USER_ID1)
 
-        if figs:
+        if figs := self.explorer.plot_single_user_ecg(user_data, USER_ID1):
             self.assertIsInstance(figs[0], plt.Figure)
             self.assertIsInstance(figs, list)
         else:
             self.assertEqual(len(figs), 0)
-        
 
     def test_no_ecg_data(self):
         self.explorer.set_date_range("2024-01-01", "2024-01-31")

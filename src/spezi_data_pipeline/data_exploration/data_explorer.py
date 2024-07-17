@@ -433,8 +433,14 @@ class ECGExplorer:  # pylint: disable=unused-variable
                     ecg_array = np.array(
                         row[ColumnNames.ECG_RECORDING.value].split(), dtype=float
                     )
+
                 if row[ColumnNames.ECG_RECORDING_UNIT.value] == ECG_MICROVOLT_UNIT:
                     ecg_array = ecg_array / 1000  # Convert uV to mV
+                elif row[ColumnNames.ECG_RECORDING_UNIT.value] != ECG_MICROVOLT_UNIT:
+                    print(
+                        "ECG recording units must be in either uV or mV. Check units and plot again."
+                    )
+                    return figures
 
                 sample_rate = row.get(
                     ColumnNames.SAMPLING_FREQUENCY.value, DEFAULT_SAMPLE_RATE_VALUE

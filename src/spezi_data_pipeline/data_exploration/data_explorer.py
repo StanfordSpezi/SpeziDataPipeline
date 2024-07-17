@@ -724,7 +724,7 @@ def explore_total_records_number(  # pylint: disable=unused-variable
     )
 
     plt.figure(figsize=(20, 10))
-    counts.plot(kind="bar", stacked=True, figsize=(20, 10))
+    ax = counts.plot(kind="bar", stacked=True, figsize=(20, 10))
     plt.title("Number of Records by LOINC Code", fontsize=20)
     plt.xlabel("LOINC Code", fontsize=20)
     plt.ylabel("Count", fontsize=20)
@@ -738,3 +738,5 @@ def explore_total_records_number(  # pylint: disable=unused-variable
     )
     plt.tight_layout()
     plt.show()
+
+    return ax # For test inspection

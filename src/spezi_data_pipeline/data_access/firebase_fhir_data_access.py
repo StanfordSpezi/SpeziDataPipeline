@@ -60,8 +60,6 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
 )
 from spezi_data_pipeline.data_processing.code_mapping import CodeProcessor
 
-import datetime
-
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
 CI_STRING = "CI"
 LOCAL_HOST_URL = "localhost:8080"

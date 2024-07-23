@@ -178,7 +178,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     def fetch_data_path(
         self,
         full_path: str,
-        loinc_codes: list[str] | None = None
+        loinc_codes: list[str] | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None
     ) -> list[Resource]:
 
         if self.db is None:
@@ -196,6 +198,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             return None
 
         path_ref = self.db.collection(full_path)
+
+        if start_date:
+            path_ref = path_ref.where('effectivePeriod.start', '>=', start_date)
+        if end_date:
+            path_ref = path_ref.where('effectivePeriod.start', '<=', end_date)       
         
         resources = []
         if loinc_codes:

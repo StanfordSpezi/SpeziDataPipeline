@@ -60,6 +60,8 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
 )
 from spezi_data_pipeline.data_processing.code_mapping import CodeProcessor
 
+import datetime
+
 FIRESTORE_EMULATOR_HOST_KEY = "FIRESTORE_EMULATOR_HOST"
 CI_STRING = "CI"
 LOCAL_HOST_URL = "localhost:8080"
@@ -178,7 +180,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
     def fetch_data_path(
         self,
         full_path: str,
-        loinc_codes: list[str] | None = None,
+        loinc_codes: list[str] | None = None
     ) -> list[Resource]:
 
         if self.db is None:

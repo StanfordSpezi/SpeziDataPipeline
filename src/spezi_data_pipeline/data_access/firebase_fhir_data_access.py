@@ -35,7 +35,7 @@ Functions:
 # Standard library imports
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 
 # Related third-party imports
 from dataclasses import dataclass
@@ -77,14 +77,23 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
 
     Attributes:
         project_id (str): Identifier of the Firebase project.
-        service_account_key_file (str): Path to the Firebase service account key file for
+        service_account_key_file (str | None): Path to the Firebase service account key file for
                                         authentication.
-        db (Optional[firestore.Client]): A Firestore client instance for database operations,
+        db (firestore.Client | None): A Firestore client instance for database operations,
                                           initialized upon successful connection.
     """
 
     def __init__(
-        self, project_id: str, service_account_key_file: str | None = None
+        self,
+        project_id: Optional[  # pylint: disable=consider-alternative-union-syntax
+            str
+        ] = None,
+        service_account_key_file: Optional[  # pylint: disable=consider-alternative-union-syntax
+            str
+        ] = None,
+        db: Optional[  # pylint: disable=consider-alternative-union-syntax
+            firestore.client
+        ] = None,
     ) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
@@ -92,7 +101,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         """
         self.project_id = project_id
         self.service_account_key_file = service_account_key_file
-        self.db = None
+        self.db = db
 
     def connect(self) -> None:
         """

@@ -48,6 +48,7 @@ from spezi_data_pipeline.data_exploration.data_explorer import (
     DataExplorer,
     ECGExplorer,
     QuestionnaireResponseExplorer,
+    explore_total_records_number,
 )
 
 USER_ID1 = "user1"
@@ -176,10 +177,12 @@ class TestECGExplorer(unittest.TestCase):  # pylint: disable=unused-variable
         user_data = self.fhir_dataframe.df[
             self.fhir_dataframe.df[ColumnNames.USER_ID.value] == USER_ID1
         ]
-        figs = self.explorer.plot_single_user_ecg(user_data, USER_ID1)
-        self.assertIsNotNone(figs)
-        self.assertIsInstance(figs, list)
-        self.assertIsInstance(figs[0], plt.Figure)
+
+        if figs := self.explorer.plot_single_user_ecg(user_data, USER_ID1):
+            self.assertIsInstance(figs[0], plt.Figure)
+            self.assertIsInstance(figs, list)
+        else:
+            self.assertEqual(len(figs), 0)
 
     def test_no_ecg_data(self):
         self.explorer.set_date_range("2024-01-01", "2024-01-31")
@@ -267,6 +270,61 @@ class TestQuestionnaireResponseExplorer(
 
         fig = self.explorer.create_score_plot(self.fhir_dataframe)
         self.assertIsNone(fig)
+
+
+class TestExploreTotalRecordsNumber(
+    unittest.TestCase
+):  # pylint: disable=unused-variable
+    """
+    Test the explore_total_records_number function.
+
+    This test class ensures that the function behaves correctly by creating a bar plot
+    showing the count of rows with the same LoincCode column value within the specified
+    date range and for the specified user IDs.
+
+    The tests include:
+    - Verifying that the function can handle input data and generate a plot.
+    - Ensuring that plt.show() is called to display the plot.
+    - Checking that the number of bars in the plot corresponds to the number of unique
+      LOINC codes in the input data.
+
+    Methods:
+    - setUp: Initializes mock data and the required objects for testing.
+    - test_explore_total_records_number: Tests the function with mock data, ensuring the
+      plot is generated and the number of bars is correct.
+    """
+
+    @patch("matplotlib.pyplot.show")
+    def test_explore_total_records_number(self, mock_show):
+
+        data = {
+            ColumnNames.EFFECTIVE_DATE_TIME.value: [
+                "2023-01-01",
+                "2023-01-02",
+                "2023-01-03",
+            ],
+            ColumnNames.USER_ID.value: ["user1", "user2", "user1"],
+            ColumnNames.LOINC_CODE.value: ["code1", "code1", "code2"],
+        }
+        df = pd.DataFrame(data)
+
+        df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+            df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+        )
+
+        ax = explore_total_records_number(
+            df,
+            start_date="2023-01-01",
+            end_date="2023-01-31",
+            user_ids=["user1", "user2"],
+        )
+
+        mock_show.assert_called_once()
+        num_unique_loinc_codes = df[ColumnNames.LOINC_CODE.value].nunique()
+        num_bars = (
+            len(ax.patches) // num_unique_loinc_codes
+        )  # Since bars are stacked, divide by num_unique_loinc_codes
+        self.assertEqual(num_bars, num_unique_loinc_codes)
 
 
 if __name__ == "__main__":

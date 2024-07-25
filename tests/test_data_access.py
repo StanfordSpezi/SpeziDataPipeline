@@ -61,6 +61,7 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
     def setUp(self):
         self.project_id = "test-project"
         self.service_account_key_file = "/path/to/service/account.json"
+        self.mock_db = MagicMock()
 
     @patch("os.path.exists")
     @patch("os.environ")
@@ -167,7 +168,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
             "users", "HealthKit", [ECG_RECORDING_LOINC_CODE]
         )
 
-        # Verify
         self.assertIsNotNone(result)
         self.assertEqual(len(result), 0)
 

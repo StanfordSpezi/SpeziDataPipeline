@@ -425,11 +425,22 @@ class ECGExplorer:  # pylint: disable=unused-variable
             )
 
             if row[ColumnNames.ECG_RECORDING.value] is not None:
-                ecg_array = np.array(
-                    row[ColumnNames.ECG_RECORDING.value].split(), dtype=float
-                )
+                if isinstance(row[ColumnNames.ECG_RECORDING.value], list):
+                    ecg_array = np.array(
+                        row[ColumnNames.ECG_RECORDING.value], dtype=float
+                    )
+                else:
+                    ecg_array = np.array(
+                        row[ColumnNames.ECG_RECORDING.value].split(), dtype=float
+                    )
+
                 if row[ColumnNames.ECG_RECORDING_UNIT.value] == ECG_MICROVOLT_UNIT:
                     ecg_array = ecg_array / 1000  # Convert uV to mV
+                elif row[ColumnNames.ECG_RECORDING_UNIT.value] != ECG_MICROVOLT_UNIT:
+                    print(
+                        "ECG units must be in either uV or mV. Check units and plot again."
+                    )
+                    return figures
 
                 sample_rate = row.get(
                     ColumnNames.SAMPLING_FREQUENCY.value, DEFAULT_SAMPLE_RATE_VALUE
@@ -690,34 +701,42 @@ def explore_total_records_number(  # pylint: disable=unused-variable
     - None
     """
 
-    df["EffectiveDateTime"] = pd.to_datetime(df["EffectiveDateTime"])
+    df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+        df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    )
 
     if start_date is not None and end_date is not None:
         df = df[
-            (df["EffectiveDateTime"] >= start_date)
-            & (df["EffectiveDateTime"] <= end_date)
+            (df[ColumnNames.EFFECTIVE_DATE_TIME.value] >= start_date)
+            & (df[ColumnNames.EFFECTIVE_DATE_TIME.value] <= end_date)
         ]
 
     if isinstance(user_ids, str):
         user_ids = [user_ids]
 
     if user_ids is not None:
-        df = df[df["UserId"].isin(user_ids)]
+        df = df[df[ColumnNames.USER_ID.value].isin(user_ids)]
 
-    counts = df.groupby(["LoincCode", "UserId"]).size().unstack(fill_value=0)
+    counts = (
+        df.groupby([ColumnNames.LOINC_CODE.value, ColumnNames.USER_ID.value])
+        .size()
+        .unstack(fill_value=0)
+    )
 
-    plt.figure(figsize=(40, 50))
-    counts.plot(kind="bar")
-    plt.title("Number of records by Loinc code", fontsize=16)
-    plt.xlabel("Loinc code", fontsize=14)
-    plt.ylabel("Count", fontsize=14)
-    plt.xticks(rotation=45, ha="right", fontsize=12)
+    plt.figure(figsize=(20, 10))
+    ax = counts.plot(kind="bar", stacked=True, figsize=(20, 10))
+    plt.title("Number of Records by LOINC Code", fontsize=20)
+    plt.xlabel("LOINC Code", fontsize=20)
+    plt.ylabel("Count", fontsize=20)
+    plt.xticks(rotation=45, ha="right", fontsize=16)
     plt.legend(
         title="User ID",
-        fontsize=12,
+        fontsize=14,
         title_fontsize=14,
         bbox_to_anchor=(1.05, 1),
         loc="upper left",
     )
     plt.tight_layout()
     plt.show()
+
+    return ax # For test inspection

@@ -83,25 +83,19 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
-    def __init__(
-        self,
-        project_id: Optional[  # pylint: disable=consider-alternative-union-syntax
-            str
-        ] = None,
-        service_account_key_file: Optional[  # pylint: disable=consider-alternative-union-syntax
-            str
-        ] = None,
-        db: Optional[  # pylint: disable=consider-alternative-union-syntax
-            firestore.client
-        ] = None,
-    ) -> None:
+
+    def __init__(self, db=None, project_id=None, service_account_key_file=None):
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
-        credentials and project ID.
+        credentials and project ID or prev. initialized database.
         """
-        self.project_id = project_id
-        self.service_account_key_file = service_account_key_file
-        self.db = db
+        if db:
+            self.db = db
+        elif project_id and service_account_key_file:
+            self.project_id = project_id
+            self.service_account_key_file = service_account_key_file
+            self.db = None
+
 
     def connect(self) -> None:
         """
@@ -142,7 +136,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         self,
         collection_name: str,
         subcollection_name: str,
-        loinc_codes: list[str] | None = None
+        loinc_codes: list[str] | None = None,
     ) -> list[Resource]:
         """
         Retrieves FHIR Observation data for specified LOINC codes from Firestore.
@@ -181,7 +175,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                 user, collection_name, subcollection_name, loinc_codes
             )
             resources.extend(user_resources)
-
         return resources
     
     def fetch_data_path(

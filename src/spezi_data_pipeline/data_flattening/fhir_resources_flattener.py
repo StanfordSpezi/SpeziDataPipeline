@@ -155,7 +155,7 @@ class ColumnNames(Enum):
         NUMBER_OF_MEASUREMENTS: Number of measurements taken.
         SAMPLING_FREQUENCY: Frequency at which data was sampled.
         SAMPLING_FREQUENCY_UNIT: Unit for the sampling frequency.
-        ELECTROCARDIOGRAM_CLASSIFICATION: Classification of the ECG observation.
+        APPLE_ELECTROCARDIOGRAM_CLASSIFICATION: Classification of the ECG observation.
         HEART_RATE: Observed heart rate.
         HEART_RATE_UNIT: Unit of the observed heart rate.
         ECG_RECORDING_UNIT: Unit for ECG recording data.
@@ -179,10 +179,10 @@ class ColumnNames(Enum):
     NUMBER_OF_MEASUREMENTS = "NumberOfMeasurements"
     SAMPLING_FREQUENCY = "SamplingFrequency"
     SAMPLING_FREQUENCY_UNIT = "SamplingFrequencyUnit"
-    ELECTROCARDIOGRAM_CLASSIFICATION = "ElectrocardiogramClassification"
+    APPLE_ELECTROCARDIOGRAM_CLASSIFICATION = "AppleElectrocardiogramClassification"
     HEART_RATE = "HeartRate"
     HEART_RATE_UNIT = "HeartRateUnit"
-    ECG_RECORDING_UNIT = "ECGDataRecordingUnit"
+    ECG_RECORDING_UNIT = "ECGRecordingUnit"
     ECG_RECORDING = "ECGRecording"
     AUTHORED_DATE = "AuthoredDate"
     QUESTIONNAIRE_TITLE = "QuestionnaireTitle"
@@ -382,7 +382,7 @@ class ResourceFlattener:
                 ColumnNames.NUMBER_OF_MEASUREMENTS,
                 ColumnNames.SAMPLING_FREQUENCY,
                 ColumnNames.SAMPLING_FREQUENCY_UNIT,
-                ColumnNames.ELECTROCARDIOGRAM_CLASSIFICATION,
+                ColumnNames.APPLE_ELECTROCARDIOGRAM_CLASSIFICATION,
                 ColumnNames.HEART_RATE,
                 ColumnNames.HEART_RATE_UNIT,
                 ColumnNames.ECG_RECORDING_UNIT,
@@ -488,8 +488,7 @@ class ObservationFlattener(ResourceFlattener):
                 )
                 effective_datetime = effective_period.get(KeyNames.START.value, None)
 
-            coding_info = extract_coding_info(observation)
-            
+            coding_info = extract_coding_info(observation)           
             subject_id = "N/A"
             if observation.subject:
                 subject_id = observation.subject.id
@@ -594,7 +593,7 @@ class ECGObservationFlattener(ResourceFlattener):
                 .get(KeyNames.COMPONENT.value, [{}])[1]
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.UNIT.value, None),
-                ColumnNames.ELECTROCARDIOGRAM_CLASSIFICATION.value: observation.dict()
+                ColumnNames.APPLE_ELECTROCARDIOGRAM_CLASSIFICATION.value: observation.dict()
                 .get(KeyNames.COMPONENT.value, [{}])[2]
                 .get(KeyNames.VALUE_STRING.value, None),
                 ColumnNames.HEART_RATE.value: observation.dict()

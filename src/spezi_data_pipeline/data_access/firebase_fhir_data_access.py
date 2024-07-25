@@ -83,7 +83,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
-
     def __init__(self, db=None, project_id=None, service_account_key_file=None):
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
@@ -95,7 +94,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             self.project_id = project_id
             self.service_account_key_file = service_account_key_file
             self.db = None
-
 
     def connect(self) -> None:
         """
@@ -201,9 +199,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
 
         path_ref = self.db.collection(full_path)
         if start_date:
-            path_ref = path_ref.where('effectivePeriod.start', '>=', start_date)
+            path_ref = path_ref.where("effectivePeriod.start", ">=", start_date)
         if end_date:
-            path_ref = path_ref.where('effectivePeriod.start', '<=', end_date)       
+            path_ref = path_ref.where("effectivePeriod.start", "<=", end_date)
         
         resources = []
         if loinc_codes:
@@ -212,7 +210,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             resources.extend(_process_all_documents(path_ref, None))
 
         return resources
-        
 
     def _fetch_user_resources(
         self,

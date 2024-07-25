@@ -200,7 +200,6 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             return None
 
         path_ref = self.db.collection(full_path)
-
         if start_date:
             path_ref = path_ref.where('effectivePeriod.start', '>=', start_date)
         if end_date:

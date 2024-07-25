@@ -83,6 +83,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
+<<<<<<< HEAD
     def __init__(
         self,
         project_id: Optional[  # pylint: disable=consider-alternative-union-syntax
@@ -95,13 +96,25 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             firestore.client
         ] = None,
     ) -> None:
+=======
+    def __init__(self, db=None, project_id=None, service_account_key_file=None):
+>>>>>>> 6a7ee33db0d1c0a6b885119fb9eb6a30737bfafb
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
-        credentials and project ID.
+        credentials and project ID or prev. initialized database.
         """
+<<<<<<< HEAD
         self.project_id = project_id
         self.service_account_key_file = service_account_key_file
         self.db = db
+=======
+        if db:
+            self.db = db
+        elif project_id and service_account_key_file:
+            self.project_id = project_id
+            self.service_account_key_file = service_account_key_file
+            self.db = None
+>>>>>>> 6a7ee33db0d1c0a6b885119fb9eb6a30737bfafb
 
     def connect(self) -> None:
         """
@@ -182,6 +195,44 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             )
             resources.extend(user_resources)
         return resources
+    
+    def fetch_data_path(
+        self,
+        full_path: str,
+        loinc_codes: list[str] | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None
+    ) -> list[Resource]:
+
+        if self.db is None:
+            print("Reinitialize the Firebase app.")
+            return None
+
+        if (
+            loinc_codes is not None
+            and loinc_codes.count(ECG_RECORDING_LOINC_CODE) > 0
+            and len(loinc_codes) > 1
+        ):
+            print("HealthKit quantity types and ECG recordings cannot be downloaded ")
+            print("simultaneously. Please review and adjust your selection to include ")
+            print("only the necessary LOINC codes.")
+            return None
+
+        path_ref = self.db.collection(full_path)
+
+        if start_date:
+            path_ref = path_ref.where('effectivePeriod.start', '>=', start_date)
+        if end_date:
+            path_ref = path_ref.where('effectivePeriod.start', '<=', end_date)       
+        
+        resources = []
+        if loinc_codes:
+            resources.extend(_process_loinc_codes(path_ref, None, loinc_codes))
+        else:
+            resources.extend(_process_all_documents(path_ref, None))
+
+        return resources
+        
 
     def _fetch_user_resources(
         self,
@@ -368,7 +419,8 @@ class ObservationCreator(ResourceCreator):
 
             resource_str = json.dumps(doc_dict)
             resource_obj = Observation.parse_raw(resource_str)
-            resource_obj.subject = Reference(id=user.id)
+            if user:
+                resource_obj.subject = Reference(id=user.id)
 
             # Special handling for ECG data
             if (
@@ -432,7 +484,8 @@ class QuestionnaireResponseCreator(ResourceCreator):
             doc_dict = doc.to_dict()
             resource_str = json.dumps(doc_dict)
             resource_obj = QuestionnaireResponse.parse_raw(resource_str)
-            resource_obj.subject = Reference(id=user.id)
+            if user:
+                resource_obj.subject = Reference(id=user.id)
             resources.append(resource_obj)
         return resources
 

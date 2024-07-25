@@ -83,38 +83,19 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
-<<<<<<< HEAD
-    def __init__(
-        self,
-        project_id: Optional[  # pylint: disable=consider-alternative-union-syntax
-            str
-        ] = None,
-        service_account_key_file: Optional[  # pylint: disable=consider-alternative-union-syntax
-            str
-        ] = None,
-        db: Optional[  # pylint: disable=consider-alternative-union-syntax
-            firestore.client
-        ] = None,
-    ) -> None:
-=======
+
     def __init__(self, db=None, project_id=None, service_account_key_file=None):
->>>>>>> 6a7ee33db0d1c0a6b885119fb9eb6a30737bfafb
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
         credentials and project ID or prev. initialized database.
         """
-<<<<<<< HEAD
-        self.project_id = project_id
-        self.service_account_key_file = service_account_key_file
-        self.db = db
-=======
         if db:
             self.db = db
         elif project_id and service_account_key_file:
             self.project_id = project_id
             self.service_account_key_file = service_account_key_file
             self.db = None
->>>>>>> 6a7ee33db0d1c0a6b885119fb9eb6a30737bfafb
+
 
     def connect(self) -> None:
         """

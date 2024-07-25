@@ -488,7 +488,7 @@ class ObservationFlattener(ResourceFlattener):
                 )
                 effective_datetime = effective_period.get(KeyNames.START.value, None)
 
-            coding_info = extract_coding_info(observation)           
+            coding_info = extract_coding_info(observation)
             subject_id = "N/A"
             if observation.subject:
                 subject_id = observation.subject.id

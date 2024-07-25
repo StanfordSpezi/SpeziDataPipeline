@@ -35,7 +35,7 @@ Functions:
 # Standard library imports
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 # Related third-party imports
 from dataclasses import dataclass
@@ -174,7 +174,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             )
             resources.extend(user_resources)
         return resources
-    
+
     def fetch_data_path(
         self,
         full_path: str,
@@ -198,12 +198,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             return None
 
         path_ref = self.db.collection(full_path)
+        resources = []
         if start_date:
             path_ref = path_ref.where("effectivePeriod.start", ">=", start_date)
         if end_date:
             path_ref = path_ref.where("effectivePeriod.start", "<=", end_date)
-        
-        resources = []
         if loinc_codes:
             resources.extend(_process_loinc_codes(path_ref, None, loinc_codes))
         else:

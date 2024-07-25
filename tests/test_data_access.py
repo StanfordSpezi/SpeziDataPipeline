@@ -79,8 +79,7 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_environ.__contains__.return_value = False
 
         firebase_access = FirebaseFHIRAccess(self.project_id)
-        with patch.dict('os.environ', {FIRESTORE_EMULATOR_HOST_KEY: LOCAL_HOST_URL, GCLOUD_PROJECT_STRING: self.project_id}):
-            firebase_access.connect()
+        firebase_access.connect()
 
         calls = [
             ((FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),),

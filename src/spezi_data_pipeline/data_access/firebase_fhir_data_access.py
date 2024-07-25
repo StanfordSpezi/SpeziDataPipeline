@@ -182,6 +182,21 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         start_date: str | None = None,
         end_date: str | None = None
     ) -> list[Resource]:
+        """
+        Retrieves FHIR Observation data for specified LOINC codes from Firestore.
+        Data is fetched from the given collection and subcollection, optionally
+        filtered by the provided LOINC codes.
+
+        Parameters:
+            full_path (str): The fully specified path to a Firestore collection.
+            loinc_codes (list[str] | None): Optional list of LOINC codes to filter
+                resources. If None, all resources in the subcollection are fetched.
+            start_date (str | None): The start date for Firestore query index filter
+            end_date (str | None): The end date for Firestore query index filter
+
+        Returns:
+            list[Resource]: A list of FHIR resources instances matching the query criteria.
+        """
 
         if self.db is None:
             print("Reinitialize the Firebase app.")

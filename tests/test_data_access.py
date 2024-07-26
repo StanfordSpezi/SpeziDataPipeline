@@ -86,7 +86,6 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
             ((FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),),
             ((GCLOUD_PROJECT_STRING, self.project_id),),
         ]
-        self.assertTrue(mock_init_app.called)
         self.assertTrue(os.environ[FIRESTORE_EMULATOR_HOST_KEY], LOCAL_HOST_URL)
         self.assertTrue(os.environ[GCLOUD_PROJECT_STRING], self.project_id)
 

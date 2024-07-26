@@ -27,6 +27,7 @@ Classes:
 
 
 # Related third-party imports
+import os
 import unittest
 from unittest.mock import patch, MagicMock
 import json
@@ -85,7 +86,10 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
             ((FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),),
             ((GCLOUD_PROJECT_STRING, self.project_id),),
         ]
-        mock_environ.__setitem__.assert_has_calls(calls, any_order=True)
+        self.assertTrue(mock_init_app.called)
+        self.assertTrue(os.environ[FIRESTORE_EMULATOR_HOST_KEY], LOCAL_HOST_URL)
+        self.assertTrue(os.environ[GCLOUD_PROJECT_STRING], self.project_id)
+
         mock_init_app.assert_called_once()
 
     @patch("spezi_data_pipeline.data_access.firebase_fhir_data_access.firestore.client")

@@ -80,6 +80,9 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
 
         firebase_access = FirebaseFHIRAccess(self.project_id)
         firebase_access.connect()
+        
+        print("Firebase access")
+        print(firebase_access)
 
         calls = [
             ((FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),),

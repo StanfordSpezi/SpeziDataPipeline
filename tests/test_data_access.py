@@ -80,17 +80,12 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
 
         firebase_access = FirebaseFHIRAccess(self.project_id)
         firebase_access.connect()
-        
-        print("Firebase access")
-        print(firebase_access)
 
         calls = [
-            (FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),
-            (GCLOUD_PROJECT_STRING, self.project_id),
+            ((FIRESTORE_EMULATOR_HOST_KEY, LOCAL_HOST_URL),),
+            ((GCLOUD_PROJECT_STRING, self.project_id),),
         ]
-        for call in calls:
-            
-            mock_environ.__setitem__.assert_any_call(*call)
+        mock_environ.__setitem__.assert_has_calls(calls, any_order=True)
         mock_init_app.assert_called_once()
 
     @patch("spezi_data_pipeline.data_access.firebase_fhir_data_access.firestore.client")

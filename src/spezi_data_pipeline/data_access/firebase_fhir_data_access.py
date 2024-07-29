@@ -187,6 +187,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         self,
         full_path: str,
         loinc_codes: list[str] | None = None,
+        index_name: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None
     ) -> list[Resource]:
@@ -223,9 +224,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         path_ref = self.db.collection(full_path)
         resources = []
         if start_date:
-            path_ref = path_ref.where("effectivePeriod.start", ">=", start_date)
+            path_ref = path_ref.where(index_name, ">=", start_date)
         if end_date:
-            path_ref = path_ref.where("effectivePeriod.start", "<=", end_date)
+            path_ref = path_ref.where(index_name, "<=", end_date)
         if loinc_codes:
             resources.extend(_process_loinc_codes(path_ref, None, loinc_codes))
         else:

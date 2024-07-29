@@ -200,6 +200,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             full_path (str): The fully specified path to a Firestore collection.
             loinc_codes (list[str] | None): Optional list of LOINC codes to filter
                 resources. If None, all resources in the subcollection are fetched.
+            index_name (str | None): The name of the Firebase index that has a registered filter
             start_date (str | None): The start date for Firestore query index filter
             end_date (str | None): The end date for Firestore query index filter
 

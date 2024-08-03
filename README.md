@@ -155,7 +155,7 @@ flattened_fhir_dataframe = flatten_fhir_resources(fhir_observations)
 
 ### Using Full Path to Fetch Data
 
-You can alternativley specify the full path to a collection in Firestore to fetch data. This ensures that you can use Spezi Data Pipeline flatteners on any location within your database.
+You can alternatively specify the full path to a collection in Firestore to fetch data. This ensures that you can use Spezi Data Pipeline flatteners on any location within your database.
 
 ```python
 # Fetch FHIR data from full path

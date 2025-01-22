@@ -183,13 +183,13 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             resources.extend(user_resources)
         return resources
 
-    def fetch_data_path(
+    def fetch_data_path(  # pylint: disable=too-many-positional-arguments, too-many-arguments
         self,
         full_path: str,
         loinc_codes: list[str] | None = None,
         index_name: str | None = None,
         start_date: str | None = None,
-        end_date: str | None = None
+        end_date: str | None = None,
     ) -> list[Resource]:
         """
         Retrieves FHIR Observation data for specified LOINC codes from Firestore.

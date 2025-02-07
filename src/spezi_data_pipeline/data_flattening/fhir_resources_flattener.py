@@ -489,9 +489,12 @@ class ObservationFlattener(ResourceFlattener):
                 effective_datetime = effective_period.get(KeyNames.START.value, None)
 
             coding_info = extract_coding_info(observation)
+            subject_id = "N/A"
+            if observation.subject:
+                subject_id = observation.subject.id
 
             flattened_entry = {
-                ColumnNames.USER_ID.value: observation.subject.id,
+                ColumnNames.USER_ID.value: subject_id,
                 ColumnNames.RESOURCE_ID.value: observation.id,
                 ColumnNames.EFFECTIVE_DATE_TIME.value: (
                     effective_datetime if effective_datetime else None
@@ -570,8 +573,12 @@ class ECGObservationFlattener(ResourceFlattener):
             coding_info = extract_coding_info(observation)
             component_info = extract_component_info(observation)
 
+            subject_id = "N/A"
+            if observation.subject:
+                subject_id = observation.subject.id
+
             flattened_entry = {
-                ColumnNames.USER_ID.value: observation.subject.id,
+                ColumnNames.USER_ID.value: subject_id,
                 ColumnNames.RESOURCE_ID.value: observation.id,
                 ColumnNames.EFFECTIVE_DATE_TIME.value: effective_datetime,
                 ColumnNames.NUMBER_OF_MEASUREMENTS.value: observation.dict()

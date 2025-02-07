@@ -36,12 +36,16 @@ jobs:
         id: set-env
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-b[0-9]+$ ]]; then
+            if [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::set-output name=repo::https://upload.pypi.org/legacy/"
+              echo "::set-output name=environment::release"
+              echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
+            elif [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$ ]]; then
               echo "::set-output name=repo::https://test.pypi.org/legacy/"
               echo "::set-output name=environment::test"
               echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
             else
-              echo "Workflow dispatch without a valid beta tag. Failing job."
+              echo "Workflow dispatch without a valid version tag. Failing job."
               exit 1
             fi
           elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then

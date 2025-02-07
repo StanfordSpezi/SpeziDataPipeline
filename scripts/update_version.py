@@ -83,4 +83,3 @@ if __name__ == "__main__":
             print(f"Updated pyproject.toml with version {latest_tag}")
         else:
             print("No valid tag found. Unable to update version.")
-            

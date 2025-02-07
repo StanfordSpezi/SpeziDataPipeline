@@ -148,10 +148,33 @@ loinc_codes = ["55423-8", "8867-4"]
 fhir_observations = firebase_access.fetch_data(collection_name, subcollection_name, loinc_codes)
 flattened_fhir_dataframe = flatten_fhir_resources(fhir_observations)
 ```
-
 > [!NOTE]
 >
 > - If loinc_codes are omitted from the input arguments, FHIR resources for all stored LOINC codes are downloaded.
+
+
+### Using Full Path to Fetch Data
+
+You can alternatively specify the full path to a collection in Firestore to fetch data. This ensures that you can use Spezi Data Pipeline flatteners on any location within your database.
+
+```python
+# Fetch FHIR data from full path
+collection_path = "collection/subcollection/......"
+fhir_observations = firebase_access.fetch_data_path(collection_path, loinc_codes)
+```
+
+### Firebase Index Date Filtering
+
+If you want to fetch data from a particular date range, you can setup a Firebase index within [Firestore](https://firebase.google.com/docs/firestore/query-data/indexing). You can then specify a `start_date` and `end_date` to filter your data before it is streamed. This can help prevent fetching unnecessary data. 
+
+```python
+# Sort FHIR data by date and fetch from full path
+collection_path = "collection/subcollection/......"
+start_date = "2024-04-22"
+end_date = "2024-04-24"
+fhir_observations = firebase_access.fetch_data_path(collection_path, loinc_codes, start_date, end_date)
+flattened_fhir_dataframe = flatten_fhir_resources(fhir_observations)
+```
 
 ### Apply basic processing for convenient data readability
 

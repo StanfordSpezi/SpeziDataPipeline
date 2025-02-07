@@ -107,8 +107,7 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         "spezi_data_pipeline.data_access.firebase_fhir_data_access.os.path.exists",
         return_value=True,
     )
-    # pylint: disable=too-many-arguments
-    def test_connect_production_with_valid_key(
+    def test_connect_production_with_valid_key( # pylint: disable=too-many-positional-arguments,too-many-arguments
         self,
         mock_exists,
         mock_getenv,  # pylint: disable=unused-argument

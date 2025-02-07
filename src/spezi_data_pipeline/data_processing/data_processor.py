@@ -313,3 +313,24 @@ def select_data_by_dates(  # pylint: disable=unused-variable
         filtered_df.reset_index(drop=True),
         resource_type=flattened_fhir_dataframe.resource_type,
     )
+
+def extract_latest_user_interaction(  # pylint: disable=unused-variable
+    flattend_fhir_df: pd.DataFrame
+    )->None:
+    """
+    Extracts the latest interaction of each user from a flattened fhir DataFrame and saves results to a CSV file. 
+    Parameters:
+        flattend_fhir_df (pd.DataFrame): The flattened_fhir `DataFrame`.
+    """
+    #Base case
+    if flattend_fhir_df.empty:
+        return
+
+    #First convert column to datetime for comparison
+    flattend_fhir_df['EffectiveDateTime'] = pd.to_datetime(flattend_fhir_df['EffectiveDateTime'], format='%d.%m.%y')
+    #Filter the most recent entry for each userid 
+    most_recent_df=flattend_fhir_df.loc[flattend_fhir_df.groupby('UserId')['EffectiveDateTime'].idxmax()]
+    most_recent_df=most_recent_df[['UserId','EffectiveDateTime']]#select the relevant cols
+    most_recent_df.rename(columns={'EffectiveDateTime': 'LastUserInteraction'}, inplace=True)
+    most_recent_df.to_csv('output.csv')
+    return

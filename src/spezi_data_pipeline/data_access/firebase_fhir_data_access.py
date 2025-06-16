@@ -20,7 +20,7 @@ Classes:
     specific criteria like LOINC codes.
 
 Functions:
-    `_fetch_user_resources`: Fetches resources for a specific user from Firestore based on 
+    `_fetch_user_resources`: Fetches resources for a specific user from Firestore based on
         the given collection and subcollection names, optionally filtering by LOINC codes.
     `_process_loinc_codes`: Filters documents based on LOINC codes from a Firestore collection
         reference, converting matching documents into FHIR Resource instances.
@@ -418,8 +418,16 @@ class ObservationCreator(ResourceCreator):
             doc_dict.pop("physician", None)
             doc_dict.pop("tracingQuality", None)
 
-            resource_str = json.dumps(doc_dict)
-            resource_obj = Observation.parse_raw(resource_str)
+            try:
+                resource_str = json.dumps(doc_dict)
+                resource_obj = Observation.parse_raw(resource_str)
+            except Exception as e:
+                print(
+                    f"[ERROR] Failed to parse Observation for user_id={user.id}, document_id={doc.id}"
+                )
+                print(f"Reason: {e}")
+                continue  # skip this document and go to the next one
+
             if user:
                 resource_obj.subject = Reference(id=user.id)
 
@@ -504,11 +512,11 @@ def get_code_mappings(code: str) -> tuple[str, str, str]:
         tuple[str, str, str]: A tuple containing the display string, code string, and system string
                                for the code. Returns (None, None, None) if the code is not found.
     """
-    loinc_processor = CodeProcessor()
-    code_mappings = loinc_processor.code_mappings.get(code)
+    standards_code = CodeProcessor()
+    code_mappings = standards_code.code_mappings.get(code)
 
-    if (code_mappings := loinc_processor.code_mappings.get(code)) is None:
-        print(f"This LOINC code '{code}' is not supported.")
+    if (code_mappings := standards_code.code_mappings.get(code)) is None:
+        print(f"This standards coding system code '{code}' is not supported.")
         return (None, None, None)
 
     return code_mappings

@@ -31,7 +31,7 @@ Functions:
     `get_code_mappings`: Retrieves mappings for a given LOINC code or custom code, supporting the
         translation of codes for FHIR resource creation and querying.
 """
-
+# pylint: disable=broad-exception-caught
 # Standard library imports
 import json
 import os
@@ -423,7 +423,8 @@ class ObservationCreator(ResourceCreator):
                 resource_obj = Observation.parse_raw(resource_str)
             except Exception as e:
                 print(
-                    f"[ERROR] Failed to parse Observation for user_id={user.id}, document_id={doc.id}"
+                    f"[ERROR] Failed to parse Observation for user_id={user.id}, "
+                    f"document_id={doc.id}"
                 )
                 print(f"Reason: {e}")
                 continue  # skip this document and go to the next one

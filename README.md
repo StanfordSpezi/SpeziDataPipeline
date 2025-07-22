@@ -190,7 +190,7 @@ The dowloaded data can be then plotted using the following commands:
 
 ```python
 # Create a visualizer instance
-visualizer = DataVisualizer()
+visualizer = DataExplorer()
 
 # Set plotting configuration
 selected_users = ["User1","User2", "User3"]
@@ -217,7 +217,7 @@ In a similar way, we can download and flatten ECG recordings (LOINC code: 131329
 
 ```python
 # Create a visualizer instance
-visualizer = ECGVisualizer()
+visualizer = ECGExplorer()
 
 # Set plotting configuration
 selected_users = ["User1"]

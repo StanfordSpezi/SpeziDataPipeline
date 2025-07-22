@@ -25,6 +25,7 @@ Classes:
                               initialization capabilities of the `FirebaseFHIRAccess` class.
 """
 
+# pylint: disable=unused-argument, unused-variable, too-many-public-methods,too-many-instance-attributes
 
 # Related third-party imports
 import unittest
@@ -32,10 +33,13 @@ from unittest.mock import patch, MagicMock
 import json
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
+import pytest
 
 # Local application/library specific imports
 from spezi_data_pipeline.data_access.firebase_fhir_data_access import (
     FirebaseFHIRAccess,
+    get_code_mappings,
+    ResourceCreator,
     ObservationCreator,
     ECGObservation,
     QuestionnaireResponseCreator,
@@ -171,7 +175,67 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         self.assertEqual(len(result), 0)
 
 
-class TestObservationCreator(unittest.TestCase):  # pylint: disable=unused-variable
+def test_fetch_data_path_calls_process_loinc_codes(monkeypatch):
+    firebase_access = FirebaseFHIRAccess("test-project")
+    firebase_access.db = MagicMock()
+    mock_collection = MagicMock()
+    firebase_access.db.collection.return_value = mock_collection
+
+    called = {}
+
+    def fake_process_loinc_codes(query, user, loinc_codes):
+        called["called"] = True
+        return ["resource1"]
+
+    monkeypatch.setattr(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access._process_loinc_codes",
+        fake_process_loinc_codes,
+    )
+
+    result = firebase_access.fetch_data_path(
+        "users/abc/HealthKit", loinc_codes=["1234-5"]
+    )
+    assert called.get("called")
+    assert result == ["resource1"]
+
+def test_fetch_data_path_calls_process_all_documents(monkeypatch):
+    firebase_access = FirebaseFHIRAccess("test-project")
+    firebase_access.db = MagicMock()
+    mock_collection = MagicMock()
+    firebase_access.db.collection.return_value = mock_collection
+
+    called = {}
+
+    def fake_process_all_documents(query, user):
+        called["called"] = True
+        return ["resource2"]
+
+    monkeypatch.setattr(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access._process_all_documents",
+        fake_process_all_documents,
+    )
+
+    result = firebase_access.fetch_data_path("users/abc/HealthKit")
+    assert called.get("called")
+    assert result == ["resource2"]
+
+NOT_SUPPORTED_MSG = "not supported"
+
+def test_get_code_mappings_returns_none_for_unknown_code(capfd):
+    display, code, system = get_code_mappings("unknown-code-xyz")
+    assert display is None and code is None and system is None
+    out, _ = capfd.readouterr()
+    assert NOT_SUPPORTED_MSG in out
+
+
+# --- Test for ResourceCreator NotImplementedError ---
+def test_resource_creator_not_implemented():
+    rc = ResourceCreator("dummy")
+    with pytest.raises(NotImplementedError):
+        rc.create_resources([], None)
+
+
+class TestObservationCreator(unittest.TestCase):
     """
     Test the successful creation of an Observation object.
     """

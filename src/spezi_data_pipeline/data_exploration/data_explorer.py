@@ -187,7 +187,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         return figures
 
     def plot_combined(
-        self, df_loinc: pd.DataFrame, users_to_plot: list[str]
+        self, df_loinc: pd.DataFrame, users_to_plot: list[str], loinc_code: str
     ) -> plt.Figure:
         """
         Generates a combined static plot for multiple users. Each user's data
@@ -198,6 +198,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         Parameters:
             df_loinc (DataFrame): A DataFrame filtered for a specific code.
             users_to_plot (list[str]): A list of user IDs to include in the plot.
+            loinc_code (str): The code that the plot is focusing on.
 
         Returns:
             matplotlib.figure.Figure: The figure object representing the combined plot.
@@ -215,7 +216,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         )
         plt.title(
             f"{df_loinc[ColumnNames.QUANTITY_NAME.value].iloc[0]} "
-            f"{date_range_title}"
+            f"({loinc_code} {date_range_title}"
         )
         plt.xlabel("Date")
         plt.ylabel(

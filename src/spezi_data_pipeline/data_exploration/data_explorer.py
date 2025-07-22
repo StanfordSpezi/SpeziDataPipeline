@@ -142,7 +142,7 @@ class DataExplorer:  # pylint: disable=unused-variable
     def create_static_plot(self, fhir_dataframe: FHIRDataFrame) -> list:
         """
         Generates static plots based on the filtered FHIR data, offering combined or
-        individual plots for specified users and LOINC codes.
+        individual plots for specified users and codes.
 
         Parameters:
             fhir_dataframe (FHIRDataFrame): The `FHIRDataFrame` containing the data
@@ -196,9 +196,9 @@ class DataExplorer:  # pylint: disable=unused-variable
         visualization for comparative analysis.
 
         Parameters:
-            df_loinc (DataFrame): A DataFrame filtered for a specific LOINC code.
+            df_loinc (DataFrame): A DataFrame filtered for a specific code.
             users_to_plot (list[str]): A list of user IDs to include in the plot.
-            loinc_code (str): The LOINC code that the plot is focusing on.
+            loinc_code (str): The code that the plot is focusing on.
 
         Returns:
             matplotlib.figure.Figure: The figure object representing the combined plot.
@@ -216,7 +216,7 @@ class DataExplorer:  # pylint: disable=unused-variable
         )
         plt.title(
             f"{df_loinc[ColumnNames.QUANTITY_NAME.value].iloc[0]} "
-            f"for LOINC Code {loinc_code} {date_range_title}"
+            f"({loinc_code} {date_range_title}"
         )
         plt.xlabel("Date")
         plt.ylabel(
@@ -239,16 +239,16 @@ class DataExplorer:  # pylint: disable=unused-variable
         Generates individual static plots for each specified user. For each user, their
         data is aggregated and plotted in a separate figure. This method is called to
         generate detailed plots for individual users, focusing on data related to a
-        specific LOINC code.
+        specific code.
 
         Parameters:
-            df_loinc (DataFrame): A `DataFrame` filtered for a specific LOINC code.
+            df_loinc (DataFrame): A `DataFrame` filtered for a specific code.
             user_id (str): The user ID for which to generate the plot.
-            loinc_code (str): The LOINC code that the plot is focusing on.
+            loinc_code (str): The code that the plot is focusing on.
 
         Returns:
             matplotlib.figure.Figure: The figure object representing the individual plot.
-            If no data is found for the specified user ID and LOINC code, returns None.
+            If no data is found for the specified user ID and code, returns None.
         """
         if user_id is None:
             print("User ID must be provided for individual plots.")
@@ -256,7 +256,7 @@ class DataExplorer:  # pylint: disable=unused-variable
 
         user_df = df_loinc[df_loinc[ColumnNames.USER_ID.value] == user_id]
         if user_df.empty:
-            print(f"No data found for user ID {user_id} and LOINC code {loinc_code}.")
+            print(f"No data found for user ID {user_id} and code {loinc_code}.")
             return None
 
         plt.figure(figsize=(10, 6), dpi=DEFAULT_DPI_VALUE)
@@ -725,8 +725,8 @@ def explore_total_records_number(  # pylint: disable=unused-variable
 
     plt.figure(figsize=(20, 10))
     ax = counts.plot(kind="bar", stacked=True, figsize=(20, 10))
-    plt.title("Number of Records by LOINC Code", fontsize=20)
-    plt.xlabel("LOINC Code", fontsize=20)
+    plt.title("Number of Records by Code", fontsize=20)
+    plt.xlabel("Code", fontsize=20)
     plt.ylabel("Count", fontsize=20)
     plt.xticks(rotation=45, ha="right", fontsize=16)
     plt.legend(

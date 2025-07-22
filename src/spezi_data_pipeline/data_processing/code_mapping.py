@@ -98,6 +98,21 @@ class CodeProcessor:  # pylint: disable=unused-variable
                 "8867-4",
                 "http://loinc.org",
             ),
+            "HKQuantityTypeIdentifierPhysicalEffort": (
+                "Apple Physical Effort",
+                "HKQuantityTypeIdentifierPhysicalEffort",
+                "http://developer.apple.com/documentation/healthkit",
+            ),
+            "41981-2": (
+                "Calories burned",
+                "41981-2",
+                "http://loinc.org",
+            ),
+            "HKQuantityTypeIdentifierVO2Max": (
+                "VO2 Max",
+                "HKQuantityTypeIdentifierVO2Max",
+                "http://developer.apple.com/documentation/healthkit",
+            ),
         }
 
         # Maps LOINC codes and similar identifiers to processing functions

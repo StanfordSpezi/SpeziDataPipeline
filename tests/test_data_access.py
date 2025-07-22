@@ -33,7 +33,6 @@ from unittest.mock import patch, MagicMock
 import json
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
-import pytest
 
 # Local application/library specific imports
 from spezi_data_pipeline.data_access.firebase_fhir_data_access import (
@@ -231,8 +230,11 @@ def test_get_code_mappings_returns_none_for_unknown_code(capfd):
 # --- Test for ResourceCreator NotImplementedError ---
 def test_resource_creator_not_implemented():
     rc = ResourceCreator("dummy")
-    with pytest.raises(NotImplementedError):
+    try:
         rc.create_resources([], None)
+        assert False, "NotImplementedError not raised"
+    except NotImplementedError:
+        pass
 
 
 class TestObservationCreator(unittest.TestCase):

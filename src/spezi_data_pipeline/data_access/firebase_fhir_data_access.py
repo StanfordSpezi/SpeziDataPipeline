@@ -20,7 +20,7 @@ Classes:
     specific criteria like LOINC codes.
 
 Functions:
-    `_fetch_user_resources`: Fetches resources for a specific user from Firestore based on 
+    `_fetch_user_resources`: Fetches resources for a specific user from Firestore based on
         the given collection and subcollection names, optionally filtering by LOINC codes.
     `_process_loinc_codes`: Filters documents based on LOINC codes from a Firestore collection
         reference, converting matching documents into FHIR Resource instances.
@@ -284,7 +284,7 @@ def _process_loinc_codes(
     query: CollectionReference,
     user: DocumentReference,
     loinc_codes: list[str],
-    timeout: Optional[float] = None,
+    timeout: float | None = None,
 ) -> list[Resource]:
     """
     Filters documents based on LOINC codes from a Firestore collection reference. This function
@@ -294,6 +294,7 @@ def _process_loinc_codes(
         query (CollectionReference): Firestore query object for a user's subcollection.
         user (DocumentReference): Firestore reference to the user document.
         loinc_codes (list[str]): List of LOINC codes to filter documents.
+        timeout (float | None): Optional timeout in seconds for Firestore stream operations.
 
     Returns:
         list[Resource]: A list of FHIR resources that match the specified LOINC codes.
@@ -337,7 +338,7 @@ def _process_loinc_codes(
 def _process_all_documents(
     query: CollectionReference,
     user: DocumentReference,
-    timeout: Optional[float] = None,
+    timeout: float | None = None,
 ) -> list[Resource]:
     """
     Fetches and processes all documents from a Firestore collection reference for a specific user,
@@ -346,6 +347,7 @@ def _process_all_documents(
     Parameters:
         query (CollectionReference): Firestore query object for a user's subcollection.
         user (DocumentReference): Firestore reference to the user document.
+        timeout (float | None): Optional timeout in seconds for Firestore stream operations.
 
     Returns:
         list[Resource]: List of FHIR resources for all documents in the user's subcollection.

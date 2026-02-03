@@ -83,6 +83,8 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
                                           initialized upon successful connection.
     """
 
+    DEFAULT_TIMEOUT = 300
+
     def __init__(
         self,
         project_id: Optional[  # pylint: disable=consider-alternative-union-syntax
@@ -94,6 +96,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         db: Optional[  # pylint: disable=consider-alternative-union-syntax
             firestore.client
         ] = None,
+        timeout: Optional[  # pylint: disable=consider-alternative-union-syntax
+            float
+        ] = None,
     ) -> None:
         """
         Initializes the FirebaseFHIRAccess instance with Firebase service account
@@ -102,6 +107,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         self.project_id = project_id
         self.service_account_key_file = service_account_key_file
         self.db = db
+        self.timeout = timeout if timeout is not None else self.DEFAULT_TIMEOUT
 
     def connect(self) -> None:
         """
@@ -175,7 +181,7 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             print("only the necessary LOINC codes.")
             return None
         resources = []
-        users = self.db.collection(collection_name).stream()
+        users = self.db.collection(collection_name).stream(timeout=self.timeout)
         for user in users:
             user_resources = self._fetch_user_resources(
                 user, collection_name, subcollection_name, loinc_codes
@@ -229,9 +235,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
         if end_date:
             path_ref = path_ref.where(index_name, "<=", end_date)
         if loinc_codes:
-            resources.extend(_process_loinc_codes(path_ref, None, loinc_codes))
+            resources.extend(
+                _process_loinc_codes(path_ref, None, loinc_codes, self.timeout)
+            )
         else:
-            resources.extend(_process_all_documents(path_ref, None))
+            resources.extend(_process_all_documents(path_ref, None, self.timeout))
 
         return resources
 
@@ -264,9 +272,11 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             .collection(subcollection_name)
         )
         if loinc_codes:
-            resources.extend(_process_loinc_codes(query, user, loinc_codes))
+            resources.extend(
+                _process_loinc_codes(query, user, loinc_codes, self.timeout)
+            )
         else:
-            resources.extend(_process_all_documents(query, user))
+            resources.extend(_process_all_documents(query, user, self.timeout))
         return resources
 
 
@@ -274,6 +284,7 @@ def _process_loinc_codes(
     query: CollectionReference,
     user: DocumentReference,
     loinc_codes: list[str],
+    timeout: Optional[float] = None,
 ) -> list[Resource]:
     """
     Filters documents based on LOINC codes from a Firestore collection reference. This function
@@ -302,7 +313,7 @@ def _process_loinc_codes(
                         KeyNames.CODE.value: code_str,
                     },
                 )
-            ).stream()
+            ).stream(timeout=timeout)
         )
 
         if not fhir_docs:
@@ -324,7 +335,9 @@ def _process_loinc_codes(
 
 
 def _process_all_documents(
-    query: CollectionReference, user: DocumentReference
+    query: CollectionReference,
+    user: DocumentReference,
+    timeout: Optional[float] = None,
 ) -> list[Resource]:
     """
     Fetches and processes all documents from a Firestore collection reference for a specific user,
@@ -339,7 +352,7 @@ def _process_all_documents(
     """
     resources = []
 
-    if not (fhir_docs := list(query.stream())):
+    if not (fhir_docs := list(query.stream(timeout=timeout))):
         return resources
 
     first_doc_dict = fhir_docs[0].to_dict()

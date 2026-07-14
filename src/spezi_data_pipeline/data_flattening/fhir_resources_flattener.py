@@ -481,11 +481,11 @@ class ObservationFlattener(ResourceFlattener):
         for observation in resources:
 
             if not (
-                effective_datetime := observation.dict().get(
+                effective_datetime := observation.model_dump().get(
                     KeyNames.EFFECTIVE_DATE_TIME.value
                 )
             ):
-                effective_period = observation.dict().get(
+                effective_period = observation.model_dump().get(
                     KeyNames.EFFECTIVE_PERIOD.value, {}
                 )
                 effective_datetime = effective_period.get(KeyNames.START.value, None)
@@ -502,10 +502,10 @@ class ObservationFlattener(ResourceFlattener):
                     effective_datetime if effective_datetime else None
                 ),
                 **coding_info,
-                ColumnNames.QUANTITY_UNIT.value: observation.dict()
+                ColumnNames.QUANTITY_UNIT.value: observation.model_dump()
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.UNIT.value, None),
-                ColumnNames.QUANTITY_VALUE.value: observation.dict()
+                ColumnNames.QUANTITY_VALUE.value: observation.model_dump()
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.VALUE.value, None),
             }
@@ -563,11 +563,11 @@ class ECGObservationFlattener(ResourceFlattener):
         for observation in resources:
 
             if not (
-                effective_datetime := observation.dict().get(
+                effective_datetime := observation.model_dump().get(
                     KeyNames.EFFECTIVE_DATE_TIME.value
                 )
             ):
-                effective_period = observation.dict().get(
+                effective_period = observation.model_dump().get(
                     KeyNames.EFFECTIVE_PERIOD.value, {}
                 )
                 effective_datetime = effective_period.get(KeyNames.START.value, None)
@@ -583,26 +583,26 @@ class ECGObservationFlattener(ResourceFlattener):
                 ColumnNames.USER_ID.value: subject_id,
                 ColumnNames.RESOURCE_ID.value: observation.id,
                 ColumnNames.EFFECTIVE_DATE_TIME.value: effective_datetime,
-                ColumnNames.NUMBER_OF_MEASUREMENTS.value: observation.dict()
+                ColumnNames.NUMBER_OF_MEASUREMENTS.value: observation.model_dump()
                 .get(KeyNames.COMPONENT.value, [{}])[0]
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.VALUE.value, None),
-                ColumnNames.SAMPLING_FREQUENCY.value: observation.dict()
+                ColumnNames.SAMPLING_FREQUENCY.value: observation.model_dump()
                 .get(KeyNames.COMPONENT.value, [{}])[1]
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.VALUE.value, None),
-                ColumnNames.SAMPLING_FREQUENCY_UNIT.value: observation.dict()
+                ColumnNames.SAMPLING_FREQUENCY_UNIT.value: observation.model_dump()
                 .get(KeyNames.COMPONENT.value, [{}])[1]
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.UNIT.value, None),
-                ColumnNames.APPLE_ELECTROCARDIOGRAM_CLASSIFICATION.value: observation.dict()
+                ColumnNames.APPLE_ELECTROCARDIOGRAM_CLASSIFICATION.value: observation.model_dump()
                 .get(KeyNames.COMPONENT.value, [{}])[2]
                 .get(KeyNames.VALUE_STRING.value, None),
-                ColumnNames.HEART_RATE.value: observation.dict()
+                ColumnNames.HEART_RATE.value: observation.model_dump()
                 .get(KeyNames.COMPONENT.value, [{}])[3]
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.VALUE.value, None),
-                ColumnNames.HEART_RATE_UNIT.value: observation.dict()
+                ColumnNames.HEART_RATE_UNIT.value: observation.model_dump()
                 .get(KeyNames.COMPONENT.value, [{}])[3]
                 .get(KeyNames.VALUE_QUANTITY.value, {})
                 .get(KeyNames.UNIT.value, None),
@@ -639,7 +639,7 @@ def extract_coding_info(observation: Observation | ECGObservation) -> dict:
             Apple HealthKit code, and display text.
     """
     coding = (
-        observation.dict().get(KeyNames.CODE.value, {}).get(KeyNames.CODING.value, [])
+        observation.model_dump().get(KeyNames.CODE.value, {}).get(KeyNames.CODING.value, [])
     )
 
     loinc_code = None
@@ -686,7 +686,7 @@ def extract_component_info(observation: ECGObservation) -> dict:
         including a single merged ECG recording data string and the unit of measurement.
     """
     component_info = {}
-    components = observation.dict().get(KeyNames.COMPONENT.value, [])
+    components = observation.model_dump().get(KeyNames.COMPONENT.value, [])
 
     merged_ecg_data = ""
     unit = None

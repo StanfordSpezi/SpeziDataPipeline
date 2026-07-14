@@ -398,7 +398,7 @@ def create_mock_observations() -> list[Observation] | str:
 
                 resource_str = json.dumps(data)
 
-                resource_obj = Observation.parse_raw(resource_str)
+                resource_obj = Observation.model_validate_json(resource_str)
                 resource_obj.subject = Reference(id="XrftRMc358NndzcRWEQ7P2MxvabZ")
 
                 observations.append(resource_obj)
@@ -446,7 +446,7 @@ def create_mock_ecg_observations() -> list[ECGObservation] | str:
 
                 resource_str = json.dumps(data)
 
-                resource_obj = Observation.parse_raw(resource_str)
+                resource_obj = Observation.model_validate_json(resource_str)
                 resource_obj.subject = Reference(id="3aX1qRKWQKTRDQZqr5vg5N7yWU12")
                 ecg_resource_obj = ECGObservation(resource_obj)
                 ecg_observations.append(ecg_resource_obj)
@@ -482,7 +482,7 @@ def create_mock_questionnaire_responses() -> list[QuestionnaireResponse] | str:
 
                 resource_str = json.dumps(data)
 
-                resource_obj = QuestionnaireResponse.parse_raw(resource_str)
+                resource_obj = QuestionnaireResponse.model_validate_json(resource_str)
                 resource_obj.subject = Reference(id="5tTYsEWMIKNq4EJEf24suVINGI12")
 
                 questionnaire_responses.append(resource_obj)

@@ -110,7 +110,7 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         "spezi_data_pipeline.data_access.firebase_fhir_data_access.os.path.exists",
         return_value=True,
     )
-    def test_connect_production_with_valid_key( # pylint: disable=too-many-positional-arguments,too-many-arguments
+    def test_connect_production_with_valid_key(  # pylint: disable=too-many-positional-arguments,too-many-arguments
         self,
         mock_exists,
         mock_getenv,  # pylint: disable=unused-argument
@@ -136,6 +136,19 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         mock_exists.assert_called_once_with(self.service_account_key_file)
         mock_certificate.assert_called_once_with(self.service_account_key_file)
         mock_initialize_app.assert_called_once()
+
+    def test_default_timeout(self):
+        firebase_access = FirebaseFHIRAccess(self.project_id)
+        self.assertEqual(firebase_access.timeout, FirebaseFHIRAccess.DEFAULT_TIMEOUT)
+
+    def test_custom_timeout(self):
+        firebase_access = FirebaseFHIRAccess(self.project_id, timeout=600)
+        self.assertEqual(firebase_access.timeout, 600)
+
+    def test_timeout_can_be_updated(self):
+        firebase_access = FirebaseFHIRAccess(self.project_id)
+        firebase_access.timeout = 900
+        self.assertEqual(firebase_access.timeout, 900)
 
     @patch("firebase_admin.firestore")
     def test_fetch_data_invalid_loinc_combination(self, mock_firestore):
@@ -173,6 +186,75 @@ class TestFirebaseFHIRAccess(unittest.TestCase):  # pylint: disable=unused-varia
         self.assertIsNotNone(result)
         self.assertEqual(len(result), 0)
 
+    @patch("firebase_admin.firestore")
+    def test_fetch_data_passes_default_timeout_to_stream(self, mock_firestore):
+        mock_db = MagicMock()
+        mock_firestore.client.return_value = mock_db
+        firebase_access = FirebaseFHIRAccess(self.project_id)
+        firebase_access.db = mock_db
+
+        mock_collection = MagicMock()
+        mock_db.collection.return_value = mock_collection
+        mock_collection.stream.return_value = iter([])
+
+        firebase_access.fetch_data("users", "HealthKit")
+
+        mock_collection.stream.assert_called_once_with(
+            timeout=FirebaseFHIRAccess.DEFAULT_TIMEOUT
+        )
+
+    @patch("firebase_admin.firestore")
+    def test_fetch_data_passes_custom_timeout_to_stream(self, mock_firestore):
+        mock_db = MagicMock()
+        mock_firestore.client.return_value = mock_db
+        firebase_access = FirebaseFHIRAccess(self.project_id, timeout=600)
+        firebase_access.db = mock_db
+
+        mock_collection = MagicMock()
+        mock_db.collection.return_value = mock_collection
+        mock_collection.stream.return_value = iter([])
+
+        firebase_access.fetch_data("users", "HealthKit")
+
+        mock_collection.stream.assert_called_once_with(timeout=600)
+
+    @patch("firebase_admin.firestore")
+    def test_fetch_data_passes_timeout_to_subcollection_stream(self, mock_firestore):
+        mock_db = MagicMock()
+        mock_firestore.client.return_value = mock_db
+        firebase_access = FirebaseFHIRAccess(self.project_id, timeout=120)
+        firebase_access.db = mock_db
+
+        mock_collection = MagicMock()
+        mock_db.collection.return_value = mock_collection
+        mock_user_doc = MagicMock()
+        mock_collection.stream.return_value = iter([mock_user_doc])
+
+        mock_subcollection = MagicMock()
+        mock_collection.document.return_value.collection.return_value = (
+            mock_subcollection
+        )
+        mock_subcollection.stream.return_value = iter([])
+
+        firebase_access.fetch_data("users", "HealthKit")
+
+        mock_subcollection.stream.assert_called_once_with(timeout=120)
+
+    @patch("firebase_admin.firestore")
+    def test_fetch_data_path_passes_timeout_to_stream(self, mock_firestore):
+        mock_db = MagicMock()
+        mock_firestore.client.return_value = mock_db
+        firebase_access = FirebaseFHIRAccess(self.project_id, timeout=450)
+        firebase_access.db = mock_db
+
+        mock_collection = MagicMock()
+        mock_db.collection.return_value = mock_collection
+        mock_collection.stream.return_value = iter([])
+
+        firebase_access.fetch_data_path("users/uid/HealthKit")
+
+        mock_collection.stream.assert_called_once_with(timeout=450)
+
 
 def test_fetch_data_path_calls_process_loinc_codes(monkeypatch):
     firebase_access = FirebaseFHIRAccess("test-project")
@@ -182,7 +264,7 @@ def test_fetch_data_path_calls_process_loinc_codes(monkeypatch):
 
     called = {}
 
-    def fake_process_loinc_codes(query, user, loinc_codes):
+    def fake_process_loinc_codes(query, user, loinc_codes, timeout=None):
         called["called"] = True
         return ["resource1"]
 
@@ -197,6 +279,7 @@ def test_fetch_data_path_calls_process_loinc_codes(monkeypatch):
     assert called.get("called")
     assert result == ["resource1"]
 
+
 def test_fetch_data_path_calls_process_all_documents(monkeypatch):
     firebase_access = FirebaseFHIRAccess("test-project")
     firebase_access.db = MagicMock()
@@ -205,7 +288,7 @@ def test_fetch_data_path_calls_process_all_documents(monkeypatch):
 
     called = {}
 
-    def fake_process_all_documents(query, user):
+    def fake_process_all_documents(query, user, timeout=None):
         called["called"] = True
         return ["resource2"]
 
@@ -218,7 +301,9 @@ def test_fetch_data_path_calls_process_all_documents(monkeypatch):
     assert called.get("called")
     assert result == ["resource2"]
 
+
 NOT_SUPPORTED_MSG = "not supported"
+
 
 def test_get_code_mappings_returns_none_for_unknown_code(capfd):
     display, code, system = get_code_mappings("unknown-code-xyz")

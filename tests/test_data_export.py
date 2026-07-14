@@ -8,7 +8,7 @@
 
 """
 This module contains unit tests for the `DataExporter` class, which is part of the data_export
-module. The `DataExporter` class is responsible for exporting healthcare data structured as FHIR 
+module. The `DataExporter` class is responsible for exporting healthcare data structured as FHIR
 (Fast Healthcare Interoperability Resources) data into CSV files and generating visual plots based
 on this data.
 
@@ -28,7 +28,6 @@ Classes:
                         `DataExporter` class.
 """
 
-
 # Standard library imports
 from pathlib import Path
 
@@ -38,7 +37,10 @@ from unittest.mock import patch
 import pandas as pd
 
 # Local application/library specific imports
-from spezi_data_pipeline.data_flattening.fhir_resources_flattener import FHIRDataFrame, FHIRResourceType
+from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
+    FHIRDataFrame,
+    FHIRResourceType,
+)
 from spezi_data_pipeline.data_export.data_exporter import DataExporter
 
 
@@ -95,8 +97,11 @@ class TestDataExporter(unittest.TestCase):  # pylint: disable=unused-variable
         expected_filename = "base_user_user1_all_dates.png"
         self.assertEqual(filename, expected_filename)
 
+    @patch("matplotlib.pyplot.show")
     @patch("matplotlib.figure.Figure.savefig")
-    def test_create_and_save_plot(self, mock_savefig):
+    def test_create_and_save_plot(
+        self, mock_savefig, mock_show
+    ):  # pylint: disable=unused-argument
         self.exporter.create_and_save_plot("plot_base")
         if self.exporter.user_ids:
             mock_savefig.assert_called()

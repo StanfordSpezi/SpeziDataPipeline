@@ -37,7 +37,6 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 # Local application/library specific imports
 from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRResourceType,
@@ -253,7 +252,8 @@ class TestQuestionnaireResponseExplorer(
         self.explorer.set_user_ids([USER_ID1, "user2"])
         self.assertEqual(self.explorer.user_ids, [USER_ID1, "user2"])
 
-    def test_create_score_plot(self):
+    @patch("matplotlib.pyplot.show")
+    def test_create_score_plot(self, mock_show):  # pylint: disable=unused-argument
         self.explorer.set_date_range("2023-01-01", "2023-01-31")
         self.explorer.set_user_ids([USER_ID1])
 

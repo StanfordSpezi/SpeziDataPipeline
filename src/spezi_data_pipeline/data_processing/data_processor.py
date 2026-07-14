@@ -19,6 +19,8 @@ Key Features:
     health data metrics.
 - `select_data_by_user` and `select_data_by_dates`: Utility functions that facilitate the filtering
     of FHIR data based on user IDs and date ranges, respectively.
+- `extract_latest_user_interaction`: Utility function that summarizes the most recent interaction
+    recorded for each user, optionally exporting the result to a CSV file.
 - Code mappings and processing functions: Mechanisms for associating LOINC codes with specific
     processing routines and value ranges, enabling targeted and meaningful analysis of healthcare
     metrics.
@@ -313,3 +315,57 @@ def select_data_by_dates(  # pylint: disable=unused-variable
         filtered_df.reset_index(drop=True),
         resource_type=flattened_fhir_dataframe.resource_type,
     )
+
+
+def extract_latest_user_interaction(  # pylint: disable=unused-variable
+    flattened_fhir_dataframe: FHIRDataFrame,
+    output_file_path: str | None = None,
+) -> pd.DataFrame:
+    """
+    Extracts the most recent interaction of each user from a FHIRDataFrame.
+
+    For each user, the row with the latest effective datetime is identified, producing a
+    summary of when every user was last active. The result is optionally written to a CSV file.
+
+    Parameters:
+        flattened_fhir_dataframe (FHIRDataFrame): The FHIRDataFrame from which to extract the
+            latest user interactions.
+        output_file_path (str | None): The path of the CSV file to which the result is
+            written. If None (the default), no file is created.
+
+    Returns:
+        pd.DataFrame: A DataFrame with one row per user containing the user identifier and the
+            datetime of their most recent interaction.
+    """
+    result_columns = [
+        ColumnNames.USER_ID.value,
+        ColumnNames.LAST_USER_INTERACTION.value,
+    ]
+
+    if flattened_fhir_dataframe.df.empty:
+        return pd.DataFrame(columns=result_columns)
+
+    working_df = flattened_fhir_dataframe.df.copy()
+    working_df[ColumnNames.EFFECTIVE_DATE_TIME.value] = pd.to_datetime(
+        working_df[ColumnNames.EFFECTIVE_DATE_TIME.value]
+    )
+
+    latest_interaction_df = (
+        working_df.groupby(ColumnNames.USER_ID.value)[
+            ColumnNames.EFFECTIVE_DATE_TIME.value
+        ]
+        .max()
+        .reset_index()
+        .rename(
+            columns={
+                ColumnNames.EFFECTIVE_DATE_TIME.value: (
+                    ColumnNames.LAST_USER_INTERACTION.value
+                )
+            }
+        )
+    )
+
+    if output_file_path is not None:
+        latest_interaction_df.to_csv(output_file_path, index=False)
+
+    return latest_interaction_df

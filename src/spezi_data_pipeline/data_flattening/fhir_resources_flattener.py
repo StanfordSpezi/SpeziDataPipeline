@@ -165,6 +165,7 @@ class ColumnNames(Enum):
         QUESTION_ID: The unique identifier for a specific question within the questionnaire.
         QUESTION_TEXT: The text or content of the question being asked.
         ANSWER_TEXT: The text or content of the respondent's answer.
+        LAST_USER_INTERACTION: The datetime of a user's most recent recorded interaction.
     """
 
     USER_ID = "UserId"
@@ -192,6 +193,7 @@ class ColumnNames(Enum):
     ANSWER_TEXT = "AnswerText"
     RISK_SCORE = "RiskScore"
     SCORE_INTERPRETATION = "ScoreInterpretation"
+    LAST_USER_INTERACTION = "LastUserInteraction"
 
 
 # pylint: disable=too-few-public-methods

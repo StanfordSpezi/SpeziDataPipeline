@@ -20,7 +20,14 @@ The module defines the following unit test classes:
    - Selecting data by user ID.
    - Selecting data by date range.
 
-2. `TestCalculateRiskScore`: Tests for `calculate_risk_score` function, including:
+2. `TestExtractLatestUserInteraction`: Tests for `extract_latest_user_interaction` function,
+   including:
+   - Extracting the latest interaction per user.
+   - Ensuring the input DataFrame is not mutated.
+   - Writing the result to a configurable CSV file.
+   - Handling empty input.
+
+3. `TestCalculateRiskScore`: Tests for `calculate_risk_score` function, including:
    - Calculating risk scores for PHQ-9, GAD-7, and WIQ questionnaires.
    - Handling unsupported questionnaires.
 
@@ -33,6 +40,7 @@ Constants used in the tests:
 # Standard library imports
 from pathlib import Path
 import random
+import tempfile
 
 # Related third-party imports
 import unittest
@@ -49,6 +57,7 @@ from spezi_data_pipeline.data_processing.data_processor import (
     FHIRDataProcessor,
     select_data_by_dates,
     select_data_by_user,
+    extract_latest_user_interaction,
 )
 
 from spezi_data_pipeline.data_processing.observation_processor import (
@@ -163,6 +172,100 @@ class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variab
             expected_number_of_rows,
             f"The number of rows after filtering should be exactly {expected_number_of_rows}.",
         )
+
+
+class TestExtractLatestUserInteraction(  # pylint: disable=unused-variable
+    unittest.TestCase
+):
+    """
+    This class contains unit tests for the extract_latest_user_interaction function, which
+    summarizes the most recent interaction recorded for each user in a FHIRDataFrame.
+    """
+
+    def setUp(self):
+        """Initialize sample interaction data spanning multiple users and dates."""
+        self.data = {
+            ColumnNames.USER_ID.value: [
+                "user1",
+                "user1",
+                "user2",
+                "user2",
+                "user2",
+            ],
+            ColumnNames.EFFECTIVE_DATE_TIME.value: [
+                "2023-01-01",
+                "2023-06-15",
+                "2023-03-10",
+                "2023-12-31",
+                "2023-11-01",
+            ],
+        }
+        self.fhir_df = FHIRDataFrame(
+            pd.DataFrame(self.data), resource_type=FHIRResourceType.OBSERVATION
+        )
+
+    def test_extract_latest_user_interaction(self):
+        """Verify that the latest interaction per user is returned."""
+        result_df = extract_latest_user_interaction(self.fhir_df)
+
+        self.assertEqual(len(result_df), 2)
+        self.assertListEqual(
+            list(result_df.columns),
+            [ColumnNames.USER_ID.value, ColumnNames.LAST_USER_INTERACTION.value],
+        )
+
+        latest_by_user = dict(
+            zip(
+                result_df[ColumnNames.USER_ID.value],
+                result_df[ColumnNames.LAST_USER_INTERACTION.value],
+            )
+        )
+        self.assertEqual(latest_by_user["user1"], pd.Timestamp("2023-06-15"))
+        self.assertEqual(latest_by_user["user2"], pd.Timestamp("2023-12-31"))
+
+    def test_extract_latest_user_interaction_does_not_mutate_input(self):
+        """Ensure the source FHIRDataFrame is left unchanged."""
+        extract_latest_user_interaction(self.fhir_df)
+        self.assertEqual(
+            list(self.fhir_df.df[ColumnNames.EFFECTIVE_DATE_TIME.value]),
+            self.data[ColumnNames.EFFECTIVE_DATE_TIME.value],
+        )
+
+    def test_extract_latest_user_interaction_writes_csv(self):
+        """Verify that the result is written to the specified output file."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file_path = Path(tmp_dir) / "latest_interactions.csv"
+            result_df = extract_latest_user_interaction(
+                self.fhir_df, output_file_path=str(output_file_path)
+            )
+
+            self.assertTrue(output_file_path.exists())
+            written_df = pd.read_csv(output_file_path)
+            self.assertEqual(len(written_df), len(result_df))
+            self.assertListEqual(
+                list(written_df.columns),
+                [ColumnNames.USER_ID.value, ColumnNames.LAST_USER_INTERACTION.value],
+            )
+
+    def test_extract_latest_user_interaction_empty_input(self):
+        """Verify that an empty input yields an empty result and writes no file."""
+        empty_fhir_df = FHIRDataFrame(
+            pd.DataFrame(
+                columns=[
+                    ColumnNames.USER_ID.value,
+                    ColumnNames.EFFECTIVE_DATE_TIME.value,
+                ]
+            ),
+            resource_type=FHIRResourceType.OBSERVATION,
+        )
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_file_path = Path(tmp_dir) / "should_not_exist.csv"
+            result_df = extract_latest_user_interaction(
+                empty_fhir_df, output_file_path=str(output_file_path)
+            )
+
+            self.assertTrue(result_df.empty)
+            self.assertFalse(output_file_path.exists())
 
 
 class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-variable

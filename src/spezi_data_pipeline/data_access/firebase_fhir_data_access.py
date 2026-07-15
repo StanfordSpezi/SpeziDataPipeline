@@ -435,7 +435,7 @@ class ObservationCreator(ResourceCreator):
 
             try:
                 resource_str = json.dumps(doc_dict)
-                resource_obj = Observation.parse_raw(resource_str)
+                resource_obj = Observation.model_validate_json(resource_str)
             except Exception as e:
                 print(
                     f"[ERROR] Failed to parse Observation for user_id={user.id}, "
@@ -508,7 +508,7 @@ class QuestionnaireResponseCreator(ResourceCreator):
         for doc in fhir_docs:
             doc_dict = doc.to_dict()
             resource_str = json.dumps(doc_dict)
-            resource_obj = QuestionnaireResponse.parse_raw(resource_str)
+            resource_obj = QuestionnaireResponse.model_validate_json(resource_str)
             if user:
                 resource_obj.subject = Reference(id=user.id)
             resources.append(resource_obj)

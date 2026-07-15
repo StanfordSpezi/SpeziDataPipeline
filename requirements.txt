@@ -2,7 +2,7 @@ pandas>=2.0,<4
 numpy>=1.26,<3
 matplotlib>=3.8,<4
 firebase-admin>=6.5,<8
-fhir.resources
+fhir.resources>=8.0,<9
 pytest>=7.0
 coverage
 pytest-cov>=2.10.0

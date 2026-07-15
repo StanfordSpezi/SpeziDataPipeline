@@ -15,3 +15,4 @@ Spezi Data Pipeline Contributors
 * [Paul Schmiedmayer](https://github.com/PSchmiedmayer)
 * [Adrit Rao](https://github.com/AdritRao)
 * [Oliver Aalami](https://github.com/aalami5)
+* [Vishnu Ravi](https://github.com/vishnuravi)

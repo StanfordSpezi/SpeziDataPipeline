@@ -13,25 +13,26 @@ configuration file.
 This module contains unit tests for:
 1. Parsing authors from the `CONTRIBUTORS.md` file and updating the `pyproject.toml`
     configuration file.
-2. Retrieving the latest Git tag and updating the version in the pyproject.toml`  
+2. Retrieving the latest Git tag and updating the version in the pyproject.toml`
     configuration file.
 
 Classes:
-    `TestContributorsFunctions`: Contains unit tests for parsing and updating contributors 
+    `TestContributorsFunctions`: Contains unit tests for parsing and updating contributors
                                in the `pyproject.toml file`.
-    `TestVersionFunctions`: Contains unit tests for the functions `get_latest_git_tag` and 
+    `TestVersionFunctions`: Contains unit tests for the functions `get_latest_git_tag` and
                           `update_hatch_version`.
 
 Functions:
-    `test_parse_contributors(self)`: Tests parsing of authors from the `CONTRIBUTORS.md` file in 
+    `test_parse_contributors(self)`: Tests parsing of authors from the `CONTRIBUTORS.md` file in
                                    `TestContributorsFunctions`.
     `test_update_pyproject_toml(self)`: Tests updating of the `pyproject.toml` file with parsed
                                         authors in `TestContributorsFunctions`.
     `test_get_latest_git_tag(self, mock_run)`: Tests the retrieval of the latest Git tag using the
                                                git command in `TestVersionFunctions`.
-    `test_update_hatch_version(self, mock_file)`: Tests the updating of the hatch version in the 
+    `test_update_hatch_version(self, mock_file)`: Tests the updating of the hatch version in the
                                                 `pyproject.toml` file in `TestVersionFunctions`.
 """
+
 # Related third-party imports
 import unittest
 from unittest.mock import mock_open, patch

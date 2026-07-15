@@ -31,6 +31,7 @@ Functions:
     `get_code_mappings`: Retrieves mappings for a given LOINC code or custom code, supporting the
         translation of codes for FHIR resource creation and querying.
 """
+
 # pylint: disable=broad-exception-caught
 # Standard library imports
 import json

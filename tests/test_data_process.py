@@ -7,8 +7,8 @@
 #
 
 """
-This module contains unit tests for various components of the Spezi Data Pipeline, 
-focusing on the processing and analysis of FHIR (Fast Healthcare Interoperability Resources) data. 
+This module contains unit tests for various components of the Spezi Data Pipeline,
+focusing on the processing and analysis of FHIR (Fast Healthcare Interoperability Resources) data.
 The tests ensure the correct functionality of key data processing methods, including outlier
 filtering, user-specific data selection, date-specific data selection, and the calculation of
 risk scores from  questionnaire responses.

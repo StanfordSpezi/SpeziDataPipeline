@@ -9,23 +9,23 @@
 """
 Module to automatically update the Hatch project version based on the latest Git tag.
 
-This module contains functions to retrieve the latest Git tag and update the 
-Hatch version in the `pyproject.toml` configuration file. The script is intended 
+This module contains functions to retrieve the latest Git tag and update the
+Hatch version in the `pyproject.toml` configuration file. The script is intended
 to be run as a standalone program.
 
 Functions:
     get_latest_git_tag(): Retrieves the latest Git tag from the repository.
-    update_hatch_version(tag): Updates the version in the Hatch configuration file 
+    update_hatch_version(tag): Updates the version in the Hatch configuration file
                                with the specified tag.
 
 Usage:
-    Run this script from the command line to automatically update the version in 
+    Run this script from the command line to automatically update the version in
     the `pyproject.toml` file based on the latest Git tag:
-    
+
     $ python script_name.py
-    
-    The script will validate that the tag is in a valid semantic versioning format 
-    (e.g., "1.0.0"). If the tag is valid, it will update the version in 
+
+    The script will validate that the tag is in a valid semantic versioning format
+    (e.g., "1.0.0"). If the tag is valid, it will update the version in
     `pyproject.toml`. If the tag is not valid, it will print an error message.
 """
 

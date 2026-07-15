@@ -7,10 +7,10 @@
 #
 
 """
-This module provides a collection of functions designed for the processing of observations 
+This module provides a collection of functions designed for the processing of observations
 represented in the FHIR (Fast Healthcare Interoperability Resources) format. It includes
 capabilities for aggregating data by day, calculating averages, and applying moving averages
-to smooth out time-series data. These functions facilitate the examination of trends and patterns 
+to smooth out time-series data. These functions facilitate the examination of trends and patterns
 in health metrics over time, making it easier for healthcare professionals, researchers, and
 data analysts to derive insights from complex datasets.
 

@@ -9,8 +9,8 @@
 """
 Module for calculating risk scores based on various health questionnaires using FHIR resources.
 
-This module defines enumerations for different levels of severity for depression, anxiety, 
-and impairment. It includes functions to calculate risk scores for specific questionnaires 
+This module defines enumerations for different levels of severity for depression, anxiety,
+and impairment. It includes functions to calculate risk scores for specific questionnaires
 like PHQ-9, GAD-7, and WIQ, using the FHIRDataFrame structure from the Spezi data pipeline.
 
 Classes:
@@ -371,7 +371,5 @@ def calculate_risk_score(  # pylint: disable=unused-variable
             return func(fhir_dataframe, severity_enum)
 
     available_options = ", ".join(calculation_functions.keys())
-    raise ValueError(
-        f"Unsupported questionnaire title: {questionnaire_title}. \
-                        Available options: {available_options}"
-    )
+    raise ValueError(f"Unsupported questionnaire title: {questionnaire_title}. \
+                        Available options: {available_options}")

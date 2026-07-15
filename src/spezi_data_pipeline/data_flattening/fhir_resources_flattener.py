@@ -33,7 +33,7 @@ Main Components:
                                     mapping questions and answers to their respective text using
                                     Phoenix-generated questionnaire JSON files.
 
-- `get_answer_code_and_value`: Retrieves the answer code and text for a given item from the 
+- `get_answer_code_and_value`: Retrieves the answer code and text for a given item from the
                                `QuestionnaireResponse`.
 - `extract_questionnaire_mappings`: Extracts question and answer mappings from a FHIR Questionnaire
                                     JSON file for easy lookup.
@@ -56,7 +56,6 @@ import pandas as pd
 from fhir.resources.R4B.observation import Observation
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
 from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponseItem
-
 
 ENCODING = "utf-8"
 EXT_URL_ORDINAL_VALUE_STRING = "http://hl7.org/fhir/StructureDefinition/ordinalValue"
@@ -639,7 +638,9 @@ def extract_coding_info(observation: Observation | ECGObservation) -> dict:
             Apple HealthKit code, and display text.
     """
     coding = (
-        observation.model_dump().get(KeyNames.CODE.value, {}).get(KeyNames.CODING.value, [])
+        observation.model_dump()
+        .get(KeyNames.CODE.value, {})
+        .get(KeyNames.CODING.value, [])
     )
 
     loinc_code = None

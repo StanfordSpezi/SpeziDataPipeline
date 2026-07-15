@@ -10,12 +10,12 @@
 This script updates the 'authors' section of the pyproject.toml file based on the CONTRIBUTORS.md
 file.
 
-It parses the CONTRIBUTORS.md file to extract the list of contributors and updates the 
+It parses the CONTRIBUTORS.md file to extract the list of contributors and updates the
 pyproject.toml file to reflect these contributors in the 'authors' section.
 
 Functions:
 - parse_contributors(file_path): Parses the CONTRIBUTORS.md file to extract author names.
-- update_pyproject_toml(pyproject_path, contributors): Updates the pyproject.toml file with the 
+- update_pyproject_toml(pyproject_path, contributors): Updates the pyproject.toml file with the
     list of authors.
 """
 

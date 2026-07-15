@@ -54,7 +54,6 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     ColumnNames,
 )
 
-
 TIME_UNIT = "sec"
 ECG_MICROVOLT_UNIT = "uV"
 ECG_MILLIVOLT_UNIT = "mV"
@@ -739,4 +738,4 @@ def explore_total_records_number(  # pylint: disable=unused-variable
     plt.tight_layout()
     plt.show()
 
-    return ax # For test inspection
+    return ax  # For test inspection

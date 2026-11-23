@@ -348,7 +348,7 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
         self.assertIsNone(result)
 
         mock_resource = MagicMock(spec=QuestionnaireResponse)
-        mock_resource.resource_type = "QuestionnaireResponse"
+        mock_resource.get_resource_type.return_value = "QuestionnaireResponse"
         mock_resource.subject = MagicMock()
         mock_resource.subject.id = "user1"
         mock_resource.authored = "2024-06-01"
@@ -373,6 +373,52 @@ class TestQuestionnaireResponseFlattener(  # pylint: disable=unused-variable
         self.assertEqual(result.df.shape[0], 1)
         self.assertEqual(result.df.iloc[0]["QuestionText"], "Question 1")
         self.assertEqual(result.df.iloc[0]["AnswerText"], "Answer 1")
+
+
+class TestFlattenFHIRResourcesDispatch(  # pylint: disable=unused-variable
+    unittest.TestCase
+):
+    """
+    Tests that flatten_fhir_resources dispatches real fhir.resources objects (not mocks) to
+    the correct flattener based on their resource type.
+    """
+
+    def test_observations(self):
+        """Plain Observation resources are flattened as observations."""
+        resources = create_mock_observations()
+        if isinstance(resources, str):
+            self.fail(f"Failed to create mock observations: {resources}")
+
+        result = flatten_fhir_resources(resources)
+
+        self.assertEqual(result.resource_type, FHIRResourceType.OBSERVATION)
+        self.assertEqual(len(result.df), len(resources))
+
+    def test_ecg_observations(self):
+        """ECGObservation wrappers are flattened as ECG observations."""
+        resources = create_mock_ecg_observations()
+        if isinstance(resources, str):
+            self.fail(f"Failed to create mock ECG observations: {resources}")
+
+        result = flatten_fhir_resources(resources)
+
+        self.assertEqual(result.resource_type, FHIRResourceType.ECG_OBSERVATION)
+        self.assertEqual(len(result.df), len(resources))
+
+    def test_questionnaire_responses(self):
+        """QuestionnaireResponse resources are flattened as questionnaire responses."""
+        resources = create_mock_questionnaire_responses()
+        if isinstance(resources, str):
+            self.fail(f"Failed to create mock questionnaire responses: {resources}")
+
+        result = flatten_fhir_resources(
+            resources, "Resources/SocialSupportQuestionnaire.json"
+        )
+
+        self.assertEqual(result.resource_type, FHIRResourceType.QUESTIONNAIRE_RESPONSE)
+        self.assertEqual(
+            len(result.df), sum(len(response.item) for response in resources)
+        )
 
 
 def create_mock_observations() -> list[Observation] | str:

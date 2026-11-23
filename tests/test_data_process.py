@@ -31,6 +31,11 @@ The module defines the following unit test classes:
    - Calculating risk scores for PHQ-9, GAD-7, and WIQ questionnaires.
    - Handling unsupported questionnaires.
 
+4. `TestCalculateActivityIndex`: Tests for `calculate_activity_index` function, including:
+   - Calculating per-user n-day moving averages over gap-filled daily data.
+   - Leaving the input DataFrame's row order unchanged.
+   - Rejecting duplicate entries and non-step-count data.
+
 Constants used in the tests:
 - USER_ID1: A sample user ID for testing.
 - OUTLIER_VALUE: A value used to simulate outliers in the data.
@@ -61,7 +66,9 @@ from spezi_data_pipeline.data_processing.data_processor import (
 )
 
 from spezi_data_pipeline.data_processing.observation_processor import (
+    calculate_activity_index,
     calculate_daily_data,
+    STEP_COUNT_LOINC_CODE,
 )
 
 from spezi_data_pipeline.data_processing.questionnaire_processor import (
@@ -76,6 +83,7 @@ USER_ID1 = "XrftRMc358NndzcRWEQ7P2MxvabZ"
 OUTLIER_VALUE = 1e10
 LOWER_THRESHOLD = 0
 UPPER_THRESOLD = 15000
+WINDOW_DAYS = 2
 
 
 class TestFHIRDataProcessor(unittest.TestCase):  # pylint: disable=unused-variable
@@ -377,6 +385,114 @@ class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-varia
             "PHQ-9, GAD-7, WIQ"
         )
         self.assertEqual(expected_message, actual_message)
+
+
+class TestCalculateActivityIndex(unittest.TestCase):  # pylint: disable=unused-variable
+    """
+    Tests for the calculate_activity_index function, which computes per-user n-day
+    moving averages of step counts.
+    """
+
+    @staticmethod
+    def make_step_data(rows):
+        """Builds a step-count observation DataFrame from (user, date, value) tuples."""
+        return pd.DataFrame(
+            {
+                ColumnNames.USER_ID.value: [user for user, _, _ in rows],
+                ColumnNames.RESOURCE_ID.value: [
+                    f"{user}-{date}" for user, date, _ in rows
+                ],
+                ColumnNames.EFFECTIVE_DATE_TIME.value: pd.to_datetime(
+                    [date for _, date, _ in rows]
+                ),
+                ColumnNames.QUANTITY_NAME.value: "Step Count",
+                ColumnNames.QUANTITY_UNIT.value: "steps",
+                ColumnNames.QUANTITY_VALUE.value: [value for _, _, value in rows],
+                ColumnNames.LOINC_CODE.value: STEP_COUNT_LOINC_CODE,
+                ColumnNames.DISPLAY.value: "Number of steps",
+                ColumnNames.APPLE_HEALTH_KIT_CODE.value: (
+                    "HKQuantityTypeIdentifierStepCount"
+                ),
+            }
+        )
+
+    def setUp(self):
+        # Rows are deliberately out of order, and userA has no entry for 2023-01-02.
+        self.input_df = self.make_step_data(
+            [
+                ("userB", "2023-01-06", 150),
+                ("userA", "2023-01-03", 300),
+                ("userB", "2023-01-05", 50),
+                ("userA", "2023-01-01", 100),
+            ]
+        )
+
+    def test_moving_average_per_user(self):
+        result = calculate_activity_index(
+            FHIRDataFrame(self.input_df, FHIRResourceType.OBSERVATION),
+            n=WINDOW_DAYS,
+        )
+        df = result.df.sort_values(
+            [ColumnNames.USER_ID.value, ColumnNames.EFFECTIVE_DATE_TIME.value]
+        ).reset_index(drop=True)
+
+        self.assertEqual(result.resource_type, FHIRResourceType.OBSERVATION)
+        self.assertEqual(
+            list(df[ColumnNames.USER_ID.value]),
+            ["userA", "userA", "userA", "userB", "userB"],
+        )
+        self.assertEqual(
+            list(df[ColumnNames.EFFECTIVE_DATE_TIME.value]),
+            list(
+                pd.to_datetime(
+                    [
+                        "2023-01-01",
+                        "2023-01-02",
+                        "2023-01-03",
+                        "2023-01-05",
+                        "2023-01-06",
+                    ]
+                )
+            ),
+        )
+        # The missing day stays empty and the rolling mean skips it.
+        self.assertEqual(
+            list(df[ColumnNames.QUANTITY_VALUE.value]), [100, 100, 300, 50, 100]
+        )
+        self.assertTrue(
+            (
+                df[ColumnNames.QUANTITY_NAME.value]
+                == f"{WINDOW_DAYS}-day moving average Step Count"
+            ).all()
+        )
+        self.assertTrue(
+            (df[ColumnNames.LOINC_CODE.value] == STEP_COUNT_LOINC_CODE).all()
+        )
+
+    def test_does_not_reorder_input(self):
+        original_order = list(self.input_df[ColumnNames.RESOURCE_ID.value])
+        calculate_activity_index(
+            FHIRDataFrame(self.input_df, FHIRResourceType.OBSERVATION),
+            n=WINDOW_DAYS,
+        )
+        self.assertEqual(
+            list(self.input_df[ColumnNames.RESOURCE_ID.value]), original_order
+        )
+
+    def test_duplicate_entries_return_none(self):
+        df = self.make_step_data(
+            [("userA", "2023-01-01", 100), ("userA", "2023-01-01", 200)]
+        )
+        self.assertIsNone(
+            calculate_activity_index(FHIRDataFrame(df, FHIRResourceType.OBSERVATION))
+        )
+
+    def test_non_step_data_returns_none(self):
+        df = self.make_step_data([("userA", "2023-01-01", 100)])
+        df[ColumnNames.LOINC_CODE.value] = "8867-4"
+        self.assertIsNone(
+            calculate_activity_index(FHIRDataFrame(df, FHIRResourceType.OBSERVATION))
+        )
 
 
 if __name__ == "__main__":

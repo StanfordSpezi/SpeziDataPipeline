@@ -232,14 +232,14 @@ def calculate_activity_index(  # pylint: disable=unused-variable
         )
         return None
 
-    fhir_dataframe.df.sort_values(
+    sorted_df = fhir_dataframe.df.sort_values(
         by=[ColumnNames.USER_ID.value, ColumnNames.EFFECTIVE_DATE_TIME.value],
-        inplace=True,
     )
 
     def calculate_moving_average(group, n):
         # Ensure every day is accounted for in the range
-        group.set_index(ColumnNames.EFFECTIVE_DATE_TIME.value, inplace=True)
+        user_id = group.name
+        group = group.set_index(ColumnNames.EFFECTIVE_DATE_TIME.value)
         # Resample to daily data, explicitly setting numeric_only=True
         daily = group.resample(
             "D"
@@ -251,9 +251,9 @@ def calculate_activity_index(  # pylint: disable=unused-variable
             .mean()
         )
         # Reset index to move EffectiveDateTime back to a column
-        daily.reset_index(inplace=True)
+        daily = daily.reset_index()
         # Include UserId in the output
-        daily[ColumnNames.USER_ID.value] = group.name
+        daily[ColumnNames.USER_ID.value] = user_id
         # Set constant values
         daily[ColumnNames.LOINC_CODE.value] = STEP_COUNT_LOINC_CODE
         daily[ColumnNames.APPLE_HEALTH_KIT_CODE.value] = APPLE_HEALTH_KIT_STEP_COUNT
@@ -262,10 +262,10 @@ def calculate_activity_index(  # pylint: disable=unused-variable
         daily[ColumnNames.QUANTITY_NAME.value] = f"{n}-day moving average Step Count"
         return daily
 
-    result = fhir_dataframe.df.groupby(ColumnNames.USER_ID.value).apply(
+    result = sorted_df.groupby(ColumnNames.USER_ID.value).apply(
         lambda group: calculate_moving_average(group, n)
     )
     result[ColumnNames.QUANTITY_VALUE.value] = result["MovingAverage"]
-    result.reset_index(level=0, drop=True, inplace=True)
+    result = result.reset_index(level=0, drop=True)
 
     return FHIRDataFrame(result, fhir_dataframe.resource_type)

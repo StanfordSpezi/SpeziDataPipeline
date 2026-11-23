@@ -26,6 +26,8 @@ The module defines the following unit test classes:
    - Ensuring the input DataFrame is not mutated.
    - Writing the result to a configurable CSV file.
    - Handling empty input.
+   - Using the authored date for questionnaire responses.
+   - Rejecting unsupported resource types.
 
 3. `TestCalculateRiskScore`: Tests for `calculate_risk_score` function, including:
    - Calculating risk scores for PHQ-9, GAD-7, and WIQ questionnaires.
@@ -274,6 +276,44 @@ class TestExtractLatestUserInteraction(  # pylint: disable=unused-variable
 
             self.assertTrue(result_df.empty)
             self.assertFalse(output_file_path.exists())
+
+    def test_extract_latest_user_interaction_questionnaire_responses(self):
+        """Verify that questionnaire responses are dated by their authored date."""
+        questionnaire_fhir_df = FHIRDataFrame(
+            pd.DataFrame(
+                {
+                    ColumnNames.USER_ID.value: ["user1", "user1", "user2"],
+                    ColumnNames.AUTHORED_DATE.value: [
+                        "2024-02-01",
+                        "2024-05-20",
+                        "2024-03-15",
+                    ],
+                }
+            ),
+            resource_type=FHIRResourceType.QUESTIONNAIRE_RESPONSE,
+        )
+        result_df = extract_latest_user_interaction(questionnaire_fhir_df)
+
+        latest_by_user = dict(
+            zip(
+                result_df[ColumnNames.USER_ID.value],
+                result_df[ColumnNames.LAST_USER_INTERACTION.value],
+            )
+        )
+        self.assertEqual(
+            latest_by_user,
+            {
+                "user1": pd.Timestamp("2024-05-20"),
+                "user2": pd.Timestamp("2024-03-15"),
+            },
+        )
+
+    def test_extract_latest_user_interaction_unsupported_resource_type(self):
+        """Verify that an unsupported resource type raises a ValueError."""
+        fhir_df = MagicMock()
+        fhir_df.resource_type = "Patient"
+        with self.assertRaises(ValueError):
+            extract_latest_user_interaction(fhir_df)
 
 
 class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-variable

@@ -245,6 +245,18 @@ The Spezi Data Pipeline also handles questionnaire responses stored as FHIR reso
 > In FHIR standards, the `Questionnaire` resource represents the definition of a questionnaire, including questions and possible answers, while the `QuestionnaireResponse` resource captures the responses to a completed questionnaire, containing the answers provided by a user or patient.
 
 
+## Tracking Active Users
+
+To see when each user was last active, `extract_latest_user_interaction()` returns the date of every user's most recent FHIR resource. Observations are dated by their effective date and questionnaire responses by their authored date. Pass `output_file_path` to also export the result as a CSV file with the columns `UserId` and `LastUserInteraction`.
+
+```python
+from spezi_data_pipeline.data_processing.data_processor import extract_latest_user_interaction
+
+latest_interactions = extract_latest_user_interaction(
+    flattened_fhir_dataframe, output_file_path="latest_user_interactions.csv"
+)
+```
+
 ## Citation
 
 The Spezi Data Pipeline is described in the following publication. If you use it in your research, please cite:

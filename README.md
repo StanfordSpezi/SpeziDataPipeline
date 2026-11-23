@@ -12,6 +12,7 @@ SPDX-License-Identifier: MIT
 
 [![Build and Test](https://github.com/StanfordSpezi/SpeziDataPipeline/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/StanfordSpezi/SpeziDataPipeline/actions/workflows/build-and-test.yml)
 [![codecov](https://codecov.io/gh/StanfordSpezi/SpeziDataPipeline/branch/main/graph/badge.svg)](https://codecov.io/gh/StanfordSpezi/SpeziDataPipeline)
+[![DOI](https://img.shields.io/badge/DOI-10.1038%2Fs41746--026--02666--7-blue)](https://doi.org/10.1038/s41746-026-02666-7)
 
 The Spezi Data Pipeline offers a comprehensive suite of tools designed to facilitate the management, analysis, and visualization of healthcare data from Firebase Firestore. By adhering to the Fast Healthcare Interoperability Resources (FHIR) standards, this platform ensures that data handling remains robust, standardized, and interoperable across different systems and software.
 
@@ -243,6 +244,24 @@ The Spezi Data Pipeline also handles questionnaire responses stored as FHIR reso
 > 
 > In FHIR standards, the `Questionnaire` resource represents the definition of a questionnaire, including questions and possible answers, while the `QuestionnaireResponse` resource captures the responses to a completed questionnaire, containing the answers provided by a user or patient.
 
+
+## Citation
+
+The Spezi Data Pipeline is described in the following publication. If you use it in your research, please cite:
+
+> Bikia, V. et al. Spezi Data Pipeline: Streamlining FHIR-based interoperable digital health data workflows. *npj Digital Medicine* **9**, 737 (2026). https://doi.org/10.1038/s41746-026-02666-7
+
+```bibtex
+@article{bikia2026spezidatapipeline,
+  title   = {Spezi Data Pipeline: Streamlining {FHIR}-based interoperable digital health data workflows},
+  author  = {Bikia, Vasiliki and others},
+  journal = {npj Digital Medicine},
+  volume  = {9},
+  pages   = {737},
+  year    = {2026},
+  doi     = {10.1038/s41746-026-02666-7}
+}
+```
 
 ## Contributing
 

@@ -37,25 +37,25 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             if [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "::set-output name=repo::https://upload.pypi.org/legacy/"
-              echo "::set-output name=environment::release"
-              echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
+              echo "repo=https://upload.pypi.org/legacy/" >> "$GITHUB_OUTPUT"
+              echo "environment=release" >> "$GITHUB_OUTPUT"
+              echo "version=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
             elif [[ "${{ github.event.inputs.tag_name }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$ ]]; then
-              echo "::set-output name=repo::https://test.pypi.org/legacy/"
-              echo "::set-output name=environment::test"
-              echo "::set-output name=version::${{ github.event.inputs.tag_name }}"
+              echo "repo=https://test.pypi.org/legacy/" >> "$GITHUB_OUTPUT"
+              echo "environment=test" >> "$GITHUB_OUTPUT"
+              echo "version=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
             else
               echo "Workflow dispatch without a valid version tag. Failing job."
               exit 1
             fi
           elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::set-output name=repo::https://upload.pypi.org/legacy/"
-            echo "::set-output name=environment::release"
-            echo "::set-output name=version::${GITHUB_REF##*/}"
+            echo "repo=https://upload.pypi.org/legacy/" >> "$GITHUB_OUTPUT"
+            echo "environment=release" >> "$GITHUB_OUTPUT"
+            echo "version=${GITHUB_REF##*/}" >> "$GITHUB_OUTPUT"
           elif echo ${GITHUB_REF##*/} | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(b[0-9]+|alpha\.[0-9]+)$'; then
-            echo "::set-output name=repo::https://test.pypi.org/legacy/"
-            echo "::set-output name=environment::test"
-            echo "::set-output name=version::${GITHUB_REF##*/}"
+            echo "repo=https://test.pypi.org/legacy/" >> "$GITHUB_OUTPUT"
+            echo "environment=test" >> "$GITHUB_OUTPUT"
+            echo "version=${GITHUB_REF##*/}" >> "$GITHUB_OUTPUT"
           else
             echo "Invalid ref for this workflow. Failing job."
             exit 1
@@ -79,6 +79,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -98,16 +100,13 @@ jobs:
 
       - name: Check if version already exists on PyPI/Test PyPI
         run: |
-          run: |
-          REPO_URL=${{ needs.determine_environment.outputs.repo }}
-          PACKAGE_VERSION=${{ needs.determine_environment.outputs.version }}
-          if [ "$REPO_URL" == "https://upload.pypi.org/legacy/" ]; then
+          if [ "$PYPI_REPOSITORY_URL" == "https://upload.pypi.org/legacy/" ]; then
             PYPI_URL="https://pypi.org/pypi/spezi_data_pipeline/json"
           else
             PYPI_URL="https://test.pypi.org/pypi/spezi_data_pipeline/json"
           fi
-          RESPONSE=$(curl -s $PYPI_URL)
-          VERSION_EXISTS=$(echo $RESPONSE | jq -r ".releases | has(\"$PACKAGE_VERSION\")")
+          RESPONSE=$(curl -s "$PYPI_URL")
+          VERSION_EXISTS=$(echo "$RESPONSE" | jq -r --arg v "$PACKAGE_VERSION" '(.releases // {}) | has($v)')
           if [ "$VERSION_EXISTS" = "true" ]; then
             echo "Version already exists. Exiting."
             exit 1

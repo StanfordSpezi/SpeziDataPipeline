@@ -218,9 +218,8 @@ def calculate_aggregated_score(
         as_index=False,
     )[ColumnNames.ANSWER_CODE.value].sum()
 
-    grouped_df.rename(
+    grouped_df = grouped_df.rename(
         columns={ColumnNames.ANSWER_CODE.value: ColumnNames.RISK_SCORE.value},
-        inplace=True,
     )
 
     grouped_df[ColumnNames.SCORE_INTERPRETATION.value] = grouped_df[
@@ -301,8 +300,8 @@ def calculate_wiq_score(
         as_index=False,
     )["ImpairmentScore"].mean()
 
-    grouped_df.rename(
-        columns={"ImpairmentScore": ColumnNames.RISK_SCORE.value}, inplace=True
+    grouped_df = grouped_df.rename(
+        columns={"ImpairmentScore": ColumnNames.RISK_SCORE.value}
     )
 
     grouped_df[ColumnNames.SCORE_INTERPRETATION.value] = grouped_df[

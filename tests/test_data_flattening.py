@@ -102,7 +102,7 @@ class TestFHIRDataFrame(unittest.TestCase):  # pylint: disable=unused-variable
         )
 
         # Remove a required column to simulate the error condition
-        data.drop(ColumnNames.USER_ID.value, axis=1, inplace=True)
+        data = data.drop(ColumnNames.USER_ID.value, axis=1)
 
         df = FHIRDataFrame(data, FHIRResourceType.OBSERVATION)
         with self.assertRaises(ValueError):

@@ -203,9 +203,6 @@ class ECGObservation:  # pylint: disable=unused-variable
     This class provides a convenient interface to interact with ECG observation data encapsulated
     within FHIR resources. It abstracts away the complexities of the FHIR data model, offering
     direct access to attributes relevant for ECG data processing and visualization.
-
-    Parameters:
-        observation (Obervation): The original FHIR observation object containing ECG data.
     """
 
     def __init__(self, observation: Any):
@@ -213,9 +210,7 @@ class ECGObservation:  # pylint: disable=unused-variable
         Initializes an ECGObservation wrapper for FHIR ECG observations.
 
         Parameters:
-            resource (Any): The original FHIR observation object.
-            resource_type (FHIRResourceType): An enum member representing the
-                                                       specific type of the FHIR resource.
+            observation (Observation): The original FHIR observation object containing ECG data.
         """
         self.observation = observation
         self.resource_type = FHIRResourceType.ECG_OBSERVATION.value
@@ -343,9 +338,6 @@ class ResourceFlattener:
     Subclasses of ResourceFlattener implement specific logic for flattening
     different types of FHIR resources, converting them into a format that's suitable
     for data analysis and processing tasks.
-
-    Parameters:
-        resource_type (FHIRResourceType): The type of FHIR resources this flattener handles.
     """
 
     def __init__(self, resource_type: FHIRResourceType):

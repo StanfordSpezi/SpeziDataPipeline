@@ -33,7 +33,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install toml
-          pip install pylint
+          pip install pylint==4.1.4
       - name: Analysing the code with pylint
         run: |
           pylint $(git ls-files '*.py')

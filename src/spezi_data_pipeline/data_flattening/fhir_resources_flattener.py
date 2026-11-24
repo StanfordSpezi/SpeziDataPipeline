@@ -986,9 +986,13 @@ def flatten_fhir_resources(  # pylint: disable=unused-variable
         FHIRResourceType.QUESTIONNAIRE_RESPONSE: QuestionnaireResponseFlattener,
     }
 
-    resource_type = FHIRResourceType(
-        resources[0].resource_type
-    )  # Assuming each resource has a resource_type attribute
+    # ECGObservation wrappers carry their own resource type; FHIR resources from
+    # fhir.resources (>= 8) expose theirs via get_resource_type().
+    first_resource = resources[0]
+    if isinstance(first_resource, ECGObservation):
+        resource_type = FHIRResourceType(first_resource.resource_type)
+    else:
+        resource_type = FHIRResourceType(first_resource.get_resource_type())
 
     if resource_type in flattener_classes:
         flattener_class = flattener_classes[resource_type]

@@ -45,6 +45,7 @@ Constants used in the tests:
 """
 
 # Standard library imports
+import json
 from pathlib import Path
 import random
 import tempfile
@@ -53,12 +54,15 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock
 import pandas as pd
+from fhir.resources.R4B.questionnaireresponse import QuestionnaireResponse
+from fhir.resources.R4B.reference import Reference
 
 # Local application/library specific imports
 from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     FHIRDataFrame,
     FHIRResourceType,
     ColumnNames,
+    flatten_fhir_resources,
 )
 from spezi_data_pipeline.data_processing.data_processor import (
     FHIRDataProcessor,
@@ -341,6 +345,13 @@ class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-varia
 
     test_unsupported_questionnaire():
         Tests the calculate_risk_score function for handling unsupported questionnaire titles.
+
+    test_scores_from_text_answer_codes():
+        Tests that answer codes and dates stored as text, as produced by flattening, are
+        converted before scoring.
+
+    test_phq9_scores_from_flattened_sample_responses():
+        Tests PHQ-9 scoring end to end on the flattened sample questionnaire responses.
     """
 
     def setUp(self):
@@ -425,6 +436,60 @@ class TestCalculateRiskScore(unittest.TestCase):  # pylint: disable=unused-varia
             "PHQ-9, GAD-7, WIQ"
         )
         self.assertEqual(expected_message, actual_message)
+
+    def test_scores_from_text_answer_codes(self):
+        # Flattening stores answer codes as text: the object dtype in pandas 2 and the
+        # str dtype in pandas 3.
+        for fhir_df, title, expected_score in (
+            (self.fhir_df_phq_gad, SupportedQuestionnaires.PHQ_9.value, 10),
+            (
+                self.fhir_df_wiq,
+                SupportedQuestionnaires.WIQ.value,
+                (0 + 10 + 20 + 50) / 4,
+            ),
+        ):
+            with self.subTest(questionnaire=title):
+                fhir_df.df[ColumnNames.ANSWER_CODE.value] = fhir_df.df[
+                    ColumnNames.ANSWER_CODE.value
+                ].astype(str)
+                result_df = calculate_risk_score(fhir_df, title)
+                self.assertEqual(result_df.df["RiskScore"].iloc[0], expected_score)
+
+    def test_phq9_scores_from_flattened_sample_responses(self):
+        repo_root = Path(__file__).resolve().parent.parent
+        with open(
+            repo_root / "sample_data" / "phq9responses.json", "r", encoding="utf-8"
+        ) as file:
+            bundle = json.load(file)
+
+        responses = []
+        for entry in bundle["entry"]:
+            response = QuestionnaireResponse.model_validate(entry["resource"])
+            response.subject = Reference(id="user1")
+            responses.append(response)
+
+        flattened = flatten_fhir_resources(
+            responses, str(repo_root / "Resources" / "PHQ-9.json")
+        )
+        result_df = calculate_risk_score(flattened, SupportedQuestionnaires.PHQ_9.value)
+
+        scores = (
+            result_df.df.dropna(subset=["RiskScore"])
+            .sort_values(ColumnNames.AUTHORED_DATE.value)[
+                ["RiskScore", "ScoreInterpretation"]
+            ]
+            .values.tolist()
+        )
+        self.assertEqual(
+            scores,
+            [
+                [24, DepressionSeverity.SEVERE.description],
+                [19, DepressionSeverity.MODERATELY_SEVERE.description],
+                [14, DepressionSeverity.MODERATE.description],
+                [10, DepressionSeverity.MODERATE.description],
+                [7, DepressionSeverity.MILD.description],
+            ],
+        )
 
 
 class TestCalculateActivityIndex(unittest.TestCase):  # pylint: disable=unused-variable

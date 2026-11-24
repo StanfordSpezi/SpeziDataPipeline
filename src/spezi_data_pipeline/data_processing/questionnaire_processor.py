@@ -41,7 +41,27 @@ from spezi_data_pipeline.data_flattening.fhir_resources_flattener import (
     ColumnNames,
 )
 
-OBJECT = "object"
+
+def _ensure_numeric_answers_and_dates(fhir_dataframe: FHIRDataFrame) -> None:
+    """
+    Converts answer codes to integers and authored dates to datetimes when they are stored as
+    text, as produced by flattening questionnaire responses.
+
+    Text columns use the `object` dtype in pandas 2 and the `str` dtype in pandas 3, so the
+    columns are checked for being numeric or datetime rather than for a specific text dtype.
+
+    Parameters:
+        fhir_dataframe (FHIRDataFrame): The questionnaire response data, converted in place.
+    """
+    answer_codes = fhir_dataframe.df[ColumnNames.ANSWER_CODE.value]
+    if not pd.api.types.is_numeric_dtype(answer_codes):
+        fhir_dataframe.df[ColumnNames.ANSWER_CODE.value] = answer_codes.astype(int)
+
+    authored_dates = fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value]
+    if not pd.api.types.is_datetime64_any_dtype(authored_dates):
+        fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value] = pd.to_datetime(
+            authored_dates
+        )
 
 
 class DepressionSeverity(Enum):
@@ -200,15 +220,7 @@ def calculate_aggregated_score(
                    columns, with rows corresponding to grouped_df and other columns populated
                    with N/A.
     """
-    if fhir_dataframe.df[ColumnNames.ANSWER_CODE.value].dtype == OBJECT:
-        fhir_dataframe.df[ColumnNames.ANSWER_CODE.value] = fhir_dataframe.df[
-            ColumnNames.ANSWER_CODE.value
-        ].astype(int)
-
-    if fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value].dtype == OBJECT:
-        fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value] = pd.to_datetime(
-            fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value]
-        )
+    _ensure_numeric_answers_and_dates(fhir_dataframe)
 
     grouped_df = fhir_dataframe.df.groupby(
         [
@@ -278,15 +290,7 @@ def calculate_wiq_score(
         1500: 100,
     }
 
-    if fhir_dataframe.df[ColumnNames.ANSWER_CODE.value].dtype == OBJECT:
-        fhir_dataframe.df[ColumnNames.ANSWER_CODE.value] = fhir_dataframe.df[
-            ColumnNames.ANSWER_CODE.value
-        ].astype(int)
-
-    if fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value].dtype == OBJECT:
-        fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value] = pd.to_datetime(
-            fhir_dataframe.df[ColumnNames.AUTHORED_DATE.value]
-        )
+    _ensure_numeric_answers_and_dates(fhir_dataframe)
 
     fhir_dataframe.df["ImpairmentScore"] = fhir_dataframe.df[
         ColumnNames.ANSWER_CODE.value

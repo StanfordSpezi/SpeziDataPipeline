@@ -212,7 +212,13 @@ figs = visualizer.create_static_plot(processed_fhir_dataframe)
 
 ## ECG Observations
 
-In a similar way, we can download and flatten ECG recordings (LOINC code: 131329) that are stored in Firestore.
+In a similar way, we can download and flatten ECG recordings that are stored in Firestore. ECG recordings are identified by the code `131328` (MDC_ECG_ELEC_POTL). ECG recordings cannot be fetched together with other codes in the same request.
+
+```python
+fhir_ecg_observations = firebase_access.fetch_data(collection_name, subcollection_name, ["131328"])
+flattened_fhir_dataframe = flatten_fhir_resources(fhir_ecg_observations)
+processed_fhir_dataframe = FHIRDataProcessor().process_fhir_data(flattened_fhir_dataframe)
+```
 
 ### Create visual representations to explore the data
 

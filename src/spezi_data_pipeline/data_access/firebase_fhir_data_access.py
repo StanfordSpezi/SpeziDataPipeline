@@ -213,6 +213,9 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
 
         Returns:
             list[Resource]: A list of FHIR resources instances matching the query criteria.
+                When the collection is a subcollection of a document (for example
+                "users/<uid>/HealthKit"), each resource's subject is set to that document's ID,
+                so flattened data carries it as the UserId.
         """
 
         if self.db is None:
@@ -229,18 +232,22 @@ class FirebaseFHIRAccess:  # pylint: disable=unused-variable
             print("only the necessary LOINC codes.")
             return None
 
-        path_ref = self.db.collection(full_path)
+        collection_ref = self.db.collection(full_path)
+        # Resources in a subcollection of a user document (e.g. "users/<uid>/HealthKit")
+        # belong to that user; a top-level collection has no parent document.
+        user = collection_ref.parent
+        path_ref = collection_ref
         resources = []
         if start_date:
-            path_ref = path_ref.where(index_name, ">=", start_date)
+            path_ref = path_ref.where(filter=FieldFilter(index_name, ">=", start_date))
         if end_date:
-            path_ref = path_ref.where(index_name, "<=", end_date)
+            path_ref = path_ref.where(filter=FieldFilter(index_name, "<=", end_date))
         if loinc_codes:
             resources.extend(
-                _process_loinc_codes(path_ref, None, loinc_codes, self.timeout)
+                _process_loinc_codes(path_ref, user, loinc_codes, self.timeout)
             )
         else:
-            resources.extend(_process_all_documents(path_ref, None, self.timeout))
+            resources.extend(_process_all_documents(path_ref, user, self.timeout))
 
         return resources
 

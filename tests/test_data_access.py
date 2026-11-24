@@ -302,6 +302,47 @@ def test_fetch_data_path_calls_process_all_documents(monkeypatch):
     assert result == ["resource2"]
 
 
+def test_fetch_data_path_attributes_resources_to_parent_document(monkeypatch):
+    firebase_access = FirebaseFHIRAccess("test-project")
+    firebase_access.db = MagicMock()
+    user_document = MagicMock()
+    firebase_access.db.collection.return_value.parent = user_document
+
+    received = {}
+
+    def fake_process_all_documents(query, user, timeout=None):
+        received["user"] = user
+        return []
+
+    monkeypatch.setattr(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access._process_all_documents",
+        fake_process_all_documents,
+    )
+
+    firebase_access.fetch_data_path("users/abc/HealthKit")
+    assert received["user"] is user_document
+
+
+def test_fetch_data_path_top_level_collection_has_no_user(monkeypatch):
+    firebase_access = FirebaseFHIRAccess("test-project")
+    firebase_access.db = MagicMock()
+    firebase_access.db.collection.return_value.parent = None
+
+    received = {}
+
+    def fake_process_loinc_codes(query, user, loinc_codes, timeout=None):
+        received["user"] = user
+        return []
+
+    monkeypatch.setattr(
+        "spezi_data_pipeline.data_access.firebase_fhir_data_access._process_loinc_codes",
+        fake_process_loinc_codes,
+    )
+
+    firebase_access.fetch_data_path("observations", loinc_codes=["55423-8"])
+    assert received["user"] is None
+
+
 NOT_SUPPORTED_MSG = "not supported"
 
 
